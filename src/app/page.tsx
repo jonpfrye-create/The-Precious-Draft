@@ -1,4 +1,8 @@
+import Link from "next/link";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
+
+// Shows a live player count - must never be statically prerendered.
+export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const supabase = createBrowserSupabaseClient();
@@ -20,6 +24,12 @@ export default async function Home() {
           Connected to Supabase — {count} players in the pool.
         </p>
       )}
+      <Link
+        href="/commish"
+        className="rounded bg-black px-5 py-3 font-medium text-white dark:bg-white dark:text-black"
+      >
+        Go to draft board
+      </Link>
     </div>
   );
 }

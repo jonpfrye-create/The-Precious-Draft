@@ -1,0 +1,202 @@
+import "server-only";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { availablePlayersForPhase, type PhasePicks } from "./pool-exclusion";
+
+export interface League {
+  id: string;
+  name: string;
+}
+
+export interface Phase {
+  id: string;
+  league_id: string;
+  type: "main" | "leftovers" | "microwave";
+  sequence: number;
+  status: "pending" | "active" | "paused" | "completed";
+  rounds: number;
+}
+
+export interface Team {
+  id: string;
+  name: string;
+  draft_position: number;
+}
+
+export interface RosterSlot {
+  id: string;
+  slot_order: number;
+  slot_name: string;
+  eligible_positions: string[];
+  is_bench: boolean;
+}
+
+export interface Player {
+  player_id: string;
+  full_name: string;
+  position: string | null;
+  nfl_team: string | null;
+  search_rank: number | null;
+  status: string | null;
+}
+
+export interface Pick {
+  id: string;
+  phase_id: string;
+  team_id: string;
+  player_id: string;
+  pick_number: number;
+  round: number;
+}
+
+// This app is built around a single active league, so we just grab the
+// first (only) one rather than building a league picker.
+export async function getFirstLeague(): Promise<League | null> {
+  const supabase = createAdminSupabaseClient();
+  const { data, error } = await supabase
+    .from("leagues")
+    .select("id, name")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+// The phase currently being drafted: lowest sequence that isn't completed.
+export async function getCurrentPhase(leagueId: string): Promise<Phase | null> {
+  const supabase = createAdminSupabaseClient();
+  const { data, error } = await supabase
+    .from("phases")
+    .select("id, league_id, type, sequence, status, rounds")
+    .eq("league_id", leagueId)
+    .neq("status", "completed")
+    .order("sequence", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function getPhaseById(phaseId: string): Promise<Phase | null> {
+  const supabase = createAdminSupabaseClient();
+  const { data, error } = await supabase
+    .from("phases")
+    .select("id, league_id, type, sequence, status, rounds")
+    .eq("id", phaseId)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function getTeamsForPhase(phaseId: string): Promise<Team[]> {
+  const supabase = createAdminSupabaseClient();
+  const { data, error } = await supabase
+    .from("phase_teams")
+    .select("draft_position, teams (id, name)")
+    .eq("phase_id", phaseId)
+    .order("draft_position", { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map((row) => {
+    const team = row.teams as unknown as { id: string; name: string };
+    return {
+      id: team.id,
+      name: team.name,
+      draft_position: row.draft_position,
+    };
+  });
+}
+
+export async function getRosterSlots(phaseId: string): Promise<RosterSlot[]> {
+  const supabase = createAdminSupabaseClient();
+  const { data, error } = await supabase
+    .from("roster_slots")
+    .select("id, slot_order, slot_name, eligible_positions, is_bench")
+    .eq("phase_id", phaseId)
+    .order("slot_order", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getPicks(phaseId: string): Promise<Pick[]> {
+  const supabase = createAdminSupabaseClient();
+  const { data, error } = await supabase
+    .from("picks")
+    .select("id, phase_id, team_id, player_id, pick_number, round")
+    .eq("phase_id", phaseId)
+    .order("pick_number", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getPlayersByIds(playerIds: string[]): Promise<Player[]> {
+  if (playerIds.length === 0) return [];
+  const supabase = createAdminSupabaseClient();
+  const { data, error } = await supabase
+    .from("players")
+    .select("player_id, full_name, position, nfl_team, search_rank, status")
+    .in("player_id", playerIds);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getAllPlayers(): Promise<Player[]> {
+  const supabase = createAdminSupabaseClient();
+  const { data, error } = await supabase
+    .from("players")
+    .select("player_id, full_name, position, nfl_team, search_rank, status")
+    .order("search_rank", { ascending: true, nullsFirst: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+// All picks made in any phase of this league with a lower sequence than
+// the target phase, grouped for the pool-exclusion lib.
+export async function getPriorPhasePicks(
+  leagueId: string,
+  targetSequence: number
+): Promise<PhasePicks[]> {
+  const supabase = createAdminSupabaseClient();
+  const { data: priorPhases, error: phasesError } = await supabase
+    .from("phases")
+    .select("id, sequence")
+    .eq("league_id", leagueId)
+    .lt("sequence", targetSequence);
+  if (phasesError) throw phasesError;
+  if (!priorPhases || priorPhases.length === 0) return [];
+
+  const { data: picks, error: picksError } = await supabase
+    .from("picks")
+    .select("phase_id, player_id")
+    .in(
+      "phase_id",
+      priorPhases.map((p) => p.id)
+    );
+  if (picksError) throw picksError;
+
+  const sequenceByPhaseId = new Map(priorPhases.map((p) => [p.id, p.sequence]));
+  const playerIdsBySequence = new Map<number, string[]>();
+  for (const pick of picks ?? []) {
+    const sequence = sequenceByPhaseId.get(pick.phase_id)!;
+    const list = playerIdsBySequence.get(sequence) ?? [];
+    list.push(pick.player_id);
+    playerIdsBySequence.set(sequence, list);
+  }
+  return Array.from(playerIdsBySequence.entries()).map(([sequence, playerIds]) => ({
+    sequence,
+    playerIds,
+  }));
+}
+
+export async function getAvailablePlayersForPhase(phase: Phase): Promise<Player[]> {
+  const [allPlayers, priorPhasePicks, thisPhasePicks] = await Promise.all([
+    getAllPlayers(),
+    getPriorPhasePicks(phase.league_id, phase.sequence),
+    getPicks(phase.id),
+  ]);
+  return availablePlayersForPhase(
+    allPlayers,
+    priorPhasePicks,
+    phase.sequence,
+    thisPhasePicks.map((p) => p.player_id)
+  );
+}
