@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  assignRoster,
   canFillRoster,
   draftablePositions,
   forcedPositions,
   isPositionDraftable,
+  unassignedPlayers,
   type SlotSpec,
 } from "./roster-fit";
 // Relative, not "@/lib/positions": there's no vitest config, so the alias
@@ -214,5 +216,146 @@ describe("forcedPositions", () => {
     const forced = forcedPositions(["K"], LEFTOVERS, POSITIONS);
     expect(forced).not.toContain("K");
     expect(forced.length).toBeGreaterThan(1);
+  });
+});
+
+describe("assignRoster", () => {
+  const p = (name: string, position: string) => ({ name, position });
+
+  it("puts running backs in RB slots, not FLEX", () => {
+    // The naive version drops the first RB into whichever slot it hits
+    // first. A human reading the Yahoo checklist expects RB1/RB2 filled
+    // before FLEX.
+    const assigned = assignRoster(
+      [p("Bijan", "RB"), p("Saquon", "RB")],
+      LEFTOVERS
+    );
+    const byName = new Map(
+      assigned.filter((a) => a.player).map((a) => [a.player!.name, a.slot.slotName])
+    );
+    expect(byName.get("Bijan")).toMatch(/^RB[12]$/);
+    expect(byName.get("Saquon")).toMatch(/^RB[12]$/);
+    expect(byName.get("Bijan")).not.toBe(byName.get("Saquon"));
+  });
+
+  it("uses FLEX only once the specific slots are full", () => {
+    const assigned = assignRoster(
+      [p("A", "RB"), p("B", "RB"), p("C", "RB")],
+      LEFTOVERS
+    );
+    const flex = assigned.find((a) => a.slot.slotName === "FLEX");
+    expect(flex?.player).not.toBeNull();
+    expect(
+      assigned.filter((a) => a.slot.slotName.startsWith("RB") && a.player)
+    ).toHaveLength(2);
+  });
+
+  it("returns a row for every slot, in declared order", () => {
+    const assigned = assignRoster([p("A", "QB")], LEFTOVERS);
+    expect(assigned).toHaveLength(LEFTOVERS.length);
+    expect(assigned.map((a) => a.slot.slotName)).toEqual(
+      LEFTOVERS.map((s) => s.slotName)
+    );
+  });
+
+  it("leaves unfilled slots empty rather than guessing", () => {
+    const assigned = assignRoster([p("A", "QB")], LEFTOVERS);
+    expect(assigned.filter((a) => a.player === null)).toHaveLength(
+      LEFTOVERS.length - 1
+    );
+  });
+
+  it("places a complete Leftovers roster into every slot", () => {
+    const roster = [
+      p("qb", "QB"), p("rb1", "RB"), p("rb2", "RB"), p("wr1", "WR"),
+      p("wr2", "WR"), p("te", "TE"), p("flex", "RB"), p("def", "DEF"),
+      p("k", "K"),
+    ];
+    const assigned = assignRoster(roster, LEFTOVERS);
+    expect(assigned.every((a) => a.player !== null)).toBe(true);
+    expect(new Set(assigned.map((a) => a.player!.name)).size).toBe(9);
+  });
+
+  it("fills a full Main roster including the bench", () => {
+    const roster = [
+      p("qb", "QB"), p("rb1", "RB"), p("rb2", "RB"), p("wr1", "WR"),
+      p("wr2", "WR"), p("te", "TE"), p("flex", "RB"), p("def", "DEF"),
+      p("b1", "QB"), p("b2", "RB"), p("b3", "WR"), p("b4", "WR"),
+      p("b5", "TE"), p("b6", "K"),
+    ];
+    const assigned = assignRoster(roster, MAIN);
+    expect(assigned.every((a) => a.player !== null)).toBe(true);
+  });
+
+  it("puts the kicker in the K slot, not on a bench", () => {
+    const assigned = assignRoster([p("kicker", "K")], MAIN.concat(
+      { slotName: "K", eligiblePositions: ["K"] }
+    ));
+    const k = assigned.find((a) => a.slot.slotName === "K");
+    expect(k?.player?.name).toBe("kicker");
+  });
+
+  it("never places the same player twice", () => {
+    const roster = [p("a", "RB"), p("b", "RB"), p("c", "RB")];
+    const names = assignRoster(roster, LEFTOVERS)
+      .filter((a) => a.player)
+      .map((a) => a.player!.name);
+    expect(new Set(names).size).toBe(names.length);
+  });
+});
+
+describe("unassignedPlayers", () => {
+  const p = (name: string, position: string) => ({ name, position });
+
+  it("is empty for a legal roster", () => {
+    expect(unassignedPlayers([p("a", "K")], LEFTOVERS)).toEqual([]);
+  });
+
+  it("reports a player who fits nowhere", () => {
+    // Two kickers in Leftovers: one has no slot to go in.
+    const orphans = unassignedPlayers([p("k1", "K"), p("k2", "K")], LEFTOVERS);
+    expect(orphans).toHaveLength(1);
+  });
+});
+
+describe("assignRoster respects pick order", () => {
+  const p = (name: string, position: string) => ({ name, position });
+
+  it("starts the earliest pick when a team is deep at one position", () => {
+    // Four running backs, three RB/FLEX-capable starting slots. The first
+    // pick must start; benching a first-rounder while a later pick starts
+    // is a valid matching and obviously wrong to a human.
+    const roster = [
+      p("first", "RB"), p("second", "RB"), p("third", "RB"), p("fourth", "RB"),
+    ];
+    const assigned = assignRoster(roster, MAIN);
+    const slotFor = (name: string) =>
+      assigned.find((a) => a.player?.name === name)!.slot.slotName;
+
+    expect(slotFor("first")).not.toMatch(/^BENCH/);
+    expect(slotFor("fourth")).toMatch(/^BENCH/);
+  });
+
+  it("keeps the earliest picks out of the bench generally", () => {
+    const roster = [
+      p("r1", "RB"), p("r2", "WR"), p("r3", "RB"), p("r4", "WR"),
+      p("r5", "TE"), p("r6", "QB"), p("r7", "DEF"), p("r8", "RB"),
+      p("r9", "WR"),
+    ];
+    const assigned = assignRoster(roster, MAIN);
+    const benched = assigned
+      .filter((a) => a.slot.slotName.startsWith("BENCH") && a.player)
+      .map((a) => a.player!.name);
+    // Only the ninth pick overflows to the bench; the first eight all fit
+    // the starting slots.
+    expect(benched).toEqual(["r9"]);
+  });
+
+  it("still fills every slot it can", () => {
+    const roster = [
+      p("a", "RB"), p("b", "RB"), p("c", "RB"), p("d", "RB"),
+    ];
+    const assigned = assignRoster(roster, MAIN);
+    expect(assigned.filter((a) => a.player).length).toBe(4);
   });
 });

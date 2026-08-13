@@ -159,6 +159,12 @@ export default function DraftBoard({
               className="text-blue-600 hover:underline dark:text-blue-400"
             >
               Codes &amp; links
+            </Link>{" "}
+            <Link
+              href="/commish/rosters"
+              className="text-blue-600 hover:underline dark:text-blue-400"
+            >
+              Rosters for Yahoo
             </Link>
           </p>
         </div>
