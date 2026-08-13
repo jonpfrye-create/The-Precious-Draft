@@ -1,6 +1,7 @@
 import "server-only";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { availablePlayersForPhase, type PhasePicks } from "./pool-exclusion";
+import { fetchAllPlayers } from "./player-pool";
 
 export interface League {
   id: string;
@@ -174,13 +175,9 @@ export async function getPlayersByIds(playerIds: string[]): Promise<Player[]> {
 }
 
 export async function getAllPlayers(): Promise<Player[]> {
-  const supabase = createAdminSupabaseClient();
-  const { data, error } = await supabase
-    .from("players")
-    .select("player_id, full_name, position, nfl_team, search_rank, status")
-    .order("search_rank", { ascending: true, nullsFirst: false });
-  if (error) throw error;
-  return data ?? [];
+  // Paged, because Supabase truncates any response at 1000 rows - see
+  // lib/draft/player-pool.ts for why that silently broke the kicker round.
+  return fetchAllPlayers(createAdminSupabaseClient());
 }
 
 // All picks made in any phase of this league with a lower sequence than

@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "refresh-pool": "tsx scripts/ingest-players.ts",
     "codes": "tsx scripts/show-codes.ts",
-    "test-league": "tsx scripts/test-league.ts"
+    "test-league": "tsx scripts/test-league.ts",
+    "check-pool": "tsx scripts/check-pool.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.7",
