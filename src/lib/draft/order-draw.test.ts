@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   assignDraftPositions,
   evaluateDrawRequest,
+  isPositionRevealed,
+  nextRevealStep,
   shuffle,
 } from "./order-draw";
 
@@ -114,6 +116,109 @@ describe("shuffle", () => {
     }
     expect(firstUnchanged).toBeGreaterThan(60);
     expect(firstUnchanged).toBeLessThan(400);
+  });
+});
+
+describe("nextRevealStep", () => {
+  it("starts at the last pick and walks upwards", () => {
+    expect(nextRevealStep(12, 0)).toEqual({
+      positions: [12],
+      revealedAfter: 1,
+      isFinale: false,
+    });
+    expect(nextRevealStep(12, 1)).toEqual({
+      positions: [11],
+      revealedAfter: 2,
+      isFinale: false,
+    });
+    expect(nextRevealStep(12, 9)).toEqual({
+      positions: [3],
+      revealedAfter: 10,
+      isFinale: false,
+    });
+  });
+
+  it("reveals picks 2 and 1 together as the finale", () => {
+    // Naming pick 2 leaves exactly one team unaccounted for, so pick 1 is
+    // already public knowledge - the app shouldn't pretend otherwise.
+    expect(nextRevealStep(12, 10)).toEqual({
+      positions: [2, 1],
+      revealedAfter: 12,
+      isFinale: true,
+    });
+  });
+
+  it("returns null once everything is revealed", () => {
+    expect(nextRevealStep(12, 12)).toBeNull();
+    expect(nextRevealStep(12, 13)).toBeNull();
+  });
+
+  it("takes exactly one click fewer than there are teams", () => {
+    // 12 teams means 11 clicks, because the last one does double duty.
+    for (const total of [2, 3, 8, 12, 14]) {
+      let revealed = 0;
+      let clicks = 0;
+      while (nextRevealStep(total, revealed)) {
+        revealed = nextRevealStep(total, revealed)!.revealedAfter;
+        clicks++;
+      }
+      expect(revealed).toBe(total);
+      expect(clicks).toBe(total - 1);
+    }
+  });
+
+  it("covers every position exactly once across a full run", () => {
+    const total = 12;
+    let revealed = 0;
+    const seen: number[] = [];
+    let step = nextRevealStep(total, revealed);
+    while (step) {
+      seen.push(...step.positions);
+      revealed = step.revealedAfter;
+      step = nextRevealStep(total, revealed);
+    }
+    expect([...seen].sort((a, b) => a - b)).toEqual(
+      Array.from({ length: total }, (_, i) => i + 1)
+    );
+  });
+
+  it("handles a two-team phase as a single finale click", () => {
+    expect(nextRevealStep(2, 0)).toEqual({
+      positions: [2, 1],
+      revealedAfter: 2,
+      isFinale: true,
+    });
+  });
+
+  it("handles a one-team phase without a negative finale", () => {
+    expect(nextRevealStep(1, 0)).toEqual({
+      positions: [1],
+      revealedAfter: 1,
+      isFinale: false,
+    });
+    expect(nextRevealStep(1, 1)).toBeNull();
+  });
+});
+
+describe("isPositionRevealed", () => {
+  it("reveals from the bottom up", () => {
+    expect(isPositionRevealed(12, 0, 12)).toBe(false);
+    expect(isPositionRevealed(12, 1, 12)).toBe(true);
+    expect(isPositionRevealed(12, 1, 11)).toBe(false);
+    expect(isPositionRevealed(12, 3, 10)).toBe(true);
+    expect(isPositionRevealed(12, 3, 9)).toBe(false);
+  });
+
+  it("shows everything once fully revealed", () => {
+    for (let p = 1; p <= 12; p++) {
+      expect(isPositionRevealed(12, 12, p)).toBe(true);
+    }
+  });
+
+  it("shows nothing before the first click", () => {
+    for (let p = 1; p <= 12; p++) {
+      expect(isPositionRevealed(12, 0, p)).toBe(false);
+    }
   });
 });
 

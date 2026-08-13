@@ -18,6 +18,9 @@ export interface Phase {
   // the placeholder order typed in at setup must not look like a real draw.
   order_drawn_at: string | null;
   order_draw_count: number;
+  // How many draft positions have been revealed, counted from the last
+  // pick upwards. Equal to the team count once the reveal is finished.
+  order_revealed_count: number;
 }
 
 export interface Team {
@@ -82,7 +85,7 @@ export async function getCurrentPhase(leagueId: string): Promise<Phase | null> {
   const supabase = createAdminSupabaseClient();
   const { data, error } = await supabase
     .from("phases")
-    .select("id, league_id, type, sequence, status, rounds, order_drawn_at, order_draw_count")
+    .select("id, league_id, type, sequence, status, rounds, order_drawn_at, order_draw_count, order_revealed_count")
     .eq("league_id", leagueId)
     .neq("status", "completed")
     .order("sequence", { ascending: true })
@@ -96,7 +99,7 @@ export async function getPhaseById(phaseId: string): Promise<Phase | null> {
   const supabase = createAdminSupabaseClient();
   const { data, error } = await supabase
     .from("phases")
-    .select("id, league_id, type, sequence, status, rounds, order_drawn_at, order_draw_count")
+    .select("id, league_id, type, sequence, status, rounds, order_drawn_at, order_draw_count, order_revealed_count")
     .eq("id", phaseId)
     .maybeSingle();
   if (error) throw error;

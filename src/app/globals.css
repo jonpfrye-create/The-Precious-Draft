@@ -24,3 +24,39 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Draft order reveal ------------------------------------------------- */
+
+/* The card arrives fast and overshoots slightly before settling, which
+   reads as impact rather than as a transition. Deliberately short: the
+   drama comes from the hold afterwards, not from a slow entrance. */
+@keyframes slam {
+  0% {
+    opacity: 0;
+    transform: scale(2.4);
+    filter: blur(12px);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(0.94);
+    filter: blur(0);
+  }
+  75% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-slam {
+  animation: slam 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Anyone who's asked their system not to animate things gets the card
+   without the motion - it still appears, it just doesn't fly at them. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-slam {
+    animation: none;
+  }
+}

@@ -159,6 +159,24 @@ export default function DraftBoard({
         </div>
       )}
 
+      {phase.order_drawn_at !== null &&
+        phase.order_revealed_count < teams.length && (
+          <div className="rounded border border-amber-400 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-950/40">
+            <p className="font-medium">Draft order reveal is in progress.</p>
+            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+              {phase.order_revealed_count} of {teams.length} picks revealed.
+              The columns below already show the full order — don&apos;t put
+              this on the TV until the reveal is finished.{" "}
+              <Link
+                href="/commish/order"
+                className="font-medium text-blue-600 hover:underline dark:text-blue-400"
+              >
+                Back to the reveal →
+              </Link>
+            </p>
+          </div>
+        )}
+
       {phase.order_draw_count > 1 && (
         <p className="text-sm text-amber-700 dark:text-amber-500">
           Draft order was redrawn {phase.order_draw_count - 1}{" "}

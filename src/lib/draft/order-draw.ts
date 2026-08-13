@@ -55,6 +55,57 @@ export function shuffle<T>(
   return out;
 }
 
+export interface RevealStep {
+  // Positions uncovered by this click. Always one, except the finale.
+  positions: number[];
+  // Total revealed once this step lands - what gets stored on the phase.
+  revealedAfter: number;
+  // The last click of the draw: reveals picks 2 and 1 together.
+  isFinale: boolean;
+}
+
+/**
+ * Works out what the next click reveals.
+ *
+ * The order is uncovered from the last pick upwards, and stops one short:
+ * once pick 2 is named there is only one team left unaccounted for, so the
+ * room has already worked out who has pick 1. Rather than pretend
+ * otherwise, the final click reveals 2 and 1 together and treats that as
+ * the moment of the night.
+ *
+ * Returns null when everything is already revealed.
+ */
+export function nextRevealStep(
+  totalTeams: number,
+  revealedSoFar: number
+): RevealStep | null {
+  if (totalTeams < 1) return null;
+  if (revealedSoFar >= totalTeams) return null;
+
+  // With two teams left unrevealed, naming one names both.
+  if (revealedSoFar === totalTeams - 2) {
+    return { positions: [2, 1], revealedAfter: totalTeams, isFinale: true };
+  }
+
+  const position = totalTeams - revealedSoFar;
+  return {
+    positions: [position],
+    revealedAfter: revealedSoFar + 1,
+    isFinale: false,
+  };
+}
+
+// Which draft positions are visible given how many have been revealed.
+// Reveals run from the bottom up, so revealing 3 of 12 means positions
+// 12, 11 and 10 are out.
+export function isPositionRevealed(
+  totalTeams: number,
+  revealedSoFar: number,
+  draftPosition: number
+): boolean {
+  return draftPosition > totalTeams - revealedSoFar;
+}
+
 export interface DraftPosition {
   teamId: string;
   draftPosition: number;
