@@ -16,10 +16,16 @@ import { createAdminSupabaseClient } from "../src/lib/supabase/admin-client";
 const LEAGUE_NAME = "ZZZ Draw Test";
 
 // The point of the throwaway league is to rehearse the real thing, so it
-// borrows the real league's team names when there is one. Twelve names of
-// realistic length is what actually tests whether the order reveal reads
-// from across a room; "Test Team 07" does not.
-async function realTeamNames(): Promise<string[] | null> {
+// mirrors the real league: its team names (twelve names of realistic length
+// are what actually test whether the reveal reads from across a room -
+// "Test Team 07" does not) and its round count (which drives how many pick
+// numbers land on the reveal card).
+interface BorrowedLeague {
+  names: string[];
+  rounds: number | null;
+}
+
+async function borrowFromRealLeague(): Promise<BorrowedLeague | null> {
   const supabase = createAdminSupabaseClient();
   const { data: leagues, error } = await supabase
     .from("leagues")
@@ -36,7 +42,19 @@ async function realTeamNames(): Promise<string[] | null> {
     .eq("league_id", leagues[0].id);
   if (teamsError) throw teamsError;
   if (!teams || teams.length === 0) return null;
-  return teams.map((t) => t.name);
+
+  const { data: phases, error: phasesError } = await supabase
+    .from("phases")
+    .select("rounds")
+    .eq("league_id", leagues[0].id)
+    .order("sequence", { ascending: true })
+    .limit(1);
+  if (phasesError) throw phasesError;
+
+  return {
+    names: teams.map((t) => t.name),
+    rounds: phases?.[0]?.rounds ?? null,
+  };
 }
 
 // Fixed so re-running is predictable. Valid code shapes (Crockford base32,
@@ -45,7 +63,9 @@ const LEAGUE_CODE = "TESTAA";
 const COMMISSIONER_SECRET = "TESTDRAWTESTDRAWTESTDRAW22";
 
 const TEAM_COUNT = 12;
-const ROUNDS = 3;
+// Only used when there's no real league to copy. A rehearsal with three
+// rounds shows three pick numbers per card, which looks like a bug.
+const FALLBACK_ROUNDS = 14;
 
 async function remove() {
   const supabase = createAdminSupabaseClient();
@@ -95,13 +115,14 @@ async function create() {
   });
   if (secretsError) throw secretsError;
 
-  const borrowed = await realTeamNames();
+  const borrowed = await borrowFromRealLeague();
   const names =
-    borrowed ??
+    borrowed?.names ??
     Array.from(
       { length: TEAM_COUNT },
       (_, i) => `Test Team ${String(i + 1).padStart(2, "0")}`
     );
+  const rounds = borrowed?.rounds ?? FALLBACK_ROUNDS;
 
   const { data: teams, error: teamsError } = await supabase
     .from("teams")
@@ -116,7 +137,7 @@ async function create() {
       type: "main",
       sequence: 1,
       status: "active",
-      rounds: ROUNDS,
+      rounds,
       started_at: new Date().toISOString(),
     })
     .select("id")
@@ -140,7 +161,9 @@ async function create() {
     "http://localhost:3000";
 
   console.log(`\nCreated "${LEAGUE_NAME}"`);
-  console.log(`  teams:  ${teams.length}${borrowed ? " (borrowed from the real league)" : ""}`);
+  console.log(
+    `  teams:  ${teams.length}   rounds: ${rounds}${borrowed ? "   (mirroring the real league)" : ""}`
+  );
   console.log(`\n  Open this to rehearse the order draw:`);
   console.log(`    ${base}/commish/order`);
   console.log(`  after signing in with:`);
