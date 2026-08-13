@@ -1,3 +1,5 @@
+import { hashString } from "@/lib/random/seeded";
+
 export interface TeamColor {
   /** Background / accent colour. */
   hex: string;
@@ -25,17 +27,6 @@ export const TEAM_PALETTE: TeamColor[] = [
   { name: "violet", hex: "#7048E8", onHex: "#FFFFFF" },
   { name: "crimson", hex: "#C2255C", onHex: "#FFFFFF" },
 ];
-
-// Small, stable string hash (FNV-1a). Only needs to spread ids across the
-// palette deterministically - it is not doing anything security-shaped.
-function hashString(value: string): number {
-  let hash = 2166136261;
-  for (let i = 0; i < value.length; i++) {
-    hash ^= value.charCodeAt(i);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
 
 /**
  * Gives every team a colour, keyed off its id so the colour survives a

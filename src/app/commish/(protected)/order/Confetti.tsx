@@ -1,6 +1,7 @@
 "use client";
 
 import { TEAM_PALETTE } from "@/lib/teams/branding";
+import { unitFromSeed as unitFor } from "@/lib/random/seeded";
 
 // Heavier than a token sprinkle - this is the one moment of the night
 // that earns it.
@@ -20,20 +21,6 @@ const PIECE_COUNT = 220;
  * and looks identical on screen.
  */
 
-// FNV-1a again, kept local - this one only has to look scattered.
-function hash(value: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < value.length; i++) {
-    h ^= value.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
-}
-
-// Deterministic 0..1 from a seed string.
-function unitFor(seed: string): number {
-  return (hash(seed) % 100000) / 100000;
-}
 
 export default function Confetti({ accent }: { accent: string }) {
   // Mostly the winning team's colour plus gold, with the rest of the

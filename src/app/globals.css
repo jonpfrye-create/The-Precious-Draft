@@ -25,6 +25,124 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Stickers ------------------------------------------------------------
+   This league drafted on a physical board with printed player stickers.
+   The tiles should read as pressed-on paper, not as table cells: a soft
+   drop shadow so they sit above the board, a lighter top edge as if
+   catching light, and a permanent slight tilt applied inline per pick. */
+
+.sticker {
+  position: relative;
+  border-radius: 3px;
+  box-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.16),
+    0 3px 6px -2px rgba(0, 0, 0, 0.22);
+  transition:
+    transform 140ms ease-out,
+    box-shadow 140ms ease-out;
+}
+
+/* Curled corner, the way a sticker lifts at one edge once it's been on a
+   board a while. */
+.sticker::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 12px;
+  height: 12px;
+  background: linear-gradient(
+    315deg,
+    rgba(0, 0, 0, 0.16) 0%,
+    rgba(0, 0, 0, 0.04) 45%,
+    transparent 60%
+  );
+  border-bottom-right-radius: 3px;
+  pointer-events: none;
+}
+
+/* Landing on the board: comes in oversized and rotated, then presses down
+   into place. The overshoot is what sells it as being pushed on by hand
+   rather than fading in. */
+@keyframes sticker-press {
+  0% {
+    opacity: 0;
+    transform: scale(1.7) rotate(-9deg);
+    box-shadow: 0 18px 28px -8px rgba(0, 0, 0, 0.5);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(0.97) rotate(1.5deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.sticker-press {
+  animation: sticker-press 480ms cubic-bezier(0.2, 0.9, 0.3, 1.15) both;
+}
+
+/* The available-player list is the sheet the stickers come off. Rows sit
+   on a backing, separated by a perforation-ish dashed rule. */
+.sticker-sheet-row {
+  transition:
+    transform 120ms ease-out,
+    opacity 200ms ease-out;
+}
+
+.sticker-sheet-row:hover {
+  transform: translateY(-1px) rotate(-0.4deg);
+}
+
+/* Peeling one off: it lifts, tilts, and flies up out of the sheet. */
+@keyframes sticker-peel {
+  0% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+  35% {
+    opacity: 1;
+    transform: scale(1.06) rotate(-2.5deg) translateY(-4px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.55) rotate(-14deg) translate(40px, -70px);
+  }
+}
+
+.sticker-peel {
+  animation: sticker-peel 460ms cubic-bezier(0.4, 0, 0.7, 0.2) both;
+  pointer-events: none;
+}
+
+/* The gap left behind on the sheet, before the list reflows. */
+@keyframes sticker-gap {
+  0% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.sticker-gap {
+  animation: sticker-gap 900ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sticker-press,
+  .sticker-peel,
+  .sticker-gap {
+    animation: none;
+  }
+
+  .sticker-sheet-row:hover {
+    transform: none;
+  }
+}
+
 /* Draft order reveal ------------------------------------------------- */
 
 /* The card arrives fast and overshoots slightly before settling, which

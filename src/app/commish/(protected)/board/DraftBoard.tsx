@@ -14,6 +14,7 @@ import type {
 import { generateSnakeOrder, currentPick } from "@/lib/draft/snake-order";
 import { positionColor, POSITIONS } from "@/lib/positions";
 import { draftablePositions, forcedPositions } from "@/lib/draft/roster-fit";
+import { stickerStyle } from "@/lib/stickers";
 import { makePick, undoLastPick } from "./actions";
 
 interface DraftBoardProps {
@@ -42,6 +43,10 @@ export default function DraftBoard({
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [positionFilter, setPositionFilter] = useState<string>("ALL");
+  // The player currently peeling off the sheet, and the pick pressing onto
+  // the board. Both are purely visual and clear themselves.
+  const [peelingPlayerId, setPeelingPlayerId] = useState<string | null>(null);
+  const [pressedPickId, setPressedPickId] = useState<string | null>(null);
 
   const snakeOrder = useMemo(
     () => generateSnakeOrder(teams.map((t) => t.id), phase.rounds),
@@ -60,6 +65,12 @@ export default function DraftBoard({
     () => new Map(picks.map((p) => [`${p.round}:${p.team_id}`, p])),
     [picks]
   );
+
+  // The sticker that just went on. Only this one animates; the rest keep
+  // their permanent tilt.
+  const latestPick = picks.length > 0 ? picks[picks.length - 1] : null;
+  const newestPickId =
+    latestPick && latestPick.id === pressedPickId ? latestPick.id : null;
 
   // What the team on the clock has already drafted, and therefore which
   // positions still have a slot to go in. Recomputed here so the room finds
@@ -116,13 +127,21 @@ export default function DraftBoard({
     );
     if (!confirmed) return;
     setError(null);
+    setPeelingPlayerId(player.player_id);
     startTransition(async () => {
       try {
-        await makePick(phase.id, player.player_id);
+        const result = await makePick(phase.id, player.player_id);
         setSearch("");
+        // Marks this pick as the one to press onto the board once the
+        // refreshed data arrives.
+        if (result?.pickId) setPressedPickId(result.pickId);
         router.refresh();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to make pick");
+      } finally {
+        // The row is gone from the list after the refresh either way; this
+        // just stops a failed pick leaving a permanently faded row.
+        setTimeout(() => setPeelingPlayerId(null), 500);
       }
     });
   }
@@ -293,11 +312,23 @@ export default function DraftBoard({
                       key={team.id}
                       className="border-l border-t border-zinc-200 p-1 align-top dark:border-zinc-800"
                     >
-                      {player ? (
+                      {player && pick ? (
                         <div
-                          className={`rounded border px-2 py-1 ${positionColor(player.position)}`}
+                          // Only the most recent pick animates. Replaying
+                          // the press on every sticker whenever the board
+                          // refreshed would be chaos on a TV.
+                          className={`sticker border px-2 py-1 ${positionColor(player.position)} ${
+                            pick.id === newestPickId ? "sticker-press" : ""
+                          }`}
+                          style={
+                            pick.id === newestPickId
+                              ? undefined
+                              : stickerStyle(pick.id)
+                          }
                         >
-                          <div className="font-medium">{player.full_name}</div>
+                          <div className="font-medium leading-tight">
+                            {player.full_name}
+                          </div>
                           <div className="text-xs opacity-70">
                             {player.position}
                             {player.nfl_team ? ` · ${player.nfl_team}` : ""}
@@ -347,21 +378,26 @@ export default function DraftBoard({
             </div>
           </div>
 
-          <div className="max-h-[420px] overflow-y-auto rounded border border-zinc-200 dark:border-zinc-800">
+          {/* The sticker sheet: available players, waiting to be peeled off. */}
+          <div className="max-h-[420px] overflow-y-auto rounded border border-zinc-300 bg-zinc-100/60 dark:border-zinc-700 dark:bg-zinc-900/40">
             {filteredPlayers.slice(0, 200).map((player) => {
               // Greyed out rather than hidden: the room should be able to
               // see that the player is there and why they can't be taken.
               const fits = allowedPositions.has(player.position ?? "");
+              const peeling = peelingPlayerId === player.player_id;
               return (
                 <div
                   key={player.player_id}
-                  className={`flex items-center justify-between gap-3 border-b border-zinc-100 px-3 py-2 last:border-b-0 dark:border-zinc-900 ${
+                  // Each row is a sticker still on the sheet. Picking one
+                  // peels it off; the dashed rule between rows is the
+                  // perforation it tears along.
+                  className={`sticker-sheet-row flex items-center justify-between gap-3 border-b border-dashed border-zinc-200 px-3 py-2 last:border-b-0 dark:border-zinc-800 ${
                     fits ? "" : "opacity-40"
-                  }`}
+                  } ${peeling ? "sticker-peel" : ""}`}
                 >
                   <div className="flex items-center gap-3">
                     <span
-                      className={`rounded border px-2 py-0.5 text-xs font-medium ${positionColor(player.position)}`}
+                      className={`sticker border px-2 py-0.5 text-xs font-bold ${positionColor(player.position)}`}
                     >
                       {player.position ?? "?"}
                     </span>
@@ -387,7 +423,7 @@ export default function DraftBoard({
                     }
                     className="rounded bg-black px-3 py-1 text-sm font-medium text-white disabled:opacity-30 dark:bg-white dark:text-black"
                   >
-                    Draft
+                    Peel
                   </button>
                 </div>
               );

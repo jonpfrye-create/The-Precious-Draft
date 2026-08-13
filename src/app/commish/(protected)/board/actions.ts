@@ -22,7 +22,14 @@ import {
 // The phase is then checked to belong to the commissioner's own league, so
 // a valid secret for one league can't be used to edit another's draft.
 
-export async function makePick(phaseId: string, playerId: string) {
+export interface MakePickResult {
+  pickId: string;
+}
+
+export async function makePick(
+  phaseId: string,
+  playerId: string
+): Promise<MakePickResult> {
   const league = await requireCommissionerLeagueForAction();
 
   const phase = await getPhaseById(phaseId);
@@ -98,13 +105,20 @@ export async function makePick(phaseId: string, playerId: string) {
   }
 
   const supabase = createAdminSupabaseClient();
-  const { error } = await supabase.from("picks").insert({
-    phase_id: phaseId,
-    team_id: onTheClock.teamId,
-    player_id: playerId,
-    pick_number: onTheClock.overallPick,
-    round: onTheClock.round,
-  });
+  // The new pick's id comes back so the board knows which sticker to
+  // animate onto the grid - without it, every sticker would replay the
+  // press on each refresh.
+  const { data: inserted, error } = await supabase
+    .from("picks")
+    .insert({
+      phase_id: phaseId,
+      team_id: onTheClock.teamId,
+      player_id: playerId,
+      pick_number: onTheClock.overallPick,
+      round: onTheClock.round,
+    })
+    .select("id")
+    .single();
   if (error) throw error;
 
   const isPhaseComplete = picks.length + 1 >= snakeOrder.length;
@@ -115,6 +129,8 @@ export async function makePick(phaseId: string, playerId: string) {
       .eq("id", phaseId);
     if (completeError) throw completeError;
   }
+
+  return { pickId: inserted.id as string };
 }
 
 export async function undoLastPick(phaseId: string) {

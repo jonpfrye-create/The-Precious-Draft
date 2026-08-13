@@ -8,9 +8,7 @@ import {
   unassignedPlayers,
   type SlotSpec,
 } from "./roster-fit";
-// Relative, not "@/lib/positions": there's no vitest config, so the alias
-// Next resolves isn't available here.
-import { POSITIONS } from "../positions";
+import { POSITIONS } from "@/lib/positions";
 
 const FLEX = ["RB", "WR", "TE"];
 const ANY = ["QB", "RB", "WR", "TE", "K", "DEF"];
