@@ -53,7 +53,7 @@ export default function DraftBoard({
   // The sticker currently peeled off and waiting to be pressed onto the
   // board. Holding one is what replaces the old confirmation dialog: the
   // pick isn't made until it's physically placed somewhere.
-  const [heldPlayer, setHeldPlayer] = useState<Player | null>(null);
+  const [heldPlayer, setHeldPlayer] = useState<SheetPlayer | null>(null);
   const onClockCellRef = useRef<HTMLTableCellElement | null>(null);
   const boardStageRef = useRef<HTMLDivElement | null>(null);
   // Where the held sticker follows the cursor, and where to zoom the board
@@ -141,7 +141,7 @@ export default function DraftBoard({
   }, []);
 
   const toggleHeld = useCallback(
-    (player: Player) => {
+    (player: SheetPlayer) => {
       setError(null);
       if (heldPlayer?.player_id === player.player_id) {
         clearHeld();

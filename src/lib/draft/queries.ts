@@ -247,7 +247,17 @@ export async function getPriorPhasePicks(
   }));
 }
 
-export interface SheetPlayer extends Player {
+// Only what the sticker sheet actually renders. The full Player row also
+// carries search_rank, status and the numeric adp, none of which the board
+// uses - and the sheet ships every player in the pool to the browser on
+// every refresh, which happens after every single pick. Dropping three
+// unused fields costs nothing and is repaid 168 times on draft day.
+export interface SheetPlayer {
+  player_id: string;
+  full_name: string;
+  position: string | null;
+  nfl_team: string | null;
+  adp_formatted: string | null;
   /** Already drafted - in this phase or an earlier one. */
   taken: boolean;
 }
@@ -277,7 +287,11 @@ export async function getSheetPlayersForPhase(
   }
 
   return allPlayers.map((player) => ({
-    ...player,
+    player_id: player.player_id,
+    full_name: player.full_name,
+    position: player.position,
+    nfl_team: player.nfl_team,
+    adp_formatted: player.adp_formatted,
     taken: taken.has(player.player_id),
   }));
 }

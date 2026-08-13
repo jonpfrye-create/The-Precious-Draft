@@ -59,8 +59,13 @@ export default function NextPhaseForm({
         }
         // Straight to the order draw - the new phase has a placeholder
         // order until it's drawn in front of everyone.
+        //
+        // No router.refresh() here. It re-fetches the page being left,
+        // which now redirects to the board and pulls the whole player
+        // pool - so it raced the push inside the same transition and the
+        // button sat on "Starting..." while nothing appeared to happen.
+        // push() already fetches the destination fresh.
         router.push("/commish/order");
-        router.refresh();
       } catch {
         setError("Couldn't reach the server. Check your connection.");
       }
@@ -77,8 +82,11 @@ export default function NextPhaseForm({
         </p>
         <h1 className="text-4xl font-semibold">Start {label}</h1>
         <p className="text-zinc-600 dark:text-zinc-400">
-          Everyone who played {previousPhaseLabel} is ticked. Untick anyone
-          who&apos;s not sticking around.
+          {/* Explicit {" "}: JSX trims the leading space of a text chunk
+              that spans more than one line, which rendered this as
+              "played Mainis ticked". */}
+          Everyone who played {previousPhaseLabel}{" "}
+          is ticked. Untick anyone who&apos;s not sticking around.
         </p>
       </div>
 
