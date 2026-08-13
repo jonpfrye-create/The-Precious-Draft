@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 import { requireCommissionerLeague } from "@/lib/auth/commissioner";
 import { ensureLeagueSecrets } from "@/lib/auth/secrets";
 import { isDemoLeague } from "@/lib/draft/auto-pick";
+import { commissionerDestination } from "@/lib/draft/navigation";
 import {
   getSheetPlayersForPhase,
   getCurrentPhase,
@@ -24,7 +25,10 @@ export default async function BoardPage() {
   const league = await requireCommissionerLeague();
 
   const phase = await getCurrentPhase(league.id);
-  if (!phase) redirect("/commish/setup");
+  // Sending this to /commish/setup was the bug: once a league exists that
+  // page is a blank new-league form, so completing a draft looked like
+  // everything had been wiped.
+  if (!phase) redirect(await commissionerDestination(league.id));
 
   const [teams, rosterSlots, picks, sheetPlayers] = await Promise.all([
     getTeamsForPhase(phase.id),

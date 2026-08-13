@@ -3,10 +3,15 @@ import { requireCommissionerLeague } from "@/lib/auth/commissioner";
 import { isDemoLeague } from "@/lib/draft/auto-pick";
 import {
   getCurrentPhase,
+  getPhasesForLeague,
   getPicks,
   getTeamsForPhase,
 } from "@/lib/draft/queries";
-import { PHASE_LABELS, type PhaseType } from "@/lib/draft/phase-templates";
+import {
+  nextPhaseType,
+  PHASE_LABELS,
+  type PhaseType,
+} from "@/lib/draft/phase-templates";
 import DemoControls from "./DemoControls";
 
 export const dynamic = "force-dynamic";
@@ -37,9 +42,34 @@ export default async function DemoPage() {
 
   const phase = await getCurrentPhase(league.id);
   if (!phase) {
+    // "No phase in progress" usually means one just finished and the next
+    // is waiting to be started - not that the draft is over. Saying "every
+    // phase is complete" after the Main draft was simply wrong.
+    const phases = await getPhasesForLeague(league.id);
+    const finished = phases[phases.length - 1];
+    const next = finished ? nextPhaseType(finished.type as PhaseType) : null;
+
     return (
       <div className="flex min-h-screen flex-col items-center gap-6 bg-zinc-50 px-6 py-16 dark:bg-black">
-        <h1 className="text-3xl font-semibold">Every phase is complete</h1>
+        <h1 className="text-3xl font-semibold">
+          {next
+            ? `${PHASE_LABELS[finished.type as PhaseType]} draft complete`
+            : "Every phase is complete"}
+        </h1>
+        {next && (
+          <>
+            <p className="max-w-md text-center text-zinc-600 dark:text-zinc-400">
+              Pick who&apos;s staying for {PHASE_LABELS[next]}, then draw the
+              order — the demo controls come back once it&apos;s under way.
+            </p>
+            <Link
+              href="/commish/next-phase"
+              className="rounded bg-black px-6 py-4 text-lg font-medium text-white dark:bg-white dark:text-black"
+            >
+              Start {PHASE_LABELS[next]} →
+            </Link>
+          </>
+        )}
         <Link
           href="/commish/board"
           className="text-blue-600 hover:underline dark:text-blue-400"
