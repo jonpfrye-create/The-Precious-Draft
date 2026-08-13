@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { requireCommissionerLeagueForAction } from "@/lib/auth/commissioner";
 import { generateSnakeOrder } from "@/lib/draft/snake-order";
 import { availablePlayersForPhase } from "@/lib/draft/pool-exclusion";
 import {
@@ -10,9 +11,22 @@ import {
   getTeamsForPhase,
 } from "@/lib/draft/queries";
 
+// Every action in this file re-checks commissioner access itself. The
+// (protected) layout only guards page *rendering* - server actions are
+// separate HTTP endpoints that never run it, so relying on the layout
+// alone would leave picks and undo open to anyone who knew the endpoint.
+//
+// The phase is then checked to belong to the commissioner's own league, so
+// a valid secret for one league can't be used to edit another's draft.
+
 export async function makePick(phaseId: string, playerId: string) {
+  const league = await requireCommissionerLeagueForAction();
+
   const phase = await getPhaseById(phaseId);
   if (!phase) throw new Error("Phase not found");
+  if (phase.league_id !== league.id) {
+    throw new Error("That phase belongs to a different league");
+  }
 
   const [teams, picks, priorPhasePicks] = await Promise.all([
     getTeamsForPhase(phaseId),
@@ -66,6 +80,14 @@ export async function makePick(phaseId: string, playerId: string) {
 }
 
 export async function undoLastPick(phaseId: string) {
+  const league = await requireCommissionerLeagueForAction();
+
+  const phase = await getPhaseById(phaseId);
+  if (!phase) throw new Error("Phase not found");
+  if (phase.league_id !== league.id) {
+    throw new Error("That phase belongs to a different league");
+  }
+
   const supabase = createAdminSupabaseClient();
 
   const { data: lastPick, error: lastPickError } = await supabase

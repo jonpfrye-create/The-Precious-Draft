@@ -48,18 +48,29 @@ export interface Pick {
   round: number;
 }
 
-// This app is built around a single active league, so we just grab the
-// first (only) one rather than building a league picker.
-export async function getFirstLeague(): Promise<League | null> {
+// There is deliberately no "get the current league" helper. Commissioner
+// routes resolve their league from the commissioner secret (see
+// lib/auth/commissioner.ts); anything that guesses - "the oldest league",
+// "the only league" - silently strands the commissioner on the wrong board
+// the moment a second league exists.
+export async function getLeagueById(leagueId: string): Promise<League | null> {
   const supabase = createAdminSupabaseClient();
   const { data, error } = await supabase
     .from("leagues")
     .select("id, name")
-    .order("created_at", { ascending: true })
-    .limit(1)
+    .eq("id", leagueId)
     .maybeSingle();
   if (error) throw error;
   return data;
+}
+
+export async function countLeagues(): Promise<number> {
+  const supabase = createAdminSupabaseClient();
+  const { count, error } = await supabase
+    .from("leagues")
+    .select("*", { count: "exact", head: true });
+  if (error) throw error;
+  return count ?? 0;
 }
 
 // The phase currently being drafted: lowest sequence that isn't completed.

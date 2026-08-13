@@ -26,14 +26,22 @@ has been ingested, and the app is deployed on Vercel (connected to the
 `jonpfrye-create/The-Precious-Draft` GitHub repo, auto-deploying on push
 to `main`).
 
+Phase 2 is complete: the commissioner draft board runs a Main draft on a
+single device.
+
+Commissioner access codes are complete (see "Access control" below).
+
 Commands:
 - `npm run dev` — local dev server
 - `npm run build` — production build
-- `npm test` — run the Vitest suite (snake-order, pool-exclusion)
+- `npm test` — run the Vitest suite (snake-order, pool-exclusion, codes)
 - `npm run test:watch` — Vitest in watch mode
 - `npm run refresh-pool` — re-pull the current Sleeper player pool and
   upsert into the `players` table (needs `SUPABASE_SERVICE_ROLE_KEY` in
   `.env.local`)
+- `npm run codes` — print the commissioner link and league code for every
+  league, creating them if missing. This is both the bootstrap path and
+  the recovery path if the commissioner link is lost.
 
 `.env.local` holds `NEXT_PUBLIC_SUPABASE_URL`,
 `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` (the
@@ -44,6 +52,43 @@ environment variables in the Vercel project.
 Schema lives in `supabase/schema.sql`, applied by hand via the Supabase
 SQL Editor (no migration tool wired up yet — if the schema changes,
 that's a new SQL snippet the user runs the same way).
+
+**Supabase free tier pauses a project after 7 days of no activity**, which
+takes the whole app down until it's un-paused from the dashboard (data
+survives; restore takes ~3 minutes). This already happened once, in August
+2026. Either poke the project weekly or upgrade to Pro before draft day.
+
+## Access control
+
+Codes live in `league_secrets` (RLS-enabled, **zero policies** — only the
+service-role key can read them, so the anon key in the browser can never
+see a secret).
+
+- `src/lib/auth/codes.ts` — code generation and normalization. Crockford
+  base32 (no I/L/O/U) so codes survive being read aloud across a room.
+- `src/lib/auth/secrets.ts` — DB access. Deliberately has **no**
+  `server-only` import and uses relative imports, because
+  `scripts/show-codes.ts` runs it outside Next's bundler.
+- `src/lib/auth/commissioner.ts` — the cookie session and the gate.
+- `src/app/commish/(protected)/` — route group; its `layout.tsx` gates
+  everything inside. Add a new commissioner page here and it's gated.
+
+**The rule that's easy to get wrong:** the `(protected)` layout gates page
+*rendering only*. Server actions are separate HTTP endpoints that never run
+the layout — an unauthenticated caller who knows the action id can POST to
+one directly. So **every commissioner-only server action must call
+`requireCommissionerLeagueForAction()` itself**, and then check the phase
+it was handed actually belongs to that commissioner's league. Both
+`board/actions.ts` actions do this; follow the pattern.
+
+`/commish/setup` sits *outside* the protected group on purpose: on an empty
+database no secret exists yet, so requiring one would deadlock the first
+run. It uses `checkSetupAccess()` instead — open only while zero leagues
+exist, commissioner-only forever after.
+
+The board shows the league code (meant to be shared) but never the
+commissioner secret — the board is on a TV in a room full of phones. The
+secret lives behind a reveal button on `/commish/access`.
 
 ## Locked-in decisions (don't relitigate without asking)
 

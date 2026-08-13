@@ -1,6 +1,9 @@
 "use server";
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { startCommissionerSession } from "@/lib/auth/commissioner";
+import { createLeagueSecrets } from "@/lib/auth/secrets";
+import { checkSetupAccess } from "@/lib/auth/setup-access";
 
 export interface RosterSlotInput {
   slotName: string;
@@ -15,6 +18,16 @@ export interface CreateMainPhaseInput {
 }
 
 export async function createLeagueAndMainPhase(input: CreateMainPhaseInput) {
+  // Same rule the page enforces, re-checked here because a server action is
+  // a separate HTTP endpoint that can be invoked without ever loading the
+  // page. See lib/auth/setup-access.ts for why this isn't a flat gate.
+  const access = await checkSetupAccess();
+  if (!access.allowed) {
+    throw new Error(
+      "Commissioner access required to create a league. Open your commissioner link and try again."
+    );
+  }
+
   const leagueName = input.leagueName.trim();
   const teamNames = input.teamNames.map((n) => n.trim()).filter(Boolean);
   const rosterSlots = input.rosterSlots.filter((s) => s.slotName.trim());
@@ -31,6 +44,12 @@ export async function createLeagueAndMainPhase(input: CreateMainPhaseInput) {
     .select("id")
     .single();
   if (leagueError) throw leagueError;
+
+  // Mint this league's codes immediately, and move the commissioner's
+  // session onto the league they just created - otherwise someone setting
+  // up a second league would be bounced back to the first one's board.
+  const secrets = await createLeagueSecrets(league.id);
+  await startCommissionerSession(secrets.commissionerSecret);
 
   const { data: teams, error: teamsError } = await supabase
     .from("teams")

@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "refresh-pool": "tsx scripts/ingest-players.ts"
+    "refresh-pool": "tsx scripts/ingest-players.ts",
+    "codes": "tsx scripts/show-codes.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.7",

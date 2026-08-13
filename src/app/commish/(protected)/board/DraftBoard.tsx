@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type {
   League,
@@ -16,6 +17,7 @@ import { makePick, undoLastPick } from "./actions";
 
 interface DraftBoardProps {
   league: League;
+  leagueCode: string;
   phase: Phase;
   teams: Team[];
   rosterSlots: RosterSlot[];
@@ -26,6 +28,7 @@ interface DraftBoardProps {
 
 export default function DraftBoard({
   league,
+  leagueCode,
   phase,
   teams,
   picks,
@@ -104,6 +107,18 @@ export default function DraftBoard({
           <h1 className="text-2xl font-semibold">{league.name}</h1>
           <p className="text-sm uppercase tracking-wide text-zinc-500">
             {phase.type} draft
+          </p>
+          <p className="mt-1 text-sm text-zinc-500">
+            League code:{" "}
+            <span className="font-mono tracking-widest text-zinc-700 dark:text-zinc-300">
+              {leagueCode}
+            </span>{" "}
+            <Link
+              href="/commish/access"
+              className="text-blue-600 hover:underline dark:text-blue-400"
+            >
+              Codes &amp; links
+            </Link>
           </p>
         </div>
         <div className="flex items-center gap-4">

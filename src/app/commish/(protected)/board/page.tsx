@@ -4,10 +4,11 @@ import { redirect } from "next/navigation";
 // Supabase on every load - it must never be statically prerendered, or
 // it would freeze at whatever the state was during the build.
 export const dynamic = "force-dynamic";
+import { requireCommissionerLeague } from "@/lib/auth/commissioner";
+import { ensureLeagueSecrets } from "@/lib/auth/secrets";
 import {
   getAvailablePlayersForPhase,
   getCurrentPhase,
-  getFirstLeague,
   getPicks,
   getPlayersByIds,
   getRosterSlots,
@@ -16,8 +17,10 @@ import {
 import DraftBoard from "./DraftBoard";
 
 export default async function BoardPage() {
-  const league = await getFirstLeague();
-  if (!league) redirect("/commish/setup");
+  // The league comes from the commissioner's own secret, not from "whichever
+  // league is oldest" - so creating a second league doesn't strand them on
+  // the first one.
+  const league = await requireCommissionerLeague();
 
   const phase = await getCurrentPhase(league.id);
   if (!phase) redirect("/commish/setup");
@@ -31,9 +34,15 @@ export default async function BoardPage() {
 
   const pickedPlayers = await getPlayersByIds(picks.map((p) => p.player_id));
 
+  // Only the league code goes to the board. The board lives on a TV in a
+  // room full of people, so the commissioner secret stays on /commish/access
+  // where it can be revealed deliberately.
+  const { leagueCode } = await ensureLeagueSecrets(league.id);
+
   return (
     <DraftBoard
       league={league}
+      leagueCode={leagueCode}
       phase={phase}
       teams={teams}
       rosterSlots={rosterSlots}
