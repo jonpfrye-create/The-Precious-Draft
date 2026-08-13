@@ -18,9 +18,24 @@ import { isPositionDraftable } from "../src/lib/draft/roster-fit";
 // commissioner needs to sign this off without a real draft.
 
 // Hard safety rail: this writes picks, so it must never be able to touch
-// the real league. The throwaway league from test-league.ts is the only
-// thing it will act on, by name.
-const ALLOWED_LEAGUE_NAME = "ZZZ Draw Test";
+// a real league. Only leagues built by test-league.ts qualify, recognised
+// by the same "ZZZ " prefix the app uses.
+//
+//   npm run simulate -- --league "ZZZ Commish Demo"
+const DEMO_PREFIX = "ZZZ ";
+
+function requestedLeagueName(): string {
+  const index = process.argv.indexOf("--league");
+  const value = index === -1 ? undefined : process.argv[index + 1];
+  const name = value ?? "ZZZ Draw Test";
+  if (!name.startsWith(DEMO_PREFIX)) {
+    console.error(`Refusing to simulate against "${name}" - not a demo league.`);
+    process.exit(1);
+  }
+  return name;
+}
+
+const ALLOWED_LEAGUE_NAME = requestedLeagueName();
 
 function parsePickLimit(): number | null {
   const index = process.argv.indexOf("--picks");

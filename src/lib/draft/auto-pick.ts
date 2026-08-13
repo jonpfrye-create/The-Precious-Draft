@@ -24,12 +24,18 @@ export function chooseAutoPick<
   return null;
 }
 
-// The one league the demo and simulation tools are allowed to touch. They
-// write picks, so the guard is a hard equality check on the name rather
-// than anything inferred - the real draft must be untouchable by
-// construction, not by being careful.
+// Demo leagues are named by prefix so more than one can exist at a time -
+// handing the commissioner his own means he can't reset yours out from
+// under you halfway through a test, and you won't fight over whose turn
+// the board is showing.
+//
+// The demo tools write and delete picks, so the guard is a literal prefix
+// check rather than anything inferred. Nothing about a real league's name
+// can accidentally satisfy it, and the prefix is ugly on purpose: it is
+// not a name anyone would pick for a real draft.
+export const DEMO_LEAGUE_PREFIX = "ZZZ ";
 export const DEMO_LEAGUE_NAME = "ZZZ Draw Test";
 
 export function isDemoLeague(leagueName: string): boolean {
-  return leagueName === DEMO_LEAGUE_NAME;
+  return leagueName.startsWith(DEMO_LEAGUE_PREFIX);
 }

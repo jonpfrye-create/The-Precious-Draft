@@ -25,6 +25,80 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Welcome screen ------------------------------------------------------
+   Clicky Draft is buried; this one climbs out of the grave behind it. */
+
+@keyframes rise {
+  0% {
+    opacity: 0;
+    transform: translateY(70px) scale(0.94);
+    filter: blur(6px);
+  }
+  60% {
+    opacity: 1;
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+/* Slow, and it keeps drifting after it arrives, so it hovers rather than
+   simply landing. */
+.animate-rise {
+  animation:
+    rise 2.2s cubic-bezier(0.16, 1, 0.3, 1) both,
+    hover-drift 6s ease-in-out 2.2s infinite;
+}
+
+@keyframes hover-drift {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes grave-glow {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+.animate-grave-glow {
+  animation: grave-glow 4s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: inherit;
+  }
+  50% {
+    opacity: 0.15;
+  }
+}
+
+.animate-twinkle {
+  animation: twinkle 5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise,
+  .animate-grave-glow,
+  .animate-twinkle {
+    animation: none;
+  }
+}
+
 /* Stickers ------------------------------------------------------------
    This league drafted on a physical board with printed player stickers.
    The tiles should read as pressed-on paper, not as table cells: a soft

@@ -13,7 +13,29 @@ import { createAdminSupabaseClient } from "../src/lib/supabase/admin-client";
 // design - drawing on the real league would burn the "never drawn yet"
 // state that draft day depends on. So they get exercised here instead.
 
-const LEAGUE_NAME = "ZZZ Draw Test";
+// Demo leagues are recognised by the "ZZZ " prefix (see
+// lib/draft/auto-pick.ts), so more than one can exist - the commissioner
+// gets his own to poke at without resetting anyone else's.
+//
+//   npm run test-league -- --name "ZZZ Commish Demo"
+const DEFAULT_LEAGUE_NAME = "ZZZ Draw Test";
+
+function requestedName(): string {
+  const index = process.argv.indexOf("--name");
+  if (index === -1) return DEFAULT_LEAGUE_NAME;
+  const value = process.argv[index + 1];
+  if (!value) return DEFAULT_LEAGUE_NAME;
+  if (!value.startsWith("ZZZ ")) {
+    console.error(
+      `Demo league names must start with "ZZZ " so the demo tools can tell ` +
+        `them apart from a real draft. Got: ${value}`
+    );
+    process.exit(1);
+  }
+  return value;
+}
+
+const LEAGUE_NAME = requestedName();
 
 // The point of the throwaway league is to rehearse the real thing, so it
 // mirrors the real league: its team names (twelve names of realistic length
@@ -37,7 +59,7 @@ async function borrowFromRealLeague(): Promise<BorrowedLeague | null> {
   const { data: leagues, error } = await supabase
     .from("leagues")
     .select("id, name")
-    .neq("name", LEAGUE_NAME)
+    .not("name", "like", "ZZZ %")
     .order("created_at", { ascending: false })
     .limit(1);
   if (error) throw error;
@@ -95,10 +117,33 @@ const FALLBACK_SLOTS: BorrowedSlot[] = [
   })),
 ];
 
-// Fixed so re-running is predictable. Valid code shapes (Crockford base32,
-// no I/L/O/U) so they behave exactly like generated ones.
-const LEAGUE_CODE = "TESTAA";
-const COMMISSIONER_SECRET = "TESTDRAWTESTDRAWTESTDRAW22";
+// Fixed for the default league so re-running is predictable, and derived
+// for any other so two demo leagues can coexist - both code columns are
+// UNIQUE. Valid code shapes (Crockford base32, no I/L/O/U) so they behave
+// exactly like generated ones.
+const ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+
+function codeFromName(name: string, length: number, salt: string): string {
+  let hash = 2166136261;
+  for (const char of `${salt}:${name}`) {
+    hash ^= char.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  let out = "";
+  for (let i = 0; i < length; i++) {
+    hash = Math.imul(hash ^ (hash >>> 13), 16777619);
+    out += ALPHABET[(hash >>> 8) % ALPHABET.length];
+  }
+  return out;
+}
+
+const isDefaultLeague = LEAGUE_NAME === DEFAULT_LEAGUE_NAME;
+const LEAGUE_CODE = isDefaultLeague
+  ? "TESTAA"
+  : codeFromName(LEAGUE_NAME, 6, "code");
+const COMMISSIONER_SECRET = isDefaultLeague
+  ? "TESTDRAWTESTDRAWTESTDRAW22"
+  : codeFromName(LEAGUE_NAME, 26, "secret");
 
 const TEAM_COUNT = 12;
 async function remove() {
@@ -218,8 +263,12 @@ async function create() {
   console.log(`    ${base}/commish/order`);
   console.log(`  after signing in with:`);
   console.log(`    ${base}/commish/enter?secret=${COMMISSIONER_SECRET}`);
-  console.log(`\n  Start over with a fresh undrawn order:  npm run test-league -- --reset`);
-  console.log(`  Delete it when you're done:             npm run test-league -- --rm\n`);
+  // Carries --name through, or these would act on the default league.
+  const suffix = isDefaultLeague ? "" : ` --name "${LEAGUE_NAME}"`;
+  console.log(`\n  Start over with a fresh undrawn order:`);
+  console.log(`    npm run test-league --${suffix} --reset`);
+  console.log(`  Delete it when you're done:`);
+  console.log(`    npm run test-league --${suffix} --rm\n`);
 }
 
 async function reset() {

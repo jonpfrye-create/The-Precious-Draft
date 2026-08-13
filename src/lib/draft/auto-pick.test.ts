@@ -62,8 +62,13 @@ describe("chooseAutoPick", () => {
 });
 
 describe("isDemoLeague", () => {
-  it("recognises only the throwaway league", () => {
+  it("recognises the default throwaway league", () => {
     expect(isDemoLeague("ZZZ Draw Test")).toBe(true);
+  });
+
+  it("recognises additional demo leagues by prefix", () => {
+    // So the commissioner can have his own and not reset yours mid-test.
+    expect(isDemoLeague("ZZZ Commish Demo")).toBe(true);
   });
 
   it("rejects the real league", () => {
@@ -71,9 +76,13 @@ describe("isDemoLeague", () => {
     expect(isDemoLeague("The Precious")).toBe(false);
   });
 
-  it("is exact, not fuzzy", () => {
+  it("requires the prefix exactly, including the space", () => {
     expect(isDemoLeague("zzz draw test")).toBe(false);
-    expect(isDemoLeague("ZZZ Draw Test 2")).toBe(false);
+    expect(isDemoLeague("ZZZDraw Test")).toBe(false);
     expect(isDemoLeague("")).toBe(false);
+  });
+
+  it("is not satisfied by the prefix appearing later in the name", () => {
+    expect(isDemoLeague("The Precious ZZZ ")).toBe(false);
   });
 });
