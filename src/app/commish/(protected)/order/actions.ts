@@ -110,15 +110,18 @@ export async function drawDraftOrder(
 export interface RevealResult {
   ok: boolean;
   error?: string;
-  // Teams uncovered by this click - one, or two on the finale.
+  // The team uncovered by this click. Always exactly one.
   revealed?: { teamName: string; draftPosition: number }[];
   revealedCount?: number;
+  // This click revealed the first overall pick.
   isFinale?: boolean;
+  // Only pick 1 is left after this click, so the UI holds for a moment.
+  setsUpFinale?: boolean;
   isComplete?: boolean;
 }
 
 /**
- * Uncovers the next draft position (or the last two, on the finale).
+ * Uncovers the next draft position - exactly one per call, down to pick 1.
  *
  * Advancing one click at a time is the point: the commissioner controls
  * the pace in the room, and because the count lives on the phase row
@@ -166,6 +169,7 @@ export async function revealNextPosition(
     ok: true,
     revealedCount: step.revealedAfter,
     isFinale: step.isFinale,
+    setsUpFinale: step.setsUpFinale,
     isComplete: step.revealedAfter >= teams.length,
     revealed: step.positions.map((draftPosition) => ({
       draftPosition,

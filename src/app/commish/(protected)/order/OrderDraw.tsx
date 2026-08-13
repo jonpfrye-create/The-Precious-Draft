@@ -15,7 +15,7 @@ import {
   type TeamColor,
 } from "@/lib/teams/branding";
 import { pickNumbersForPosition } from "@/lib/draft/snake-order";
-import { playFanfare, playStinger } from "@/lib/audio/fanfare";
+import { playFanfare, playStinger, playSuspense } from "@/lib/audio/fanfare";
 import Confetti from "./Confetti";
 import { drawDraftOrder, revealNextPosition } from "./actions";
 
@@ -30,12 +30,9 @@ interface Announcement {
 // commissioner controls the pace between picks; this is just the length of
 // the slam itself.
 const CARD_HOLD_MS = 2600;
-const FINALE_HOLD_MS = 4200;
-// Gap between pick 2 landing and pick 1 following it. Long enough for the
-// room to do the arithmetic themselves, which is the whole point.
-const FINALE_GAP_MS = 1800;
-// Six numbers is about what fits on a lower third at TV distance.
-const VISIBLE_PICK_NUMBERS = 6;
+// The finale runs as long as the confetti does, so the room isn't left
+// looking at a bare list while pieces are still falling.
+const FINALE_HOLD_MS = 8000;
 
 export default function OrderDraw({
   phase,
@@ -61,7 +58,6 @@ export default function OrderDraw({
   // Cards currently on the stage. Driven by the action's response so the
   // animation and the database never disagree about who was just named.
   const [stage, setStage] = useState<Announcement[]>([]);
-  const [stageIsFinale, setStageIsFinale] = useState(false);
   const [muted, setMuted] = useState(false);
   const [celebrating, setCelebrating] = useState(false);
 
@@ -85,7 +81,6 @@ export default function OrderDraw({
           return;
         }
         setStage([]);
-        setStageIsFinale(false);
         setConfirmation("");
         setShowRedraw(false);
         router.refresh();
@@ -109,7 +104,7 @@ export default function OrderDraw({
         const teamIdByPosition = new Map(
           teams.map((t) => [t.draft_position, t.id])
         );
-        const withColor = result.revealed.map((r) => ({
+        const [announced] = result.revealed.map((r) => ({
           ...r,
           color: colorFor(teamIdByPosition.get(r.draftPosition) ?? ""),
           pickNumbers: pickNumbersForPosition(
@@ -118,32 +113,27 @@ export default function OrderDraw({
             r.draftPosition
           ),
         }));
-        const [first, second] = withColor;
-        setStageIsFinale(Boolean(result.isFinale));
 
-        if (result.isFinale && second) {
-          // Pick 2 lands alone first. The room works out pick 1 from who's
-          // left, and then pick 1 confirms it.
-          setStage([first]);
-          if (!muted) playStinger();
+        setStage([announced]);
+        const finale = Boolean(result.isFinale);
 
-          setTimeout(() => {
-            setStage([first, second]);
-            setCelebrating(true);
-            if (!muted) playFanfare();
-          }, FINALE_GAP_MS);
-
+        if (finale) {
+          setCelebrating(true);
+          if (!muted) playFanfare();
           setTimeout(() => {
             setStage([]);
             setCelebrating(false);
             router.refresh();
-          }, FINALE_GAP_MS + FINALE_HOLD_MS);
+          }, FINALE_HOLD_MS);
         } else {
-          setStage([first]);
-          if (!muted) playStinger();
+          const tension = total > 1 ? (result.revealedCount ?? 1) / (total - 1) : 1;
+          if (!muted) playStinger(Math.min(tension, 1));
           setTimeout(() => {
             setStage([]);
             router.refresh();
+            // Revealing pick 2 leaves one team standing. The suspense drone
+            // starts as the card clears, under the "one team remains" panel.
+            if (result.setsUpFinale && !muted) playSuspense();
           }, CARD_HOLD_MS);
         }
       } catch {
@@ -152,10 +142,12 @@ export default function OrderDraw({
     });
   }
 
-  const nextPositionLabel = (() => {
-    if (revealedCount === total - 2) return "Reveal picks 2 and 1";
-    return `Reveal pick ${total - revealedCount}`;
-  })();
+  // One pick away from the end: the room already knows who it is, so the
+  // button says so rather than just counting down.
+  const onePickLeft = hasBeenDrawn && revealedCount === total - 1;
+  const nextPositionLabel = onePickLeft
+    ? "🏆 Reveal the first pick"
+    : `Reveal pick ${total - revealedCount}`;
 
   const sortedTeams = [...teams].sort(
     (a, b) => a.draft_position - b.draft_position
@@ -164,7 +156,7 @@ export default function OrderDraw({
   return (
     <div className="flex w-full max-w-3xl flex-col gap-8">
       {stage.length > 0 && (
-        <Stage announcements={stage} isFinale={stageIsFinale} />
+        <Stage announcements={stage} />
       )}
       {celebrating && (
         <Confetti
@@ -286,14 +278,32 @@ export default function OrderDraw({
           {isPending ? "Drawing..." : "🎲 Draw the draft order"}
         </button>
       ) : midReveal ? (
-        <button
-          type="button"
-          onClick={handleReveal}
-          disabled={isPending || stage.length > 0}
-          className="self-start rounded bg-amber-500 px-8 py-5 text-xl font-semibold text-black disabled:opacity-40"
-        >
-          {stage.length > 0 ? "..." : nextPositionLabel}
-        </button>
+        <div className="flex flex-col gap-4">
+          {onePickLeft && stage.length === 0 && (
+            <div className="animate-suspense rounded-lg border-2 border-amber-400 bg-amber-50 p-6 text-center dark:bg-amber-950/40">
+              <p className="text-3xl font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">
+                One team remains
+              </p>
+              <p className="mt-2 text-zinc-600 dark:text-zinc-400">
+                {total - 1} picks are on the board. Everyone in the room
+                already knows who has the first pick — make them say it out
+                loud before you click.
+              </p>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={handleReveal}
+            disabled={isPending || stage.length > 0}
+            className={`self-start rounded px-8 py-5 text-xl font-semibold disabled:opacity-40 ${
+              onePickLeft
+                ? "animate-pulse bg-amber-400 text-black shadow-lg shadow-amber-500/40"
+                : "bg-amber-500 text-black"
+            }`}
+          >
+            {stage.length > 0 ? "..." : nextPositionLabel}
+          </button>
+        </div>
       ) : showRedraw ? (
         <div className="flex flex-col gap-3 rounded border border-amber-400 p-5 dark:border-amber-700">
           <p className="font-medium">Redraw the order?</p>
@@ -363,39 +373,17 @@ export default function OrderDraw({
 
 // The full-screen moment. Sits above everything, so from across the room
 // there is exactly one thing to look at.
-function Stage({
-  announcements,
-  isFinale,
-}: {
-  announcements: Announcement[];
-  isFinale: boolean;
-}) {
-  // On the finale both cards are up at once, so they have to share the
-  // height rather than each demanding the full screen.
-  const stacked = announcements.length > 1;
-
+function Stage({ announcements }: { announcements: Announcement[] }) {
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-8 overflow-hidden bg-[#05060A] px-6">
       {announcements.map((a) => (
-        <AnnouncementCard key={a.draftPosition} announcement={a} compact={stacked} />
+        <AnnouncementCard key={a.draftPosition} announcement={a} />
       ))}
-
-      {isFinale && announcements.length === 1 && (
-        <p className="animate-pulse text-xl font-semibold uppercase tracking-[0.4em] text-zinc-500">
-          which means…
-        </p>
-      )}
     </div>
   );
 }
 
-function AnnouncementCard({
-  announcement,
-  compact,
-}: {
-  announcement: Announcement;
-  compact: boolean;
-}) {
+function AnnouncementCard({ announcement }: { announcement: Announcement }) {
   const { teamName, manager } = splitTeamName(announcement.teamName);
   const initials = teamInitials(announcement.teamName);
   const color = announcement.color;
@@ -422,9 +410,7 @@ function AnnouncementCard({
           style={{ backgroundColor: color.hex }}
         />
         <span
-          className={`font-bold uppercase tracking-[0.35em] ${
-            compact ? "text-lg" : "text-2xl"
-          }`}
+          className={`font-bold uppercase tracking-[0.35em] text-2xl`}
           style={{ color: isTopPick ? "#FCD34D" : color.hex }}
         >
           {isTopPick ? "First pick" : `Pick ${announcement.draftPosition}`}
@@ -438,9 +424,7 @@ function AnnouncementCard({
       <div className="flex items-center gap-6">
         {/* Monogram plate standing in for a team logo */}
         <div
-          className={`flex shrink-0 items-center justify-center rounded-2xl font-black shadow-2xl ${
-            compact ? "h-20 w-20 text-3xl" : "h-32 w-32 text-5xl md:h-40 md:w-40 md:text-6xl"
-          }`}
+          className={`flex shrink-0 items-center justify-center rounded-2xl font-black shadow-2xl h-32 w-32 text-5xl md:h-40 md:w-40 md:text-6xl`}
           style={{ backgroundColor: color.hex, color: color.onHex }}
         >
           {initials}
@@ -448,19 +432,13 @@ function AnnouncementCard({
 
         <div className="flex flex-col text-left">
           <span
-            className={`font-black uppercase leading-[0.95] tracking-tight text-white ${
-              compact
-                ? "text-4xl md:text-5xl"
-                : "text-5xl md:text-7xl lg:text-8xl"
-            }`}
+            className={`font-black uppercase leading-[0.95] tracking-tight text-white text-5xl md:text-7xl lg:text-8xl`}
           >
             {teamName}
           </span>
           {manager && (
             <span
-              className={`mt-2 font-semibold uppercase tracking-[0.3em] ${
-                compact ? "text-base" : "text-xl md:text-2xl"
-              }`}
+              className={`mt-2 font-semibold uppercase tracking-[0.3em] text-xl md:text-2xl`}
               style={{ color: color.hex }}
             >
               {manager}
@@ -469,38 +447,28 @@ function AnnouncementCard({
         </div>
       </div>
 
-      {/* Lower-third bar */}
-      <div
-        className={`mt-8 flex w-full items-stretch overflow-hidden rounded-lg shadow-2xl ${
-          compact ? "h-10" : "h-14"
-        }`}
-      >
+      {/* Lower-third bar: every overall pick this slot owns, all rounds. */}
+      <div className="mt-8 flex w-full items-stretch overflow-hidden rounded-lg shadow-2xl">
         <div
           className="flex items-center px-6 font-black tabular-nums"
           style={{ backgroundColor: color.hex, color: color.onHex }}
         >
-          <span className={compact ? "text-xl" : "text-2xl"}>
-            {announcement.draftPosition}
-          </span>
+          <span className="text-3xl">{announcement.draftPosition}</span>
         </div>
-        <div className="flex flex-1 items-center gap-3 overflow-hidden bg-white/10 px-6 backdrop-blur">
-          <span
-            className={`shrink-0 font-semibold uppercase tracking-[0.25em] text-zinc-400 ${
-              compact ? "text-xs" : "text-sm"
-            }`}
-          >
+        <div className="flex flex-1 flex-wrap items-center gap-x-3 gap-y-1 bg-white/10 px-6 py-3 backdrop-blur">
+          <span className="shrink-0 text-sm font-semibold uppercase tracking-[0.25em] text-zinc-400">
             Picks
           </span>
-          <span
-            className={`truncate font-bold tabular-nums text-zinc-100 ${
-              compact ? "text-sm" : "text-lg"
-            }`}
-          >
-            {/* Every overall pick this slot owns across the whole phase.
-                Trimmed because fourteen numbers won't fit on a TV. */}
-            {announcement.pickNumbers.slice(0, VISIBLE_PICK_NUMBERS).join(" · ")}
-            {announcement.pickNumbers.length > VISIBLE_PICK_NUMBERS && " · …"}
-          </span>
+          {/* Wraps rather than truncates - all fourteen rounds are on
+              screen, which is the first thing everyone wants to know. */}
+          {announcement.pickNumbers.map((pick) => (
+            <span
+              key={pick}
+              className="text-lg font-bold tabular-nums text-zinc-100"
+            >
+              {pick}
+            </span>
+          ))}
         </div>
       </div>
     </div>

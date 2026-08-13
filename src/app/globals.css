@@ -53,6 +53,24 @@ body {
   animation: slam 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* The hold between pick 2 and pick 1: a slow breathing glow, so the screen
+   is visibly waiting for the commissioner rather than looking finished. */
+@keyframes suspense {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 42px 6px rgba(251, 191, 36, 0.45);
+    transform: scale(1.015);
+  }
+}
+
+.animate-suspense {
+  animation: suspense 2s ease-in-out infinite;
+}
+
 /* Falls the full height of the screen, drifting sideways and tumbling.
    Drift and spin come in as custom properties so every piece differs. */
 @keyframes confetti-fall {
@@ -84,5 +102,9 @@ body {
 
   .confetti-piece {
     display: none;
+  }
+
+  .animate-suspense {
+    animation: none;
   }
 }

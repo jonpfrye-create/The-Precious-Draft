@@ -2,14 +2,16 @@
 
 import { TEAM_PALETTE } from "@/lib/teams/branding";
 
-const PIECE_COUNT = 90;
+// Heavier than a token sprinkle - this is the one moment of the night
+// that earns it.
+const PIECE_COUNT = 220;
 
 /**
  * Confetti for the first pick.
  *
- * Plain DOM elements with CSS animations rather than a canvas library: it's
- * ninety absolutely-positioned spans for a few seconds on a machine doing
- * nothing else, and it keeps the dependency list at zero.
+ * Plain DOM elements with CSS animations rather than a canvas library: a
+ * couple of hundred absolutely-positioned spans for a few seconds on a
+ * machine doing nothing else, and it keeps the dependency list at zero.
  *
  * Every piece's position, speed and spin is derived deterministically from
  * its index and the accent colour rather than from Math.random. Randomness
@@ -49,12 +51,12 @@ export default function Confetti({ accent }: { accent: string }) {
     return {
       key: i,
       left: unitFor(`${seed}:x`) * 100,
-      delay: unitFor(`${seed}:d`) * 1.2,
-      duration: 2.6 + unitFor(`${seed}:t`) * 2.2,
-      drift: (unitFor(`${seed}:r`) - 0.5) * 240,
+      delay: unitFor(`${seed}:d`) * 2.8,
+      duration: 4.2 + unitFor(`${seed}:t`) * 3.6,
+      drift: (unitFor(`${seed}:r`) - 0.5) * 320,
       spin: 360 + unitFor(`${seed}:s`) * 1080,
-      width: 7 + unitFor(`${seed}:w`) * 8,
-      height: 10 + unitFor(`${seed}:h`) * 14,
+      width: 11 + unitFor(`${seed}:w`) * 14,
+      height: 16 + unitFor(`${seed}:h`) * 22,
       color: colors[i % colors.length],
     };
   });

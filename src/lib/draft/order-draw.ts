@@ -56,22 +56,30 @@ export function shuffle<T>(
 }
 
 export interface RevealStep {
-  // Positions uncovered by this click. Always one, except the finale.
+  // Positions uncovered by this click. Always exactly one.
   positions: number[];
   // Total revealed once this step lands - what gets stored on the phase.
   revealedAfter: number;
-  // The last click of the draw: reveals picks 2 and 1 together.
+  // This click reveals the first overall pick: fanfare and confetti.
   isFinale: boolean;
+  // Only pick 1 is left after this click. The room can already work out who
+  // it is by elimination, so the UI stops and makes a moment of it rather
+  // than rolling straight on.
+  setsUpFinale: boolean;
 }
 
 /**
  * Works out what the next click reveals.
  *
- * The order is uncovered from the last pick upwards, and stops one short:
- * once pick 2 is named there is only one team left unaccounted for, so the
- * room has already worked out who has pick 1. Rather than pretend
- * otherwise, the final click reveals 2 and 1 together and treats that as
- * the moment of the night.
+ * The order is uncovered from the last pick upwards, one pick per click,
+ * all the way down to 1. Every reveal is its own button press - an earlier
+ * version revealed 2 and 1 together, which broke the rhythm and left the
+ * room unsure whether the last card was still coming.
+ *
+ * Pick 1 is still special: once pick 2 is named there is exactly one team
+ * unaccounted for, so the room works it out before the screen says it. The
+ * gap between those two clicks is the tension, and `setsUpFinale` is what
+ * tells the UI to hold there.
  *
  * Returns null when everything is already revealed.
  */
@@ -82,16 +90,12 @@ export function nextRevealStep(
   if (totalTeams < 1) return null;
   if (revealedSoFar >= totalTeams) return null;
 
-  // With two teams left unrevealed, naming one names both.
-  if (revealedSoFar === totalTeams - 2) {
-    return { positions: [2, 1], revealedAfter: totalTeams, isFinale: true };
-  }
-
   const position = totalTeams - revealedSoFar;
   return {
     positions: [position],
     revealedAfter: revealedSoFar + 1,
-    isFinale: false,
+    isFinale: position === 1,
+    setsUpFinale: position === 2,
   };
 }
 
