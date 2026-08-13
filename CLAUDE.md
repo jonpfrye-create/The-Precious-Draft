@@ -48,6 +48,10 @@ Commands:
 - `npm run codes` — print the commissioner link and league code for every
   league, creating them if missing. This is both the bootstrap path and
   the recovery path if the commissioner link is lost.
+- `npm run test-league` — create a disposable 12-team league to exercise
+  draft mechanics against; `npm run test-league -- --rm` deletes it.
+  **Use this rather than the real league** for anything one-shot (see the
+  draft order draw below).
 
 `.env.local` holds `NEXT_PUBLIC_SUPABASE_URL`,
 `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` (the
@@ -96,6 +100,30 @@ exist, commissioner-only forever after.
 The board shows the league code (meant to be shared) but never the
 commissioner secret — the board is on a TV in a room full of phones. The
 secret lives behind a reveal button on `/commish/access`.
+
+## Draft order draw
+
+Draft order is **not** decided at setup. The order typed in there is an
+explicit placeholder; the real order is drawn at `/commish/order` with
+everyone watching, because the league won't accept an order the
+commissioner generated alone weeks earlier. Rules live in
+`src/lib/draft/order-draw.ts`:
+
+- first draw is free
+- every later draw needs the phrase `REDRAW` typed in, and the board shows
+  the redraw count forever after — redrawing is possible but never quiet
+- **once a single pick exists the order is frozen with no override**, since
+  redrawing would orphan picks already made
+
+The shuffle runs server-side on purpose. A draw the commissioner's browser
+could compute is a draw it could silently retry until it liked the answer.
+
+`phases.order_drawn_at` being null means "still on the placeholder order" —
+the board shows a warning in that state. Applied via
+`supabase/002-draft-order.sql`.
+
+Draft order is per-phase, so Leftovers and Microwave each get their own
+draw through the same page.
 
 ## Locked-in decisions (don't relitigate without asking)
 

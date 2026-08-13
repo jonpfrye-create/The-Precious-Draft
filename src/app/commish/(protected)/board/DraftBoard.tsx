@@ -141,6 +141,31 @@ export default function DraftBoard({
         </div>
       </header>
 
+      {phase.order_drawn_at === null && (
+        <div className="rounded border border-amber-400 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-950/40">
+          <p className="font-medium">
+            The draft order hasn&apos;t been drawn yet.
+          </p>
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+            Teams below are in the placeholder order from setup. Draw the real
+            order before the first pick — once anyone drafts, it&apos;s locked.{" "}
+            <Link
+              href="/commish/order"
+              className="font-medium text-blue-600 hover:underline dark:text-blue-400"
+            >
+              Draw the draft order →
+            </Link>
+          </p>
+        </div>
+      )}
+
+      {phase.order_draw_count > 1 && (
+        <p className="text-sm text-amber-700 dark:text-amber-500">
+          Draft order was redrawn {phase.order_draw_count - 1}{" "}
+          {phase.order_draw_count - 1 === 1 ? "time" : "times"}.
+        </p>
+      )}
+
       {error && <p className="text-red-600 dark:text-red-400">{error}</p>}
 
       <div className="overflow-x-auto rounded border border-zinc-200 dark:border-zinc-800">

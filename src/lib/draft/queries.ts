@@ -14,6 +14,10 @@ export interface Phase {
   sequence: number;
   status: "pending" | "active" | "paused" | "completed";
   rounds: number;
+  // Null until the draft order has actually been drawn - a phase sitting on
+  // the placeholder order typed in at setup must not look like a real draw.
+  order_drawn_at: string | null;
+  order_draw_count: number;
 }
 
 export interface Team {
@@ -78,7 +82,7 @@ export async function getCurrentPhase(leagueId: string): Promise<Phase | null> {
   const supabase = createAdminSupabaseClient();
   const { data, error } = await supabase
     .from("phases")
-    .select("id, league_id, type, sequence, status, rounds")
+    .select("id, league_id, type, sequence, status, rounds, order_drawn_at, order_draw_count")
     .eq("league_id", leagueId)
     .neq("status", "completed")
     .order("sequence", { ascending: true })
@@ -92,7 +96,7 @@ export async function getPhaseById(phaseId: string): Promise<Phase | null> {
   const supabase = createAdminSupabaseClient();
   const { data, error } = await supabase
     .from("phases")
-    .select("id, league_id, type, sequence, status, rounds")
+    .select("id, league_id, type, sequence, status, rounds, order_drawn_at, order_draw_count")
     .eq("id", phaseId)
     .maybeSingle();
   if (error) throw error;
