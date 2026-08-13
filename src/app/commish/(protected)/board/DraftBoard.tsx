@@ -13,6 +13,7 @@ import type {
 } from "@/lib/draft/queries";
 import { generateSnakeOrder, currentPick } from "@/lib/draft/snake-order";
 import { positionColor, POSITIONS } from "@/lib/positions";
+import { draftablePositions, forcedPositions } from "@/lib/draft/roster-fit";
 import { makePick, undoLastPick } from "./actions";
 
 interface DraftBoardProps {
@@ -31,6 +32,7 @@ export default function DraftBoard({
   leagueCode,
   phase,
   teams,
+  rosterSlots,
   picks,
   pickedPlayers,
   availablePlayers,
@@ -59,6 +61,39 @@ export default function DraftBoard({
     [picks]
   );
 
+  // What the team on the clock has already drafted, and therefore which
+  // positions still have a slot to go in. Recomputed here so the room finds
+  // out before a name is called out - the server enforces the same rule,
+  // but discovering it as a rejected pick is a worse experience.
+  const slotSpecs = useMemo(
+    () =>
+      rosterSlots.map((slot) => ({
+        slotName: slot.slot_name,
+        eligiblePositions: slot.eligible_positions,
+      })),
+    [rosterSlots]
+  );
+
+  const onClockDraftedPositions = useMemo(() => {
+    if (!onClockTeam) return [];
+    return picks
+      .filter((p) => p.team_id === onClockTeam.id)
+      .map((p) => playerById.get(p.player_id)?.position ?? null);
+  }, [picks, onClockTeam, playerById]);
+
+  const allowedPositions = useMemo(
+    () =>
+      new Set(
+        draftablePositions(onClockDraftedPositions, slotSpecs, POSITIONS)
+      ),
+    [onClockDraftedPositions, slotSpecs]
+  );
+
+  const forced = useMemo(
+    () => forcedPositions(onClockDraftedPositions, slotSpecs, POSITIONS),
+    [onClockDraftedPositions, slotSpecs]
+  );
+
   const filteredPlayers = useMemo(() => {
     const term = search.trim().toLowerCase();
     return availablePlayers.filter((p) => {
@@ -70,6 +105,12 @@ export default function DraftBoard({
 
   function handleDraft(player: Player) {
     if (!onClockTeam) return;
+    if (!allowedPositions.has(player.position ?? "")) {
+      setError(
+        `${onClockTeam.name} has no roster slot left for a ${player.position ?? "player with no position"}.`
+      );
+      return;
+    }
     const confirmed = window.confirm(
       `Draft ${player.full_name} (${player.position ?? "?"}) for ${onClockTeam.name}?`
     );
@@ -184,6 +225,21 @@ export default function DraftBoard({
         </p>
       )}
 
+      {forced.length > 0 && onClockTeam && phase.status !== "completed" && (
+        <div className="rounded border border-blue-400 bg-blue-50 p-4 dark:border-blue-700 dark:bg-blue-950/40">
+          <p className="font-medium">
+            {onClockTeam.name} must draft{" "}
+            {forced.length === 1 ? "a" : "one of"}{" "}
+            <span className="font-bold">{forced.join(" / ")}</span>
+            {forced.length === 1 ? " now" : ""}.
+          </p>
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+            It&apos;s the only roster slot they have left to fill. Everything
+            else is greyed out below.
+          </p>
+        </div>
+      )}
+
       {error && <p className="text-red-600 dark:text-red-400">{error}</p>}
 
       <div className="overflow-x-auto rounded border border-zinc-200 dark:border-zinc-800">
@@ -276,33 +332,50 @@ export default function DraftBoard({
           </div>
 
           <div className="max-h-[420px] overflow-y-auto rounded border border-zinc-200 dark:border-zinc-800">
-            {filteredPlayers.slice(0, 200).map((player) => (
-              <div
-                key={player.player_id}
-                className="flex items-center justify-between gap-3 border-b border-zinc-100 px-3 py-2 last:border-b-0 dark:border-zinc-900"
-              >
-                <div className="flex items-center gap-3">
-                  <span
-                    className={`rounded border px-2 py-0.5 text-xs font-medium ${positionColor(player.position)}`}
-                  >
-                    {player.position ?? "?"}
-                  </span>
-                  <span className="font-medium">{player.full_name}</span>
-                  {player.nfl_team && (
-                    <span className="text-sm text-zinc-500">
-                      {player.nfl_team}
-                    </span>
-                  )}
-                </div>
-                <button
-                  onClick={() => handleDraft(player)}
-                  disabled={isPending || !onClockTeam}
-                  className="rounded bg-black px-3 py-1 text-sm font-medium text-white disabled:opacity-30 dark:bg-white dark:text-black"
+            {filteredPlayers.slice(0, 200).map((player) => {
+              // Greyed out rather than hidden: the room should be able to
+              // see that the player is there and why they can't be taken.
+              const fits = allowedPositions.has(player.position ?? "");
+              return (
+                <div
+                  key={player.player_id}
+                  className={`flex items-center justify-between gap-3 border-b border-zinc-100 px-3 py-2 last:border-b-0 dark:border-zinc-900 ${
+                    fits ? "" : "opacity-40"
+                  }`}
                 >
-                  Draft
-                </button>
-              </div>
-            ))}
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`rounded border px-2 py-0.5 text-xs font-medium ${positionColor(player.position)}`}
+                    >
+                      {player.position ?? "?"}
+                    </span>
+                    <span className="font-medium">{player.full_name}</span>
+                    {player.nfl_team && (
+                      <span className="text-sm text-zinc-500">
+                        {player.nfl_team}
+                      </span>
+                    )}
+                    {!fits && onClockTeam && (
+                      <span className="text-xs italic text-zinc-500">
+                        no slot left
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => handleDraft(player)}
+                    disabled={isPending || !onClockTeam || !fits}
+                    title={
+                      fits
+                        ? undefined
+                        : `${onClockTeam?.name ?? "This team"} has no roster slot left for a ${player.position ?? "?"}`
+                    }
+                    className="rounded bg-black px-3 py-1 text-sm font-medium text-white disabled:opacity-30 dark:bg-white dark:text-black"
+                  >
+                    Draft
+                  </button>
+                </div>
+              );
+            })}
             {filteredPlayers.length === 0 && (
               <p className="p-3 text-zinc-500">No players match.</p>
             )}

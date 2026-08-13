@@ -4,10 +4,13 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { requireCommissionerLeagueForAction } from "@/lib/auth/commissioner";
 import { generateSnakeOrder } from "@/lib/draft/snake-order";
 import { availablePlayersForPhase } from "@/lib/draft/pool-exclusion";
+import { isPositionDraftable } from "@/lib/draft/roster-fit";
 import {
   getPhaseById,
   getPicks,
+  getPlayersByIds,
   getPriorPhasePicks,
+  getRosterSlots,
   getTeamsForPhase,
 } from "@/lib/draft/queries";
 
@@ -57,6 +60,41 @@ export async function makePick(phaseId: string, playerId: string) {
   );
   if (available.length === 0) {
     throw new Error("That player is not available in this phase");
+  }
+
+  // Roster rules: everything this team has drafted, plus the new player,
+  // has to fit into distinct eligible slots. That single check is what
+  // enforces "only one kicker" and "you must end up with one" - see
+  // lib/draft/roster-fit.ts. Checked here rather than only in the UI
+  // because the UI can be stale, and an illegal roster isn't discovered
+  // until someone tries to enter it into Yahoo days later.
+  const [rosterSlots, candidate] = await Promise.all([
+    getRosterSlots(phaseId),
+    getPlayersByIds([playerId]),
+  ]);
+  const candidatePosition = candidate[0]?.position ?? null;
+
+  const teamPickIds = picks
+    .filter((p) => p.team_id === onTheClock.teamId)
+    .map((p) => p.player_id);
+  const teamPlayers = await getPlayersByIds(teamPickIds);
+  const draftedPositions = teamPlayers.map((p) => p.position);
+
+  if (
+    !isPositionDraftable(
+      draftedPositions,
+      candidatePosition,
+      rosterSlots.map((slot) => ({
+        slotName: slot.slot_name,
+        eligiblePositions: slot.eligible_positions,
+      }))
+    )
+  ) {
+    const team = teams.find((t) => t.id === onTheClock.teamId);
+    throw new Error(
+      `${team?.name ?? "That team"} has no roster slot left for a ` +
+        `${candidatePosition ?? "player with no position"}.`
+    );
   }
 
   const supabase = createAdminSupabaseClient();
