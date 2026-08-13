@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 import { unitFromSeed } from "@/lib/random/seeded";
+import {
+  isValidCommissionerSecretShape,
+  normalizeCode,
+} from "@/lib/auth/codes";
 
 // Shows a live player count - must never be statically prerendered.
 export const dynamic = "force-dynamic";
@@ -16,7 +20,24 @@ const STARS = Array.from({ length: 60 }, (_, i) => ({
   delay: unitFromSeed(`star:${i}:d`) * 4,
 }));
 
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ secret?: string }>;
+}) {
+  // A commissioner link normally jumps straight to the board, which skips
+  // this page entirely. Handing someone "/?secret=..." instead lets them
+  // see the graveyard first and then walk in - the front door rather than
+  // the side entrance.
+  //
+  // The shape is checked before it goes anywhere near an href, so a junk
+  // query param is ignored rather than reflected back into the page.
+  const { secret } = await searchParams;
+  const normalized = normalizeCode(secret ?? "");
+  const entryHref = isValidCommissionerSecretShape(normalized)
+    ? `/commish/enter?secret=${normalized}`
+    : "/commish";
+
   const supabase = createBrowserSupabaseClient();
   const { count, error } = await supabase
     .from("players")
@@ -122,7 +143,16 @@ export default async function Home() {
               </text>
               <text
                 x="160"
-                y="174"
+                y="170"
+                textAnchor="middle"
+                className="fill-zinc-300"
+                style={{ font: "700 13px system-ui", letterSpacing: "1px" }}
+              >
+                2020 &ndash; 2025
+              </text>
+              <text
+                x="160"
+                y="186"
                 textAnchor="middle"
                 className="fill-zinc-400"
                 style={{ font: "600 11px system-ui", letterSpacing: "1px" }}
@@ -148,7 +178,7 @@ export default async function Home() {
         {/* Doors */}
         <div className="relative z-10 -mt-6 flex flex-col items-center gap-4 pb-12">
           <Link
-            href="/commish"
+            href={entryHref}
             className="rounded-lg bg-emerald-400 px-8 py-4 text-lg font-bold uppercase tracking-wider text-emerald-950 transition-transform hover:scale-105"
           >
             Enter the draft
