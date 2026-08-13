@@ -14,11 +14,7 @@ import type {
 import { generateSnakeOrder, currentPick } from "@/lib/draft/snake-order";
 import { positionColor, POSITIONS } from "@/lib/positions";
 import { draftablePositions, forcedPositions } from "@/lib/draft/roster-fit";
-import {
-  placementFromClick,
-  placementStyle,
-  stickerStyle,
-} from "@/lib/stickers";
+import { placementFromClick, placementStyle } from "@/lib/stickers";
 import { makePick, undoLastPick } from "./actions";
 
 interface DraftBoardProps {
@@ -48,7 +44,7 @@ export default function DraftBoard({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [positionFilter, setPositionFilter] = useState<string>("ALL");
+  const [positionFilter, setPositionFilter] = useState<string>(POSITIONS[0]);
   // The player currently peeling off the sheet, and the pick pressing onto
   // the board. Both are purely visual and clear themselves.
   const [peelingPlayerId, setPeelingPlayerId] = useState<string | null>(null);
@@ -58,6 +54,13 @@ export default function DraftBoard({
   // pick isn't made until it's physically placed somewhere.
   const [heldPlayer, setHeldPlayer] = useState<Player | null>(null);
   const onClockCellRef = useRef<HTMLTableCellElement | null>(null);
+  const boardStageRef = useRef<HTMLDivElement | null>(null);
+  // Where the held sticker follows the cursor, and where to zoom the board
+  // from. Both only exist while something is in hand.
+  const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
+  const [zoomOrigin, setZoomOrigin] = useState<{ x: number; y: number } | null>(
+    null
+  );
 
   const snakeOrder = useMemo(
     () => generateSnakeOrder(teams.map((t) => t.id), phase.rounds),
@@ -116,45 +119,72 @@ export default function DraftBoard({
     [onClockDraftedPositions, slotSpecs]
   );
 
+  const searchTerm = search.trim().toLowerCase();
   const filteredPlayers = useMemo(() => {
-    const term = search.trim().toLowerCase();
     return availablePlayers.filter((p) => {
-      if (positionFilter !== "ALL" && p.position !== positionFilter) return false;
-      if (term && !p.full_name.toLowerCase().includes(term)) return false;
-      return true;
+      // Searching looks across every sheet - otherwise finding one player
+      // means already knowing which position tab they're filed under.
+      if (searchTerm) return p.full_name.toLowerCase().includes(searchTerm);
+      return p.position === positionFilter;
     });
-  }, [availablePlayers, search, positionFilter]);
+  }, [availablePlayers, searchTerm, positionFilter]);
+
+  const clearHeld = useCallback(() => {
+    setHeldPlayer(null);
+    setCursor(null);
+    setZoomOrigin(null);
+  }, []);
 
   const toggleHeld = useCallback(
     (player: Player) => {
       setError(null);
-      setHeldPlayer((current) =>
-        current?.player_id === player.player_id ? null : player
-      );
+      if (heldPlayer?.player_id === player.player_id) {
+        clearHeld();
+        return;
+      }
+      // Zoom the board toward the slot being drafted into. Scrolling it
+      // into view barely registered on a TV; actually scaling toward the
+      // cell reads as the board coming to meet you.
+      //
+      // The origin is the target cell's centre in the stage's own
+      // coordinates, so the zoom pushes in on that exact square rather
+      // than the middle of the table. Measured here, at the click, rather
+      // than in an effect.
+      const cell = onClockCellRef.current;
+      const stage = boardStageRef.current;
+      if (cell && stage) {
+        const cellRect = cell.getBoundingClientRect();
+        const stageRect = stage.getBoundingClientRect();
+        setZoomOrigin({
+          x: cellRect.left - stageRect.left + cellRect.width / 2,
+          y: cellRect.top - stageRect.top + cellRect.height / 2,
+        });
+      }
+      setHeldPlayer(player);
     },
-    []
+    [heldPlayer, clearHeld]
   );
 
-  // Bring the target cell into view the moment a sticker is picked up, so
-  // the commissioner isn't hunting for their slot on a 14-round board.
+  // The held sticker rides with the cursor, so it reads as being carried
+  // from the sheet to the board.
   useEffect(() => {
     if (!heldPlayer) return;
-    onClockCellRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-      inline: "center",
-    });
+    function onMove(event: MouseEvent) {
+      setCursor({ x: event.clientX, y: event.clientY });
+    }
+    window.addEventListener("mousemove", onMove);
+    return () => window.removeEventListener("mousemove", onMove);
   }, [heldPlayer]);
 
   // Escape puts the sticker back on the sheet.
   useEffect(() => {
     if (!heldPlayer) return;
     function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") setHeldPlayer(null);
+      if (event.key === "Escape") clearHeld();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [heldPlayer]);
+  }, [heldPlayer, clearHeld]);
 
   function placeHeldSticker(event: React.MouseEvent<HTMLTableCellElement>) {
     const player = heldPlayer;
@@ -170,7 +200,7 @@ export default function DraftBoard({
     );
 
     setError(null);
-    setHeldPlayer(null);
+    clearHeld();
     setPeelingPlayerId(player.player_id);
     startTransition(async () => {
       try {
@@ -326,30 +356,56 @@ export default function DraftBoard({
         </div>
       )}
 
-      {heldPlayer && onClockTeam && (
-        <div className="sticky top-2 z-30 flex flex-wrap items-center gap-3 rounded-lg border-2 border-amber-500 bg-amber-100 p-4 shadow-lg dark:bg-amber-950/80">
-          <span
-            className={`sticker border-2 px-3 py-1 ${positionColor(heldPlayer.position)}`}
+      {heldPlayer && cursor && (
+        // Carried under the cursor rather than parked in a bar at the top:
+        // the sticker is in your hand until you press it down. Pointer
+        // events off so it never eats the click meant for the board.
+        <div
+          aria-hidden
+          className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-1/2"
+          style={{ left: cursor.x, top: cursor.y }}
+        >
+          <div
+            className={`sticker border-2 px-3 py-2 shadow-2xl ${positionColor(heldPlayer.position)}`}
+            style={{ transform: "rotate(-6deg) scale(1.15)" }}
           >
-            <span className="font-bold">{heldPlayer.full_name}</span>
-          </span>
-          <span className="font-medium">
-            Now click {onClockTeam.name}&apos;s square to stick it on — where
-            you click is where it lands.
-          </span>
-          <button
-            type="button"
-            onClick={() => setHeldPlayer(null)}
-            className="ml-auto rounded border border-zinc-400 px-3 py-1 text-sm dark:border-zinc-600"
-          >
-            Put it back (Esc)
-          </button>
+            <div className="text-[10px] font-black uppercase tracking-wider opacity-70">
+              {heldPlayer.position}
+              {heldPlayer.nfl_team ? ` · ${heldPlayer.nfl_team}` : ""}
+            </div>
+            <div className="text-base font-bold leading-tight">
+              {heldPlayer.full_name}
+            </div>
+          </div>
         </div>
+      )}
+
+      {heldPlayer && onClockTeam && (
+        <p className="text-sm font-medium text-amber-700 dark:text-amber-500">
+          Click {onClockTeam.name}&apos;s square to stick it on — where you
+          click is where it lands. Esc puts it back.
+        </p>
       )}
 
       {error && <p className="text-red-600 dark:text-red-400">{error}</p>}
 
-      <div className="overflow-x-auto rounded border border-zinc-200 dark:border-zinc-800">
+      <div
+        ref={boardStageRef}
+        className={`rounded border border-zinc-200 dark:border-zinc-800 ${
+          heldPlayer ? "overflow-hidden" : "overflow-x-auto"
+        }`}
+      >
+        <div
+          className="origin-center transition-transform duration-500 ease-out"
+          style={
+            heldPlayer && zoomOrigin
+              ? {
+                  transform: "scale(1.75)",
+                  transformOrigin: `${zoomOrigin.x}px ${zoomOrigin.y}px`,
+                }
+              : undefined
+          }
+        >
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr>
@@ -436,6 +492,7 @@ export default function DraftBoard({
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       {phase.status !== "completed" && (
@@ -448,7 +505,7 @@ export default function DraftBoard({
               className="min-w-[200px] flex-1 rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
             />
             <div className="flex gap-1">
-              {["ALL", ...POSITIONS].map((pos) => (
+              {POSITIONS.map((pos) => (
                 <button
                   key={pos}
                   onClick={() => setPositionFilter(pos)}
@@ -486,7 +543,6 @@ export default function DraftBoard({
                         ? "Peel this sticker off, then click the board"
                         : `${onClockTeam?.name ?? "This team"} has no roster slot left for a ${player.position ?? "?"}`
                     }
-                    style={held ? undefined : stickerStyle(player.player_id)}
                     className={`sticker sticker-sheet-row flex flex-col items-start gap-1 border-2 px-2 py-2 text-left disabled:cursor-not-allowed ${positionColor(player.position)} ${
                       fits ? "" : "opacity-40"
                     } ${peeling ? "sticker-peel" : ""} ${
@@ -495,9 +551,19 @@ export default function DraftBoard({
                         : ""
                     }`}
                   >
-                    <span className="text-[10px] font-black uppercase tracking-wider opacity-70">
-                      {player.position ?? "?"}
-                      {player.nfl_team ? ` · ${player.nfl_team}` : ""}
+                    <span className="flex w-full items-baseline justify-between gap-2 text-[10px] font-black uppercase tracking-wider opacity-70">
+                      <span>
+                        {player.position ?? "?"}
+                        {player.nfl_team ? ` · ${player.nfl_team}` : ""}
+                      </span>
+                      {/* Where the rest of the world is taking this player.
+                          Blank rather than zero when the feed doesn't cover
+                          them, which is most of the pool. */}
+                      {player.adp_formatted && (
+                        <span className="tabular-nums">
+                          ADP {player.adp_formatted}
+                        </span>
+                      )}
                     </span>
                     <span className="text-sm font-bold leading-tight">
                       {player.full_name}

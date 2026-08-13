@@ -3,6 +3,8 @@ import { sortByDraftability, type RankablePlayer } from "./player-ranking";
 
 export interface PoolPlayer extends RankablePlayer {
   player_id: string;
+  adp: number | null;
+  adp_formatted: string | null;
 }
 
 // Supabase caps every REST response at 1000 rows, server-side. Neither
@@ -21,7 +23,7 @@ export interface PoolPlayer extends RankablePlayer {
 export const SUPABASE_MAX_ROWS = 1000;
 
 const PLAYER_COLUMNS =
-  "player_id, full_name, position, nfl_team, search_rank, status";
+  "player_id, full_name, position, nfl_team, search_rank, status, adp, adp_formatted";
 
 export async function fetchAllPlayers(
   supabase: SupabaseClient

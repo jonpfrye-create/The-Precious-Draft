@@ -4,6 +4,7 @@ export interface RankablePlayer {
   nfl_team: string | null;
   search_rank: number | null;
   status: string | null;
+  adp?: number | null;
 }
 
 // Sleeper's search_rank is good for skill positions and useless for the
@@ -60,6 +61,18 @@ export function sortByDraftability<T extends RankablePlayer>(players: T[]): T[] 
 
     const status = statusRank(a.status) - statusRank(b.status);
     if (status !== 0) return status;
+
+    // Real ADP wins where both players have it: it comes from actual
+    // drafts this month, while search_rank is Sleeper's own popularity
+    // ordering and is useless for whole positions (see the kicker note
+    // above).
+    if (a.adp != null && b.adp != null && a.adp !== b.adp) {
+      return a.adp - b.adp;
+    }
+    // Anyone with an ADP is someone people actually draft, so they sort
+    // ahead of anyone without one.
+    if (a.adp != null && b.adp == null) return -1;
+    if (a.adp == null && b.adp != null) return 1;
 
     const rank = effectiveSearchRank(a) - effectiveSearchRank(b);
     if (rank !== 0) return rank;

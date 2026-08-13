@@ -45,6 +45,11 @@ export interface Player {
   nfl_team: string | null;
   search_rank: number | null;
   status: string | null;
+  // Average draft position from Fantasy Football Calculator. Null for the
+  // vast majority of the pool - the feed only covers players anyone
+  // actually drafts.
+  adp: number | null;
+  adp_formatted: string | null;
 }
 
 export interface Pick {
@@ -190,7 +195,9 @@ export async function getPlayersByIds(playerIds: string[]): Promise<Player[]> {
   const supabase = createAdminSupabaseClient();
   const { data, error } = await supabase
     .from("players")
-    .select("player_id, full_name, position, nfl_team, search_rank, status")
+    .select(
+      "player_id, full_name, position, nfl_team, search_rank, status, adp, adp_formatted"
+    )
     .in("player_id", playerIds);
   if (error) throw error;
   return data ?? [];
