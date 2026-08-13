@@ -15,6 +15,30 @@ import { createAdminSupabaseClient } from "../src/lib/supabase/admin-client";
 
 const LEAGUE_NAME = "ZZZ Draw Test";
 
+// The point of the throwaway league is to rehearse the real thing, so it
+// borrows the real league's team names when there is one. Twelve names of
+// realistic length is what actually tests whether the order reveal reads
+// from across a room; "Test Team 07" does not.
+async function realTeamNames(): Promise<string[] | null> {
+  const supabase = createAdminSupabaseClient();
+  const { data: leagues, error } = await supabase
+    .from("leagues")
+    .select("id, name")
+    .neq("name", LEAGUE_NAME)
+    .order("created_at", { ascending: false })
+    .limit(1);
+  if (error) throw error;
+  if (!leagues || leagues.length === 0) return null;
+
+  const { data: teams, error: teamsError } = await supabase
+    .from("teams")
+    .select("name")
+    .eq("league_id", leagues[0].id);
+  if (teamsError) throw teamsError;
+  if (!teams || teams.length === 0) return null;
+  return teams.map((t) => t.name);
+}
+
 // Fixed so re-running is predictable. Valid code shapes (Crockford base32,
 // no I/L/O/U) so they behave exactly like generated ones.
 const LEAGUE_CODE = "TESTAA";
@@ -71,14 +95,17 @@ async function create() {
   });
   if (secretsError) throw secretsError;
 
+  const borrowed = await realTeamNames();
+  const names =
+    borrowed ??
+    Array.from(
+      { length: TEAM_COUNT },
+      (_, i) => `Test Team ${String(i + 1).padStart(2, "0")}`
+    );
+
   const { data: teams, error: teamsError } = await supabase
     .from("teams")
-    .insert(
-      Array.from({ length: TEAM_COUNT }, (_, i) => ({
-        league_id: league.id,
-        name: `Test Team ${String(i + 1).padStart(2, "0")}`,
-      }))
-    )
+    .insert(names.map((name) => ({ league_id: league.id, name })))
     .select("id, name");
   if (teamsError) throw teamsError;
 
@@ -113,14 +140,26 @@ async function create() {
     "http://localhost:3000";
 
   console.log(`\nCreated "${LEAGUE_NAME}"`);
-  console.log(`  league id: ${league.id}`);
-  console.log(`  phase id:  ${phase.id}`);
-  console.log(`  teams:     ${teams.length}`);
-  console.log(`  commissioner link:\n    ${base}/commish/enter?secret=${COMMISSIONER_SECRET}`);
-  console.log(`\n  Remove it with: npm run test-league -- --rm\n`);
+  console.log(`  teams:  ${teams.length}${borrowed ? " (borrowed from the real league)" : ""}`);
+  console.log(`\n  Open this to rehearse the order draw:`);
+  console.log(`    ${base}/commish/order`);
+  console.log(`  after signing in with:`);
+  console.log(`    ${base}/commish/enter?secret=${COMMISSIONER_SECRET}`);
+  console.log(`\n  Start over with a fresh undrawn order:  npm run test-league -- --reset`);
+  console.log(`  Delete it when you're done:             npm run test-league -- --rm\n`);
 }
 
-const main = process.argv.includes("--rm") ? remove : create;
+async function reset() {
+  await remove();
+  await create();
+}
+
+const main = process.argv.includes("--rm")
+  ? remove
+  : process.argv.includes("--reset")
+    ? reset
+    : create;
+
 main().catch((err) => {
   console.error(err);
   process.exit(1);
