@@ -26,9 +26,16 @@ export interface MakePickResult {
   pickId: string;
 }
 
+export interface PickPlacement {
+  x: number;
+  y: number;
+  rotation: number;
+}
+
 export async function makePick(
   phaseId: string,
-  playerId: string
+  playerId: string,
+  placement?: PickPlacement
 ): Promise<MakePickResult> {
   const league = await requireCommissionerLeagueForAction();
 
@@ -116,6 +123,9 @@ export async function makePick(
       player_id: playerId,
       pick_number: onTheClock.overallPick,
       round: onTheClock.round,
+      placement_x: placement?.x ?? null,
+      placement_y: placement?.y ?? null,
+      placement_rotation: placement?.rotation ?? null,
     })
     .select("id")
     .single();

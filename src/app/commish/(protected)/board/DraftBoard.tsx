@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type {
@@ -14,7 +14,11 @@ import type {
 import { generateSnakeOrder, currentPick } from "@/lib/draft/snake-order";
 import { positionColor, POSITIONS } from "@/lib/positions";
 import { draftablePositions, forcedPositions } from "@/lib/draft/roster-fit";
-import { stickerStyle } from "@/lib/stickers";
+import {
+  placementFromClick,
+  placementStyle,
+  stickerStyle,
+} from "@/lib/stickers";
 import { makePick, undoLastPick } from "./actions";
 
 interface DraftBoardProps {
@@ -49,6 +53,11 @@ export default function DraftBoard({
   // the board. Both are purely visual and clear themselves.
   const [peelingPlayerId, setPeelingPlayerId] = useState<string | null>(null);
   const [pressedPickId, setPressedPickId] = useState<string | null>(null);
+  // The sticker currently peeled off and waiting to be pressed onto the
+  // board. Holding one is what replaces the old confirmation dialog: the
+  // pick isn't made until it's physically placed somewhere.
+  const [heldPlayer, setHeldPlayer] = useState<Player | null>(null);
+  const onClockCellRef = useRef<HTMLTableCellElement | null>(null);
 
   const snakeOrder = useMemo(
     () => generateSnakeOrder(teams.map((t) => t.id), phase.rounds),
@@ -116,33 +125,62 @@ export default function DraftBoard({
     });
   }, [availablePlayers, search, positionFilter]);
 
-  function handleDraft(player: Player) {
-    if (!onClockTeam) return;
-    if (!allowedPositions.has(player.position ?? "")) {
-      setError(
-        `${onClockTeam.name} has no roster slot left for a ${player.position ?? "player with no position"}.`
+  const toggleHeld = useCallback(
+    (player: Player) => {
+      setError(null);
+      setHeldPlayer((current) =>
+        current?.player_id === player.player_id ? null : player
       );
-      return;
+    },
+    []
+  );
+
+  // Bring the target cell into view the moment a sticker is picked up, so
+  // the commissioner isn't hunting for their slot on a 14-round board.
+  useEffect(() => {
+    if (!heldPlayer) return;
+    onClockCellRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+      inline: "center",
+    });
+  }, [heldPlayer]);
+
+  // Escape puts the sticker back on the sheet.
+  useEffect(() => {
+    if (!heldPlayer) return;
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setHeldPlayer(null);
     }
-    const confirmed = window.confirm(
-      `Draft ${player.full_name} (${player.position ?? "?"}) for ${onClockTeam.name}?`
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [heldPlayer]);
+
+  function placeHeldSticker(event: React.MouseEvent<HTMLTableCellElement>) {
+    const player = heldPlayer;
+    if (!player || !onClockTeam) return;
+
+    // Where in the cell it was pressed decides where the sticker sits.
+    // This click is the confirmation - there's no dialog, because putting
+    // a sticker somewhere specific is already a deliberate act.
+    const rect = event.currentTarget.getBoundingClientRect();
+    const placement = placementFromClick(
+      (event.clientX - rect.left) / rect.width,
+      (event.clientY - rect.top) / rect.height
     );
-    if (!confirmed) return;
+
     setError(null);
+    setHeldPlayer(null);
     setPeelingPlayerId(player.player_id);
     startTransition(async () => {
       try {
-        const result = await makePick(phase.id, player.player_id);
+        const result = await makePick(phase.id, player.player_id, placement);
         setSearch("");
-        // Marks this pick as the one to press onto the board once the
-        // refreshed data arrives.
         if (result?.pickId) setPressedPickId(result.pickId);
         router.refresh();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to make pick");
       } finally {
-        // The row is gone from the list after the refresh either way; this
-        // just stops a failed pick leaving a permanently faded row.
         setTimeout(() => setPeelingPlayerId(null), 500);
       }
     });
@@ -288,6 +326,27 @@ export default function DraftBoard({
         </div>
       )}
 
+      {heldPlayer && onClockTeam && (
+        <div className="sticky top-2 z-30 flex flex-wrap items-center gap-3 rounded-lg border-2 border-amber-500 bg-amber-100 p-4 shadow-lg dark:bg-amber-950/80">
+          <span
+            className={`sticker border-2 px-3 py-1 ${positionColor(heldPlayer.position)}`}
+          >
+            <span className="font-bold">{heldPlayer.full_name}</span>
+          </span>
+          <span className="font-medium">
+            Now click {onClockTeam.name}&apos;s square to stick it on — where
+            you click is where it lands.
+          </span>
+          <button
+            type="button"
+            onClick={() => setHeldPlayer(null)}
+            className="ml-auto rounded border border-zinc-400 px-3 py-1 text-sm dark:border-zinc-600"
+          >
+            Put it back (Esc)
+          </button>
+        </div>
+      )}
+
       {error && <p className="text-red-600 dark:text-red-400">{error}</p>}
 
       <div className="overflow-x-auto rounded border border-zinc-200 dark:border-zinc-800">
@@ -320,10 +379,20 @@ export default function DraftBoard({
                     onClockPick &&
                     onClockPick.round === round &&
                     onClockPick.teamId === team.id;
+                  // The one cell that can receive the held sticker.
+                  const isTarget = Boolean(isOnClock && heldPlayer);
                   return (
                     <td
                       key={team.id}
-                      className="border-l border-t border-zinc-200 p-1 align-top dark:border-zinc-800"
+                      ref={isOnClock ? onClockCellRef : undefined}
+                      onClick={
+                        isTarget ? (e) => placeHeldSticker(e) : undefined
+                      }
+                      className={`border-l border-t border-zinc-200 p-1 align-top dark:border-zinc-800 ${
+                        isTarget
+                          ? "cursor-crosshair bg-amber-100 ring-4 ring-amber-400 dark:bg-amber-950/50"
+                          : ""
+                      }`}
                     >
                       {player && pick ? (
                         <div
@@ -336,7 +405,7 @@ export default function DraftBoard({
                           style={
                             pick.id === newestPickId
                               ? undefined
-                              : stickerStyle(pick.id)
+                              : placementStyle(pick.id, pick)
                           }
                         >
                           <div className="font-medium leading-tight">
@@ -346,6 +415,10 @@ export default function DraftBoard({
                             {player.position}
                             {player.nfl_team ? ` · ${player.nfl_team}` : ""}
                           </div>
+                        </div>
+                      ) : isTarget ? (
+                        <div className="rounded border-2 border-dashed border-amber-600 px-2 py-3 text-center text-xs font-bold uppercase text-amber-800 dark:border-amber-400 dark:text-amber-300">
+                          Click to stick it here
                         </div>
                       ) : isOnClock ? (
                         <div className="animate-pulse rounded border-2 border-dashed border-black px-2 py-1 text-center text-xs font-semibold dark:border-white">
@@ -391,56 +464,53 @@ export default function DraftBoard({
             </div>
           </div>
 
-          {/* The sticker sheet: available players, waiting to be peeled off. */}
-          <div className="max-h-[420px] overflow-y-auto rounded border border-zinc-300 bg-zinc-100/60 dark:border-zinc-700 dark:bg-zinc-900/40">
-            {filteredPlayers.slice(0, 200).map((player) => {
-              // Greyed out rather than hidden: the room should be able to
-              // see that the player is there and why they can't be taken.
-              const fits = allowedPositions.has(player.position ?? "");
-              const peeling = peelingPlayerId === player.player_id;
-              return (
-                <div
-                  key={player.player_id}
-                  // Each row is a sticker still on the sheet. Picking one
-                  // peels it off; the dashed rule between rows is the
-                  // perforation it tears along.
-                  className={`sticker-sheet-row flex items-center justify-between gap-3 border-b border-dashed border-zinc-200 px-3 py-2 last:border-b-0 dark:border-zinc-800 ${
-                    fits ? "" : "opacity-40"
-                  } ${peeling ? "sticker-peel" : ""}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`sticker border px-2 py-0.5 text-xs font-bold ${positionColor(player.position)}`}
-                    >
+          {/* The sticker sheet: available players laid out as a printed
+              sheet, the way the physical one was. Clicking a sticker peels
+              it off and holds it; the board is where it gets pressed on. */}
+          <div className="max-h-[440px] overflow-y-auto rounded-lg border border-zinc-300 bg-zinc-200/70 p-3 dark:border-zinc-700 dark:bg-zinc-900/60">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {filteredPlayers.slice(0, 200).map((player) => {
+                // Greyed out rather than hidden: the room should be able to
+                // see that the player is there and why they can't be taken.
+                const fits = allowedPositions.has(player.position ?? "");
+                const peeling = peelingPlayerId === player.player_id;
+                const held = heldPlayer?.player_id === player.player_id;
+                return (
+                  <button
+                    key={player.player_id}
+                    type="button"
+                    disabled={isPending || !onClockTeam || !fits}
+                    onClick={() => toggleHeld(player)}
+                    title={
+                      fits
+                        ? "Peel this sticker off, then click the board"
+                        : `${onClockTeam?.name ?? "This team"} has no roster slot left for a ${player.position ?? "?"}`
+                    }
+                    style={held ? undefined : stickerStyle(player.player_id)}
+                    className={`sticker sticker-sheet-row flex flex-col items-start gap-1 border-2 px-2 py-2 text-left disabled:cursor-not-allowed ${positionColor(player.position)} ${
+                      fits ? "" : "opacity-40"
+                    } ${peeling ? "sticker-peel" : ""} ${
+                      held
+                        ? "ring-4 ring-amber-500 ring-offset-2 dark:ring-offset-black"
+                        : ""
+                    }`}
+                  >
+                    <span className="text-[10px] font-black uppercase tracking-wider opacity-70">
                       {player.position ?? "?"}
+                      {player.nfl_team ? ` · ${player.nfl_team}` : ""}
                     </span>
-                    <span className="font-medium">{player.full_name}</span>
-                    {player.nfl_team && (
-                      <span className="text-sm text-zinc-500">
-                        {player.nfl_team}
-                      </span>
-                    )}
+                    <span className="text-sm font-bold leading-tight">
+                      {player.full_name}
+                    </span>
                     {!fits && onClockTeam && (
-                      <span className="text-xs italic text-zinc-500">
+                      <span className="text-[10px] italic opacity-70">
                         no slot left
                       </span>
                     )}
-                  </div>
-                  <button
-                    onClick={() => handleDraft(player)}
-                    disabled={isPending || !onClockTeam || !fits}
-                    title={
-                      fits
-                        ? undefined
-                        : `${onClockTeam?.name ?? "This team"} has no roster slot left for a ${player.position ?? "?"}`
-                    }
-                    className="rounded bg-black px-3 py-1 text-sm font-medium text-white disabled:opacity-30 dark:bg-white dark:text-black"
-                  >
-                    Peel
                   </button>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
             {filteredPlayers.length === 0 && (
               <p className="p-3 text-zinc-500">No players match.</p>
             )}

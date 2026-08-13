@@ -54,6 +54,11 @@ export interface Pick {
   player_id: string;
   pick_number: number;
   round: number;
+  // Where the commissioner pressed the sticker onto the board. Null for
+  // auto-drafted picks, which fall back to a tilt derived from the pick id.
+  placement_x: number | null;
+  placement_y: number | null;
+  placement_rotation: number | null;
 }
 
 // There is deliberately no "get the current league" helper. Commissioner
@@ -171,7 +176,9 @@ export async function getPicks(phaseId: string): Promise<Pick[]> {
   const supabase = createAdminSupabaseClient();
   const { data, error } = await supabase
     .from("picks")
-    .select("id, phase_id, team_id, player_id, pick_number, round")
+    .select(
+      "id, phase_id, team_id, player_id, pick_number, round, placement_x, placement_y, placement_rotation"
+    )
     .eq("phase_id", phaseId)
     .order("pick_number", { ascending: true });
   if (error) throw error;

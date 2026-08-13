@@ -284,11 +284,6 @@ export default function OrderDraw({
               <p className="text-3xl font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">
                 One team remains
               </p>
-              <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-                {total - 1} picks are on the board. Everyone in the room
-                already knows who has the first pick — make them say it out
-                loud before you click.
-              </p>
             </div>
           )}
           <button
