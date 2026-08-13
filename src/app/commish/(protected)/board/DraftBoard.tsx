@@ -9,6 +9,7 @@ import type {
   Pick,
   Player,
   RosterSlot,
+  SheetPlayer,
   Team,
 } from "@/lib/draft/queries";
 import { generateSnakeOrder, currentPick } from "@/lib/draft/snake-order";
@@ -26,7 +27,7 @@ interface DraftBoardProps {
   rosterSlots: RosterSlot[];
   picks: Pick[];
   pickedPlayers: Player[];
-  availablePlayers: Player[];
+  sheetPlayers: SheetPlayer[];
 }
 
 export default function DraftBoard({
@@ -38,7 +39,7 @@ export default function DraftBoard({
   rosterSlots,
   picks,
   pickedPlayers,
-  availablePlayers,
+  sheetPlayers,
 }: DraftBoardProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -121,13 +122,17 @@ export default function DraftBoard({
 
   const searchTerm = search.trim().toLowerCase();
   const filteredPlayers = useMemo(() => {
-    return availablePlayers.filter((p) => {
+    return sheetPlayers.filter((p) => {
       // Searching looks across every sheet - otherwise finding one player
-      // means already knowing which position tab they're filed under.
-      if (searchTerm) return p.full_name.toLowerCase().includes(searchTerm);
+      // means already knowing which position tab they're filed under. It
+      // also skips the gaps, since searching for someone already drafted
+      // and getting a blank tile would just be confusing.
+      if (searchTerm) {
+        return !p.taken && p.full_name.toLowerCase().includes(searchTerm);
+      }
       return p.position === positionFilter;
     });
-  }, [availablePlayers, searchTerm, positionFilter]);
+  }, [sheetPlayers, searchTerm, positionFilter]);
 
   const clearHeld = useCallback(() => {
     setHeldPlayer(null);
@@ -367,7 +372,9 @@ export default function DraftBoard({
         >
           <div
             className={`sticker border-2 px-3 py-2 shadow-2xl ${positionColor(heldPlayer.position)}`}
-            style={{ transform: "rotate(-6deg) scale(1.15)" }}
+            // Straight while it's in your hand. The tilt is a consequence
+            // of being pressed onto the board, not of existing.
+            style={{ transform: "scale(1.15)" }}
           >
             <div className="text-[10px] font-black uppercase tracking-wider opacity-70">
               {heldPlayer.position}
@@ -445,36 +452,33 @@ export default function DraftBoard({
                         isTarget ? (e) => placeHeldSticker(e) : undefined
                       }
                       className={`border-l border-t border-zinc-200 p-1 align-top dark:border-zinc-800 ${
-                        isTarget
-                          ? "cursor-crosshair bg-amber-100 ring-4 ring-amber-400 dark:bg-amber-950/50"
-                          : ""
+                        isTarget ? "cursor-crosshair" : ""
                       }`}
                     >
                       {player && pick ? (
-                        <div
-                          // Only the most recent pick animates. Replaying
-                          // the press on every sticker whenever the board
-                          // refreshed would be chaos on a TV.
-                          className={`sticker border px-2 py-1 ${positionColor(player.position)} ${
-                            pick.id === newestPickId ? "sticker-press" : ""
-                          }`}
-                          style={
-                            pick.id === newestPickId
-                              ? undefined
-                              : placementStyle(pick.id, pick)
-                          }
-                        >
-                          <div className="font-medium leading-tight">
-                            {player.full_name}
+                        // The permanent placement sits on the wrapper, so
+                        // the sticker is already at its final angle the
+                        // instant it appears. The press animation runs
+                        // inside and only scales and fades - if it drove
+                        // the transform itself it would end at "straight"
+                        // and the tilt would snap in later.
+                        <div style={placementStyle(pick.id, pick)}>
+                          <div
+                            // Only the most recent pick animates. Replaying
+                            // the press on every sticker whenever the board
+                            // refreshed would be chaos on a TV.
+                            className={`sticker border px-2 py-1 ${positionColor(player.position)} ${
+                              pick.id === newestPickId ? "sticker-press" : ""
+                            }`}
+                          >
+                            <div className="font-medium leading-tight">
+                              {player.full_name}
+                            </div>
+                            <div className="text-xs opacity-70">
+                              {player.position}
+                              {player.nfl_team ? ` · ${player.nfl_team}` : ""}
+                            </div>
                           </div>
-                          <div className="text-xs opacity-70">
-                            {player.position}
-                            {player.nfl_team ? ` · ${player.nfl_team}` : ""}
-                          </div>
-                        </div>
-                      ) : isTarget ? (
-                        <div className="rounded border-2 border-dashed border-amber-600 px-2 py-3 text-center text-xs font-bold uppercase text-amber-800 dark:border-amber-400 dark:text-amber-300">
-                          Click to stick it here
                         </div>
                       ) : isOnClock ? (
                         <div className="animate-pulse rounded border-2 border-dashed border-black px-2 py-1 text-center text-xs font-semibold dark:border-white">
@@ -527,6 +531,20 @@ export default function DraftBoard({
           <div className="max-h-[440px] overflow-y-auto rounded-lg border border-zinc-300 bg-zinc-200/70 p-3 dark:border-zinc-700 dark:bg-zinc-900/60">
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {filteredPlayers.slice(0, 200).map((player) => {
+                // A gap where a sticker used to be. Kept in place rather
+                // than closed up, so the sheet empties out as the draft
+                // goes on and you scroll further to find anyone left -
+                // which is exactly what happened to the paper sheets.
+                if (player.taken) {
+                  return (
+                    <span
+                      key={player.player_id}
+                      aria-hidden
+                      className="rounded border-2 border-dashed border-zinc-300 bg-zinc-100/40 dark:border-zinc-800 dark:bg-zinc-950/40"
+                    />
+                  );
+                }
+
                 // Greyed out rather than hidden: the room should be able to
                 // see that the player is there and why they can't be taken.
                 const fits = allowedPositions.has(player.position ?? "");

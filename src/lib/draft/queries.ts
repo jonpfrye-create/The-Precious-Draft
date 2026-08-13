@@ -247,6 +247,41 @@ export async function getPriorPhasePicks(
   }));
 }
 
+export interface SheetPlayer extends Player {
+  /** Already drafted - in this phase or an earlier one. */
+  taken: boolean;
+}
+
+/**
+ * The whole pool for the sticker sheet, in draft order, with drafted
+ * players marked rather than removed.
+ *
+ * The sheet keeps a gap where every peeled sticker used to be, which is
+ * both how the physical sheets worked and where Leftovers got its name -
+ * by the time that phase starts, the sheet is mostly holes.
+ */
+export async function getSheetPlayersForPhase(
+  phase: Phase
+): Promise<SheetPlayer[]> {
+  const [allPlayers, priorPhasePicks, thisPhasePicks] = await Promise.all([
+    getAllPlayers(),
+    getPriorPhasePicks(phase.league_id, phase.sequence),
+    getPicks(phase.id),
+  ]);
+
+  const taken = new Set<string>(thisPhasePicks.map((p) => p.player_id));
+  for (const prior of priorPhasePicks) {
+    if (prior.sequence < phase.sequence) {
+      for (const id of prior.playerIds) taken.add(id);
+    }
+  }
+
+  return allPlayers.map((player) => ({
+    ...player,
+    taken: taken.has(player.player_id),
+  }));
+}
+
 export async function getAvailablePlayersForPhase(phase: Phase): Promise<Player[]> {
   const [allPlayers, priorPhasePicks, thisPhasePicks] = await Promise.all([
     getAllPlayers(),

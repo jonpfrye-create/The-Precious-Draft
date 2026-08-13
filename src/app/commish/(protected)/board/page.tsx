@@ -8,7 +8,7 @@ import { requireCommissionerLeague } from "@/lib/auth/commissioner";
 import { ensureLeagueSecrets } from "@/lib/auth/secrets";
 import { isDemoLeague } from "@/lib/draft/auto-pick";
 import {
-  getAvailablePlayersForPhase,
+  getSheetPlayersForPhase,
   getCurrentPhase,
   getPicks,
   getPlayersByIds,
@@ -26,11 +26,11 @@ export default async function BoardPage() {
   const phase = await getCurrentPhase(league.id);
   if (!phase) redirect("/commish/setup");
 
-  const [teams, rosterSlots, picks, availablePlayers] = await Promise.all([
+  const [teams, rosterSlots, picks, sheetPlayers] = await Promise.all([
     getTeamsForPhase(phase.id),
     getRosterSlots(phase.id),
     getPicks(phase.id),
-    getAvailablePlayersForPhase(phase),
+    getSheetPlayersForPhase(phase),
   ]);
 
   const pickedPlayers = await getPlayersByIds(picks.map((p) => p.player_id));
@@ -50,7 +50,7 @@ export default async function BoardPage() {
       rosterSlots={rosterSlots}
       picks={picks}
       pickedPlayers={pickedPlayers}
-      availablePlayers={availablePlayers}
+      sheetPlayers={sheetPlayers}
     />
   );
 }
