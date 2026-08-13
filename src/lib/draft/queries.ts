@@ -124,6 +124,22 @@ export async function getTeamsForPhase(phaseId: string): Promise<Team[]> {
   });
 }
 
+// Every team in the league, regardless of which phases they're in. Team
+// colours are seeded from this rather than from a phase's subset, so a
+// team keeps the same colour across Main, Leftovers and Microwave - see
+// lib/teams/branding.ts.
+export async function getTeamsForLeague(
+  leagueId: string
+): Promise<{ id: string; name: string }[]> {
+  const supabase = createAdminSupabaseClient();
+  const { data, error } = await supabase
+    .from("teams")
+    .select("id, name")
+    .eq("league_id", leagueId);
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function getRosterSlots(phaseId: string): Promise<RosterSlot[]> {
   const supabase = createAdminSupabaseClient();
   const { data, error } = await supabase

@@ -8,11 +8,18 @@ import {
   isPositionRevealed,
   REDRAW_CONFIRMATION,
 } from "@/lib/draft/order-draw";
+import {
+  splitTeamName,
+  teamInitials,
+  TEAM_PALETTE,
+  type TeamColor,
+} from "@/lib/teams/branding";
 import { drawDraftOrder, revealNextPosition } from "./actions";
 
 interface Announcement {
   teamName: string;
   draftPosition: number;
+  color: TeamColor;
 }
 
 // How long the big card sits on screen before it drops into the list. The
@@ -28,11 +35,17 @@ export default function OrderDraw({
   phase,
   teams,
   picksMade,
+  colorByTeamId,
 }: {
   phase: Phase;
   teams: Team[];
   picksMade: number;
+  colorByTeamId: Record<string, TeamColor>;
 }) {
+  // Falls back to the first palette entry rather than crashing if a team
+  // somehow arrives without a colour.
+  const colorFor = (teamId: string): TeamColor =>
+    colorByTeamId[teamId] ?? TEAM_PALETTE[0];
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -83,7 +96,16 @@ export default function OrderDraw({
           setError(result.error ?? "Couldn't reveal the next pick.");
           return;
         }
-        const [first, second] = result.revealed;
+        // The action returns names and positions; colour comes from the
+        // league-wide assignment held on this page.
+        const teamIdByPosition = new Map(
+          teams.map((t) => [t.draft_position, t.id])
+        );
+        const withColor = result.revealed.map((r) => ({
+          ...r,
+          color: colorFor(teamIdByPosition.get(r.draftPosition) ?? ""),
+        }));
+        const [first, second] = withColor;
         setStageIsFinale(Boolean(result.isFinale));
 
         if (result.isFinale && second) {
@@ -156,24 +178,47 @@ export default function OrderDraw({
           const shown =
             !hasBeenDrawn ||
             isPositionRevealed(total, revealedCount, team.draft_position);
+          const color = colorFor(team.id);
+          const { teamName, manager } = splitTeamName(team.name);
+          const isTopPick = team.draft_position === 1 && hasBeenDrawn;
+
           return (
             <li
               key={team.id}
-              className={`flex items-center gap-4 rounded border p-4 transition-all duration-700 ${
+              className={`flex items-center gap-4 overflow-hidden rounded border p-4 transition-all duration-700 ${
                 shown
                   ? "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950"
                   : "border-dashed border-zinc-300 bg-transparent dark:border-zinc-700"
-              } ${team.draft_position === 1 && shown && hasBeenDrawn ? "ring-2 ring-amber-400" : ""}`}
+              } ${isTopPick && shown ? "ring-2 ring-amber-400" : ""}`}
             >
-              <span className="w-12 text-right text-3xl font-bold tabular-nums text-zinc-300 dark:text-zinc-700">
+              <span className="w-10 text-right text-3xl font-bold tabular-nums text-zinc-300 dark:text-zinc-700">
                 {team.draft_position}
               </span>
+              {/* Colour chip doubles as the team's identity everywhere else */}
               <span
-                className={`text-xl font-medium transition-opacity duration-700 ${
+                aria-hidden
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-sm font-black transition-opacity duration-700"
+                style={{
+                  backgroundColor: shown ? color.hex : "transparent",
+                  color: color.onHex,
+                  opacity: shown ? 1 : 0,
+                }}
+              >
+                {shown ? teamInitials(team.name) : ""}
+              </span>
+              <span
+                className={`flex flex-col transition-opacity duration-700 ${
                   shown ? "opacity-100" : "opacity-0"
                 }`}
               >
-                {shown ? team.name : "—"}
+                <span className="text-xl font-semibold leading-tight">
+                  {shown ? teamName : "—"}
+                </span>
+                {shown && manager && (
+                  <span className="text-sm uppercase tracking-widest text-zinc-500">
+                    {manager}
+                  </span>
+                )}
               </span>
             </li>
           );
@@ -285,39 +330,147 @@ function Stage({
   announcements: Announcement[];
   isFinale: boolean;
 }) {
+  // On the finale both cards are up at once, so they have to share the
+  // height rather than each demanding the full screen.
+  const stacked = announcements.length > 1;
+
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-black/95 px-8">
-      {announcements.map((a) => {
-        const isTopPick = a.draftPosition === 1;
-        return (
-          <div
-            key={a.draftPosition}
-            className="animate-slam flex flex-col items-center gap-3 text-center"
-          >
-            <span
-              className={`text-2xl font-bold uppercase tracking-[0.3em] ${
-                isTopPick ? "text-amber-400" : "text-zinc-500"
-              }`}
-            >
-              {isTopPick ? "First pick" : `Pick ${a.draftPosition}`}
-            </span>
-            <span
-              className={`text-6xl font-black leading-tight md:text-8xl ${
-                isTopPick ? "text-amber-300" : "text-white"
-              }`}
-            >
-              {a.teamName}
-            </span>
-          </div>
-        );
-      })}
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-8 overflow-hidden bg-[#05060A] px-6">
+      {announcements.map((a) => (
+        <AnnouncementCard key={a.draftPosition} announcement={a} compact={stacked} />
+      ))}
+
       {isFinale && announcements.length === 1 && (
-        <p className="animate-pulse text-lg uppercase tracking-widest text-zinc-500">
-          which means...
+        <p className="animate-pulse text-xl font-semibold uppercase tracking-[0.4em] text-zinc-500">
+          which means…
         </p>
       )}
     </div>
   );
+}
+
+function AnnouncementCard({
+  announcement,
+  compact,
+}: {
+  announcement: Announcement;
+  compact: boolean;
+}) {
+  const { teamName, manager } = splitTeamName(announcement.teamName);
+  const initials = teamInitials(announcement.teamName);
+  const color = announcement.color;
+  const isTopPick = announcement.draftPosition === 1;
+
+  return (
+    <div className="animate-slam relative flex w-full max-w-5xl flex-col items-center">
+      {/* Team-coloured wash behind the card, so the whole screen takes on
+          the team's colour rather than it being a small accent. */}
+      <div
+        aria-hidden
+        className={`pointer-events-none absolute inset-0 -z-10 blur-3xl ${
+          isTopPick ? "opacity-45" : "opacity-25"
+        }`}
+        style={{
+          background: `radial-gradient(circle at 50% 45%, ${color.hex} 0%, transparent 68%)`,
+        }}
+      />
+
+      {/* Pick number strap */}
+      <div className="mb-5 flex items-center gap-4">
+        <span
+          className="h-1.5 w-16 rounded-full"
+          style={{ backgroundColor: color.hex }}
+        />
+        <span
+          className={`font-bold uppercase tracking-[0.35em] ${
+            compact ? "text-lg" : "text-2xl"
+          }`}
+          style={{ color: isTopPick ? "#FCD34D" : color.hex }}
+        >
+          {isTopPick ? "First pick" : `Pick ${announcement.draftPosition}`}
+        </span>
+        <span
+          className="h-1.5 w-16 rounded-full"
+          style={{ backgroundColor: color.hex }}
+        />
+      </div>
+
+      <div className="flex items-center gap-6">
+        {/* Monogram plate standing in for a team logo */}
+        <div
+          className={`flex shrink-0 items-center justify-center rounded-2xl font-black shadow-2xl ${
+            compact ? "h-20 w-20 text-3xl" : "h-32 w-32 text-5xl md:h-40 md:w-40 md:text-6xl"
+          }`}
+          style={{ backgroundColor: color.hex, color: color.onHex }}
+        >
+          {initials}
+        </div>
+
+        <div className="flex flex-col text-left">
+          <span
+            className={`font-black uppercase leading-[0.95] tracking-tight text-white ${
+              compact
+                ? "text-4xl md:text-5xl"
+                : "text-5xl md:text-7xl lg:text-8xl"
+            }`}
+          >
+            {teamName}
+          </span>
+          {manager && (
+            <span
+              className={`mt-2 font-semibold uppercase tracking-[0.3em] ${
+                compact ? "text-base" : "text-xl md:text-2xl"
+              }`}
+              style={{ color: color.hex }}
+            >
+              {manager}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Lower-third bar */}
+      <div
+        className={`mt-8 flex w-full items-stretch overflow-hidden rounded-lg shadow-2xl ${
+          compact ? "h-10" : "h-14"
+        }`}
+      >
+        <div
+          className="flex items-center px-6 font-black tabular-nums"
+          style={{ backgroundColor: color.hex, color: color.onHex }}
+        >
+          <span className={compact ? "text-xl" : "text-2xl"}>
+            {announcement.draftPosition}
+          </span>
+        </div>
+        <div className="flex flex-1 items-center bg-white/10 px-6 backdrop-blur">
+          <span
+            className={`font-semibold uppercase tracking-[0.25em] text-zinc-200 ${
+              compact ? "text-sm" : "text-base"
+            }`}
+          >
+            {announcement.draftPosition === 1
+              ? "On the clock first"
+              : `Picks ${ordinal(announcement.draftPosition)}`}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ordinal(n: number): string {
+  const suffix =
+    n % 100 >= 11 && n % 100 <= 13
+      ? "th"
+      : n % 10 === 1
+        ? "st"
+        : n % 10 === 2
+          ? "nd"
+          : n % 10 === 3
+            ? "rd"
+            : "th";
+  return `${n}${suffix}`;
 }
 
 // Never changes, so subscribing is a no-op - this is only here to give
