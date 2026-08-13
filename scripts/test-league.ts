@@ -20,9 +20,16 @@ const LEAGUE_NAME = "ZZZ Draw Test";
 // are what actually test whether the reveal reads from across a room -
 // "Test Team 07" does not) and its round count (which drives how many pick
 // numbers land on the reveal card).
+interface BorrowedSlot {
+  slot_name: string;
+  eligible_positions: string[];
+  is_bench: boolean;
+}
+
 interface BorrowedLeague {
   names: string[];
   rounds: number | null;
+  slots: BorrowedSlot[];
 }
 
 async function borrowFromRealLeague(): Promise<BorrowedLeague | null> {
@@ -45,17 +52,48 @@ async function borrowFromRealLeague(): Promise<BorrowedLeague | null> {
 
   const { data: phases, error: phasesError } = await supabase
     .from("phases")
-    .select("rounds")
+    .select("id, rounds")
     .eq("league_id", leagues[0].id)
     .order("sequence", { ascending: true })
     .limit(1);
   if (phasesError) throw phasesError;
 
+  // Roster slots matter as much as the names: without them nothing can be
+  // drafted at all, because every pick has to land in an eligible slot.
+  let slots: BorrowedSlot[] = [];
+  if (phases?.[0]?.id) {
+    const { data: slotRows, error: slotsError } = await supabase
+      .from("roster_slots")
+      .select("slot_name, eligible_positions, is_bench")
+      .eq("phase_id", phases[0].id)
+      .order("slot_order", { ascending: true });
+    if (slotsError) throw slotsError;
+    slots = (slotRows ?? []) as BorrowedSlot[];
+  }
+
   return {
     names: teams.map((t) => t.name),
     rounds: phases?.[0]?.rounds ?? null,
+    slots,
   };
 }
+
+// Used when there's no real league to copy from.
+const FALLBACK_SLOTS: BorrowedSlot[] = [
+  { slot_name: "QB", eligible_positions: ["QB"], is_bench: false },
+  { slot_name: "RB1", eligible_positions: ["RB"], is_bench: false },
+  { slot_name: "RB2", eligible_positions: ["RB"], is_bench: false },
+  { slot_name: "WR1", eligible_positions: ["WR"], is_bench: false },
+  { slot_name: "WR2", eligible_positions: ["WR"], is_bench: false },
+  { slot_name: "TE", eligible_positions: ["TE"], is_bench: false },
+  { slot_name: "FLEX", eligible_positions: ["RB", "WR", "TE"], is_bench: false },
+  { slot_name: "DEF", eligible_positions: ["DEF"], is_bench: false },
+  ...Array.from({ length: 6 }, (_, i) => ({
+    slot_name: `BENCH ${i + 1}`,
+    eligible_positions: ["QB", "RB", "WR", "TE", "K", "DEF"],
+    is_bench: true,
+  })),
+];
 
 // Fixed so re-running is predictable. Valid code shapes (Crockford base32,
 // no I/L/O/U) so they behave exactly like generated ones.
@@ -63,10 +101,6 @@ const LEAGUE_CODE = "TESTAA";
 const COMMISSIONER_SECRET = "TESTDRAWTESTDRAWTESTDRAW22";
 
 const TEAM_COUNT = 12;
-// Only used when there's no real league to copy. A rehearsal with three
-// rounds shows three pick numbers per card, which looks like a bug.
-const FALLBACK_ROUNDS = 14;
-
 async function remove() {
   const supabase = createAdminSupabaseClient();
   const { data, error } = await supabase
@@ -122,7 +156,12 @@ async function create() {
       { length: TEAM_COUNT },
       (_, i) => `Test Team ${String(i + 1).padStart(2, "0")}`
     );
-  const rounds = borrowed?.rounds ?? FALLBACK_ROUNDS;
+  const slots =
+    borrowed?.slots && borrowed.slots.length > 0
+      ? borrowed.slots
+      : FALLBACK_SLOTS;
+  // Rounds must equal the slot count, or the draft can't be completed.
+  const rounds = slots.length;
 
   const { data: teams, error: teamsError } = await supabase
     .from("teams")
@@ -155,6 +194,17 @@ async function create() {
     }))
   );
   if (phaseTeamsError) throw phaseTeamsError;
+
+  const { error: slotsInsertError } = await supabase.from("roster_slots").insert(
+    slots.map((slot, index) => ({
+      phase_id: phase.id,
+      slot_order: index + 1,
+      slot_name: slot.slot_name,
+      eligible_positions: slot.eligible_positions,
+      is_bench: slot.is_bench,
+    }))
+  );
+  if (slotsInsertError) throw slotsInsertError;
 
   const base =
     process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ??

@@ -107,6 +107,21 @@ export async function getPhaseById(phaseId: string): Promise<Phase | null> {
   return data;
 }
 
+// Every phase in the league, oldest first. Used to work out which phase
+// comes next and whether the current one has finished.
+export async function getPhasesForLeague(leagueId: string): Promise<Phase[]> {
+  const supabase = createAdminSupabaseClient();
+  const { data, error } = await supabase
+    .from("phases")
+    .select(
+      "id, league_id, type, sequence, status, rounds, order_drawn_at, order_draw_count, order_revealed_count"
+    )
+    .eq("league_id", leagueId)
+    .order("sequence", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function getTeamsForPhase(phaseId: string): Promise<Team[]> {
   const supabase = createAdminSupabaseClient();
   const { data, error } = await supabase

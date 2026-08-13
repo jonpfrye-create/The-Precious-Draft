@@ -142,6 +142,10 @@ draw through the same page.
   math are the highest-risk part of the project — they need automated
   tests, not just manual QA.
 - **Undo** only ever undoes the single most recent pick, commissioner-only.
+- **Roster slots are not rounds.** Nine slots means nine picks in any
+  order; what's enforced is that the finished roster fits. "Only one
+  kicker" and "you must end up with one" both fall out of that single
+  check — see `src/lib/draft/roster-fit.ts`. Don't special-case positions.
 - No Yahoo API integration, ever — end-of-phase output is copy-paste text
   for manual entry.
 - No pick timer in v1.
@@ -183,3 +187,22 @@ resolve before building this: what's the ADP source? Sleeper's
 `search_rank` (already ingested) is closest to hand, but isn't quite the
 same thing as ADP; may need a real ADP feed or a manually-entered
 reference list per the "Yahoo/Sleeper ADP" framing.
+
+**Stickers as the core interaction** (requested 13 Aug 2026). The whole
+pick flow should feel physical, not like a form: the available-player list
+is the *sheet of stickers*, and taking a player should feel like peeling
+one off it. Landing on the board should feel like pressing it down — the
+tile arrives with weight, slightly askew (see the rotation note above),
+and the sheet it came from shows a gap where it used to be. This is the
+project's whole reason for existing over Clicky Draft, so it deserves more
+than a CSS transition.
+
+**Demo mode for commissioner sign-off** (requested 13 Aug 2026). The user
+wants to show the app to the league commissioner and get approval without
+manually entering a couple of hundred picks. Needs a way to fast-forward a
+draft: auto-pick best-available for every team, ideally with a speed
+control and the ability to stop partway so the board can be shown
+mid-draft. `scripts/test-league.ts` already builds a throwaway league with
+the real team names, so this is most naturally an extension of that (or a
+commissioner-only "simulate N picks" button that only ever appears on a
+test league — it must never be reachable on the real one).

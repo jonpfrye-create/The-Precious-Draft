@@ -164,9 +164,19 @@ export default function DraftBoard({
         </div>
         <div className="flex items-center gap-4">
           {phase.status === "completed" ? (
-            <span className="rounded bg-green-600 px-4 py-2 font-medium text-white">
-              Draft complete
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="rounded bg-green-600 px-4 py-2 font-medium text-white">
+                {phase.type} draft complete
+              </span>
+              {phase.type !== "microwave" && (
+                <Link
+                  href="/commish/next-phase"
+                  className="rounded bg-black px-4 py-2 font-medium text-white dark:bg-white dark:text-black"
+                >
+                  Start {phase.type === "main" ? "Leftovers" : "Microwave"} →
+                </Link>
+              )}
+            </div>
           ) : (
             <span className="rounded bg-black px-4 py-2 font-medium text-white dark:bg-white dark:text-black">
               On the clock: {onClockTeam?.name}
