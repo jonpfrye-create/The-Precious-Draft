@@ -18,6 +18,12 @@ product decisions.
 - No auth provider — commissioner secret link + league code/team claim,
   no accounts or passwords
 
+## Deadline
+
+**Draft day is Saturday 29 August 2026.** Main, Leftovers and Microwave all
+run that day. Anything not working by then doesn't ship — prefer cutting
+scope over landing something half-finished close to the date.
+
 ## Status
 
 Phase 1 is complete: schema is live in Supabase, snake-order and
@@ -56,7 +62,8 @@ that's a new SQL snippet the user runs the same way).
 **Supabase free tier pauses a project after 7 days of no activity**, which
 takes the whole app down until it's un-paused from the dashboard (data
 survives; restore takes ~3 minutes). This already happened once, in August
-2026. Either poke the project weekly or upgrade to Pro before draft day.
+2026. The user has chosen to stay on the free tier and un-pause manually —
+so **check the project is awake the day before the draft, not on the day.**
 
 ## Access control
 
