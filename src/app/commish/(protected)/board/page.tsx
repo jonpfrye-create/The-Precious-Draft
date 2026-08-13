@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 export const dynamic = "force-dynamic";
 import { requireCommissionerLeague } from "@/lib/auth/commissioner";
 import { ensureLeagueSecrets } from "@/lib/auth/secrets";
+import { isDemoLeague } from "@/lib/draft/auto-pick";
 import {
   getAvailablePlayersForPhase,
   getCurrentPhase,
@@ -43,6 +44,7 @@ export default async function BoardPage() {
     <DraftBoard
       league={league}
       leagueCode={leagueCode}
+      isDemo={isDemoLeague(league.name)}
       phase={phase}
       teams={teams}
       rosterSlots={rosterSlots}

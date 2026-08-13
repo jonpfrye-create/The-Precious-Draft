@@ -20,6 +20,7 @@ import { makePick, undoLastPick } from "./actions";
 interface DraftBoardProps {
   league: League;
   leagueCode: string;
+  isDemo: boolean;
   phase: Phase;
   teams: Team[];
   rosterSlots: RosterSlot[];
@@ -31,6 +32,7 @@ interface DraftBoardProps {
 export default function DraftBoard({
   league,
   leagueCode,
+  isDemo,
   phase,
   teams,
   rosterSlots,
@@ -185,6 +187,17 @@ export default function DraftBoard({
             >
               Rosters for Yahoo
             </Link>
+            {isDemo && (
+              <>
+                {" "}
+                <Link
+                  href="/commish/demo"
+                  className="font-medium text-amber-700 hover:underline dark:text-amber-500"
+                >
+                  Demo controls
+                </Link>
+              </>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-4">

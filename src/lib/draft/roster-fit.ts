@@ -32,8 +32,8 @@ function slotAccepts(slot: SlotSpec, position: string | null): boolean {
  * anything cleverer would matter.
  */
 function maximumMatching(
-  positions: (string | null)[],
-  slots: SlotSpec[]
+  positions: readonly (string | null)[],
+  slots: readonly SlotSpec[]
 ): number {
   // slotToPlayer[i] is the index of the player currently occupying slot i.
   const slotToPlayer = new Array<number>(slots.length).fill(-1);
@@ -68,8 +68,8 @@ function maximumMatching(
  * A team with more players than slots always fails.
  */
 export function canFillRoster(
-  draftedPositions: (string | null)[],
-  slots: SlotSpec[]
+  draftedPositions: readonly (string | null)[],
+  slots: readonly SlotSpec[]
 ): boolean {
   if (draftedPositions.length > slots.length) return false;
   return maximumMatching(draftedPositions, slots) === draftedPositions.length;
@@ -80,9 +80,9 @@ export function canFillRoster(
  * they already have.
  */
 export function isPositionDraftable(
-  draftedPositions: (string | null)[],
+  draftedPositions: readonly (string | null)[],
   candidatePosition: string | null,
-  slots: SlotSpec[]
+  slots: readonly SlotSpec[]
 ): boolean {
   return canFillRoster([...draftedPositions, candidatePosition], slots);
 }
@@ -93,8 +93,8 @@ export function isPositionDraftable(
  * finds out before the pick is called rather than after.
  */
 export function draftablePositions(
-  draftedPositions: (string | null)[],
-  slots: SlotSpec[],
+  draftedPositions: readonly (string | null)[],
+  slots: readonly SlotSpec[],
   positions: readonly string[]
 ): string[] {
   return positions.filter((position) =>
@@ -228,8 +228,8 @@ export function unassignedPlayers<T extends { position: string | null }>(
  * pick must be a kicker, this is what says so.
  */
 export function forcedPositions(
-  draftedPositions: (string | null)[],
-  slots: SlotSpec[],
+  draftedPositions: readonly (string | null)[],
+  slots: readonly SlotSpec[],
   positions: readonly string[]
 ): string[] {
   const remaining = slots.length - draftedPositions.length;
