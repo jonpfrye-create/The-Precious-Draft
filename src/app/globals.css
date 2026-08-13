@@ -53,10 +53,36 @@ body {
   animation: slam 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* Falls the full height of the screen, drifting sideways and tumbling.
+   Drift and spin come in as custom properties so every piece differs. */
+@keyframes confetti-fall {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  100% {
+    opacity: 0.9;
+    transform: translate3d(var(--confetti-drift, 0px), 118vh, 0)
+      rotate(var(--confetti-spin, 720deg));
+  }
+}
+
+.confetti-piece {
+  border-radius: 2px;
+  animation-name: confetti-fall;
+  animation-timing-function: cubic-bezier(0.25, 0.6, 0.5, 1);
+  animation-fill-mode: both;
+}
+
 /* Anyone who's asked their system not to animate things gets the card
-   without the motion - it still appears, it just doesn't fly at them. */
+   without the motion - it still appears, it just doesn't fly at them, and
+   the confetti stays off the screen entirely. */
 @media (prefers-reduced-motion: reduce) {
   .animate-slam {
     animation: none;
+  }
+
+  .confetti-piece {
+    display: none;
   }
 }

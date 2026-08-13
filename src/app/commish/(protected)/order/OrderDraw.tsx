@@ -14,12 +14,16 @@ import {
   TEAM_PALETTE,
   type TeamColor,
 } from "@/lib/teams/branding";
+import { pickNumbersForPosition } from "@/lib/draft/snake-order";
+import { playFanfare, playStinger } from "@/lib/audio/fanfare";
+import Confetti from "./Confetti";
 import { drawDraftOrder, revealNextPosition } from "./actions";
 
 interface Announcement {
   teamName: string;
   draftPosition: number;
   color: TeamColor;
+  pickNumbers: number[];
 }
 
 // How long the big card sits on screen before it drops into the list. The
@@ -30,6 +34,8 @@ const FINALE_HOLD_MS = 4200;
 // Gap between pick 2 landing and pick 1 following it. Long enough for the
 // room to do the arithmetic themselves, which is the whole point.
 const FINALE_GAP_MS = 1800;
+// Six numbers is about what fits on a lower third at TV distance.
+const VISIBLE_PICK_NUMBERS = 6;
 
 export default function OrderDraw({
   phase,
@@ -56,6 +62,8 @@ export default function OrderDraw({
   // animation and the database never disagree about who was just named.
   const [stage, setStage] = useState<Announcement[]>([]);
   const [stageIsFinale, setStageIsFinale] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const [celebrating, setCelebrating] = useState(false);
 
   const hasBeenDrawn = phase.order_drawn_at !== null;
   const isLocked = picksMade > 0;
@@ -104,6 +112,11 @@ export default function OrderDraw({
         const withColor = result.revealed.map((r) => ({
           ...r,
           color: colorFor(teamIdByPosition.get(r.draftPosition) ?? ""),
+          pickNumbers: pickNumbersForPosition(
+            total,
+            phase.rounds,
+            r.draftPosition
+          ),
         }));
         const [first, second] = withColor;
         setStageIsFinale(Boolean(result.isFinale));
@@ -112,13 +125,22 @@ export default function OrderDraw({
           // Pick 2 lands alone first. The room works out pick 1 from who's
           // left, and then pick 1 confirms it.
           setStage([first]);
-          setTimeout(() => setStage([first, second]), FINALE_GAP_MS);
+          if (!muted) playStinger();
+
+          setTimeout(() => {
+            setStage([first, second]);
+            setCelebrating(true);
+            if (!muted) playFanfare();
+          }, FINALE_GAP_MS);
+
           setTimeout(() => {
             setStage([]);
+            setCelebrating(false);
             router.refresh();
           }, FINALE_GAP_MS + FINALE_HOLD_MS);
         } else {
           setStage([first]);
+          if (!muted) playStinger();
           setTimeout(() => {
             setStage([]);
             router.refresh();
@@ -143,6 +165,24 @@ export default function OrderDraw({
     <div className="flex w-full max-w-3xl flex-col gap-8">
       {stage.length > 0 && (
         <Stage announcements={stage} isFinale={stageIsFinale} />
+      )}
+      {celebrating && (
+        <Confetti
+          accent={
+            stage.find((a) => a.draftPosition === 1)?.color.hex ?? "#FCD34D"
+          }
+        />
+      )}
+
+      {!isLocked && (
+        <button
+          type="button"
+          onClick={() => setMuted((m) => !m)}
+          className="self-end text-sm text-zinc-500 hover:underline"
+          aria-pressed={muted}
+        >
+          {muted ? "🔇 Sound off" : "🔊 Sound on"}
+        </button>
       )}
 
       {!hasBeenDrawn && (
@@ -443,15 +483,23 @@ function AnnouncementCard({
             {announcement.draftPosition}
           </span>
         </div>
-        <div className="flex flex-1 items-center bg-white/10 px-6 backdrop-blur">
+        <div className="flex flex-1 items-center gap-3 overflow-hidden bg-white/10 px-6 backdrop-blur">
           <span
-            className={`font-semibold uppercase tracking-[0.25em] text-zinc-200 ${
-              compact ? "text-sm" : "text-base"
+            className={`shrink-0 font-semibold uppercase tracking-[0.25em] text-zinc-400 ${
+              compact ? "text-xs" : "text-sm"
             }`}
           >
-            {announcement.draftPosition === 1
-              ? "On the clock first"
-              : `Picks ${ordinal(announcement.draftPosition)}`}
+            Picks
+          </span>
+          <span
+            className={`truncate font-bold tabular-nums text-zinc-100 ${
+              compact ? "text-sm" : "text-lg"
+            }`}
+          >
+            {/* Every overall pick this slot owns across the whole phase.
+                Trimmed because fourteen numbers won't fit on a TV. */}
+            {announcement.pickNumbers.slice(0, VISIBLE_PICK_NUMBERS).join(" · ")}
+            {announcement.pickNumbers.length > VISIBLE_PICK_NUMBERS && " · …"}
           </span>
         </div>
       </div>
@@ -459,19 +507,6 @@ function AnnouncementCard({
   );
 }
 
-function ordinal(n: number): string {
-  const suffix =
-    n % 100 >= 11 && n % 100 <= 13
-      ? "th"
-      : n % 10 === 1
-        ? "st"
-        : n % 10 === 2
-          ? "nd"
-          : n % 10 === 3
-            ? "rd"
-            : "th";
-  return `${n}${suffix}`;
-}
 
 // Never changes, so subscribing is a no-op - this is only here to give
 // useSyncExternalStore the shape it wants.

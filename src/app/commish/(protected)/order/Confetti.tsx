@@ -1,0 +1,87 @@
+"use client";
+
+import { TEAM_PALETTE } from "@/lib/teams/branding";
+
+const PIECE_COUNT = 90;
+
+/**
+ * Confetti for the first pick.
+ *
+ * Plain DOM elements with CSS animations rather than a canvas library: it's
+ * ninety absolutely-positioned spans for a few seconds on a machine doing
+ * nothing else, and it keeps the dependency list at zero.
+ *
+ * Every piece's position, speed and spin is derived deterministically from
+ * its index and the accent colour rather than from Math.random. Randomness
+ * during render isn't allowed (and would re-roll every piece on each
+ * re-render, making them jump); a hash spreads them just as convincingly
+ * and looks identical on screen.
+ */
+
+// FNV-1a again, kept local - this one only has to look scattered.
+function hash(value: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < value.length; i++) {
+    h ^= value.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+// Deterministic 0..1 from a seed string.
+function unitFor(seed: string): number {
+  return (hash(seed) % 100000) / 100000;
+}
+
+export default function Confetti({ accent }: { accent: string }) {
+  // Mostly the winning team's colour plus gold, with the rest of the
+  // palette scattered through so it reads as celebration, not a wash.
+  const colors = [
+    accent,
+    "#FCD34D",
+    accent,
+    "#FFFFFF",
+    ...TEAM_PALETTE.map((c) => c.hex),
+  ];
+
+  const pieces = Array.from({ length: PIECE_COUNT }, (_, i) => {
+    const seed = `${accent}:${i}`;
+    return {
+      key: i,
+      left: unitFor(`${seed}:x`) * 100,
+      delay: unitFor(`${seed}:d`) * 1.2,
+      duration: 2.6 + unitFor(`${seed}:t`) * 2.2,
+      drift: (unitFor(`${seed}:r`) - 0.5) * 240,
+      spin: 360 + unitFor(`${seed}:s`) * 1080,
+      width: 7 + unitFor(`${seed}:w`) * 8,
+      height: 10 + unitFor(`${seed}:h`) * 14,
+      color: colors[i % colors.length],
+    };
+  });
+
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none fixed inset-0 z-[60] overflow-hidden"
+    >
+      {pieces.map((piece) => (
+        <span
+          key={piece.key}
+          className="confetti-piece absolute top-[-8vh] block"
+          style={
+            {
+              left: `${piece.left}%`,
+              width: `${piece.width}px`,
+              height: `${piece.height}px`,
+              backgroundColor: piece.color,
+              animationDelay: `${piece.delay}s`,
+              animationDuration: `${piece.duration}s`,
+              "--confetti-drift": `${piece.drift}px`,
+              "--confetti-spin": `${piece.spin}deg`,
+            } as React.CSSProperties
+          }
+        />
+      ))}
+    </div>
+  );
+}
