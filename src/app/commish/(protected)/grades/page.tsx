@@ -1,0 +1,101 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { requireCommissionerLeague } from "@/lib/auth/commissioner";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import {
+  getPhasesForLeague,
+  getPicks,
+  getPlayersByIds,
+  getRosterSlots,
+  getTeamsForPhase,
+} from "@/lib/draft/queries";
+import { assignRoster } from "@/lib/draft/roster-fit";
+import GradeCard from "./GradeCard";
+
+export const dynamic = "force-dynamic";
+
+export default async function GradesPage() {
+  const league = await requireCommissionerLeague();
+  const phases = await getPhasesForLeague(league.id);
+
+  // Grades are for the Main draft only - Leftovers and Microwave are two
+  // and nine picks of scraps, and nobody grades those.
+  const main = phases.find((p) => p.sequence === 1);
+  if (!main) redirect("/commish/setup");
+
+  const [teams, slots, picks] = await Promise.all([
+    getTeamsForPhase(main.id),
+    getRosterSlots(main.id),
+    getPicks(main.id),
+  ]);
+  const players = await getPlayersByIds(picks.map((p) => p.player_id));
+  const playerById = new Map(players.map((p) => [p.player_id, p]));
+
+  const supabase = createAdminSupabaseClient();
+  const { data: grades } = await supabase
+    .from("team_grades")
+    .select("team_id, grade, comment")
+    .eq("phase_id", main.id)
+    .eq("source", "commissioner");
+  const gradeByTeam = new Map(
+    (grades ?? []).map((g) => [g.team_id, g])
+  );
+
+  const slotSpecs = slots.map((slot) => ({
+    slotName: slot.slot_name,
+    eligiblePositions: slot.eligible_positions,
+  }));
+
+  const graded = teams.filter((t) => gradeByTeam.has(t.id)).length;
+
+  return (
+    <div className="flex min-h-screen flex-col items-center gap-8 bg-zinc-50 px-6 py-12 dark:bg-black">
+      <div className="flex w-full max-w-3xl flex-col gap-2">
+        <h1 className="text-3xl font-semibold">Draft grades</h1>
+        <p className="text-zinc-600 dark:text-zinc-400">
+          {league.name} — Main draft. {graded} of {teams.length} graded.
+          Grades save as you click; comments save when you click away.
+        </p>
+        <Link
+          href="/commish/board"
+          className="text-sm text-blue-600 hover:underline dark:text-blue-400"
+        >
+          ← Back to the board
+        </Link>
+      </div>
+
+      <div className="flex w-full max-w-3xl flex-col gap-4">
+        {teams.map((team) => {
+          // Same slot assignment the Yahoo export uses, so a team's roster
+          // reads the same way in both places.
+          const teamPlayers = picks
+            .filter((pick) => pick.team_id === team.id)
+            .map((pick) => playerById.get(pick.player_id))
+            .filter((p) => p !== undefined);
+
+          const roster = assignRoster(teamPlayers, slotSpecs).map(
+            (assignment) => ({
+              slotName: assignment.slot.slotName,
+              playerName: assignment.player?.full_name ?? null,
+              position: assignment.player?.position ?? null,
+              nflTeam: assignment.player?.nfl_team ?? null,
+            })
+          );
+
+          const existing = gradeByTeam.get(team.id);
+          return (
+            <GradeCard
+              key={team.id}
+              phaseId={main.id}
+              teamId={team.id}
+              teamName={team.name}
+              roster={roster}
+              initialGrade={existing?.grade ?? null}
+              initialComment={existing?.comment ?? null}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}

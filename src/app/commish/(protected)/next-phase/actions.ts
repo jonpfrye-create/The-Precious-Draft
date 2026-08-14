@@ -3,7 +3,7 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { requireCommissionerLeagueForAction } from "@/lib/auth/commissioner";
 import { nextPhaseType, type PhaseType } from "@/lib/draft/phase-templates";
-import { getPhasesForLeague } from "@/lib/draft/queries";
+import { getPhasesForLeague, getPlayersByIds } from "@/lib/draft/queries";
 
 export interface StartPhaseSlotInput {
   slotName: string;
@@ -115,4 +115,78 @@ export async function startNextPhase(
   if (slotsError) throw slotsError;
 
   return { ok: true, phaseId: phase.id as string };
+}
+
+export interface ReleaseResult {
+  ok: boolean;
+  error?: string;
+  playerName?: string;
+  teamName?: string;
+}
+
+/**
+ * Puts the last player of a position taken in the previous phase back into
+ * the pool for the phases that follow.
+ *
+ * The team that drafted him keeps him - Main and Leftovers are separate
+ * Yahoo leagues, so the same player being in both is fine, and his roster
+ * line and the Main export are untouched. All that changes is that he
+ * stops being excluded from later phases.
+ *
+ * "The last one taken" is how this league already does it: the most recent
+ * pick is the one least likely to have been a considered choice.
+ */
+export async function releaseLastPickOfPosition(
+  position: string
+): Promise<ReleaseResult> {
+  const league = await requireCommissionerLeagueForAction();
+
+  const phases = await getPhasesForLeague(league.id);
+  const latest = phases[phases.length - 1];
+  if (!latest) return { ok: false, error: "This league has no phases yet." };
+
+  const supabase = createAdminSupabaseClient();
+
+  // Newest first, so the first match is the last one drafted.
+  const { data: picks, error: picksError } = await supabase
+    .from("picks")
+    .select("id, team_id, player_id, pick_number")
+    .eq("phase_id", latest.id)
+    .is("released_at", null)
+    .order("pick_number", { ascending: false });
+  if (picksError) throw picksError;
+  if (!picks || picks.length === 0) {
+    return { ok: false, error: "There are no picks to release." };
+  }
+
+  const players = await getPlayersByIds(picks.map((p) => p.player_id));
+  const byId = new Map(players.map((p) => [p.player_id, p]));
+
+  const target = picks.find(
+    (pick) => byId.get(pick.player_id)?.position === position
+  );
+  if (!target) {
+    return {
+      ok: false,
+      error: `No ${position} was drafted in ${latest.type}, so there's none to release.`,
+    };
+  }
+
+  const { error: releaseError } = await supabase
+    .from("picks")
+    .update({ released_at: new Date().toISOString() })
+    .eq("id", target.id);
+  if (releaseError) throw releaseError;
+
+  const { data: team } = await supabase
+    .from("teams")
+    .select("name")
+    .eq("id", target.team_id)
+    .maybeSingle();
+
+  return {
+    ok: true,
+    playerName: byId.get(target.player_id)?.full_name ?? "That player",
+    teamName: team?.name ?? "their team",
+  };
 }
