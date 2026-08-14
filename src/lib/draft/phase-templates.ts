@@ -55,14 +55,17 @@ export function leftoversTemplate(
 }
 
 /**
- * Microwave: exactly two picks - one flex-eligible starter and one bench
- * slot that takes anything. Fixed rather than derived, because it bears no
- * relation to the phases before it.
+ * Microwave: exactly two picks, both flex-eligible. Running backs,
+ * receivers and tight ends only - no quarterbacks, kickers or defenses at
+ * either slot, including the bench one.
+ *
+ * Fixed rather than derived, because it bears no relation to the phases
+ * before it.
  */
 export function microwaveTemplate(): SlotTemplate[] {
   return [
     { slotName: "W/R/T", eligiblePositions: [...FLEX_POSITIONS], isBench: false },
-    { slotName: "BENCH", eligiblePositions: [...ALL_POSITIONS], isBench: true },
+    { slotName: "BENCH", eligiblePositions: [...FLEX_POSITIONS], isBench: true },
   ];
 }
 

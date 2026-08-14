@@ -112,6 +112,16 @@ describe("microwaveTemplate", () => {
     expect(slots[1].isBench).toBe(true);
   });
 
+  it("allows only flex positions, bench included", () => {
+    // No quarterbacks, kickers or defenses anywhere in Microwave.
+    for (const slot of microwaveTemplate()) {
+      expect(slot.eligiblePositions).toEqual(FLEX);
+      for (const banned of ["QB", "K", "DEF"]) {
+        expect(slot.eligiblePositions).not.toContain(banned);
+      }
+    }
+  });
+
   it("ignores whatever came before it", () => {
     expect(templateForPhase("microwave", MAIN_SLOTS)).toHaveLength(2);
   });

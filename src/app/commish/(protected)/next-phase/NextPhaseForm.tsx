@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { PHASE_LABELS, type PhaseType } from "@/lib/draft/phase-templates";
+import { scarcityWarnings } from "@/lib/draft/scarcity";
 import { splitTeamName } from "@/lib/teams/branding";
 import { startNextPhase, type StartPhaseSlotInput } from "./actions";
 
@@ -17,11 +18,13 @@ export default function NextPhaseForm({
   previousPhaseLabel,
   teams,
   defaultSlots,
+  availableByPosition,
 }: {
   phaseType: PhaseType;
   previousPhaseLabel: string;
   teams: TeamOption[];
   defaultSlots: StartPhaseSlotInput[];
+  availableByPosition: Record<string, number>;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -73,6 +76,18 @@ export default function NextPhaseForm({
   }
 
   const label = PHASE_LABELS[phaseType];
+
+  // Recomputed as teams are ticked and slots edited, because both change
+  // the answer. A quarterback shortage only appears once you know how many
+  // teams are staying.
+  const warnings = scarcityWarnings(
+    slots.map((slot) => ({
+      slotName: slot.slotName,
+      eligiblePositions: slot.eligiblePositions,
+    })),
+    selected.size,
+    availableByPosition
+  );
 
   return (
     <div className="flex w-full max-w-3xl flex-col gap-8">
@@ -216,6 +231,28 @@ export default function NextPhaseForm({
           </p>
         )}
       </section>
+
+      {warnings.length > 0 && (
+        <div className="rounded border-2 border-red-400 bg-red-50 p-5 dark:border-red-700 dark:bg-red-950/40">
+          <p className="font-semibold">Not enough players to go round.</p>
+          <ul className="mt-2 flex flex-col gap-1 text-sm">
+            {warnings.map((warning) => (
+              <li key={warning.position}>
+                <strong>{warning.position}</strong>: {selected.size} teams need{" "}
+                {warning.needed}, but only <strong>{warning.available}</strong>{" "}
+                {warning.available === 1 ? "is" : "are"} left in the pool.
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
+            At least one team would be left without a starter. The usual fix
+            is to undo the last {warnings[0].position} taken in{" "}
+            {previousPhaseLabel} so it returns to the pool, or to drop that
+            slot from this phase&apos;s roster. You can still start the phase
+            — this is a warning, not a block.
+          </p>
+        </div>
+      )}
 
       {error && (
         <p role="alert" className="text-red-600 dark:text-red-400">

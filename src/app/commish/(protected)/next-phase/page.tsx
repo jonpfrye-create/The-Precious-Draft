@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireCommissionerLeague } from "@/lib/auth/commissioner";
 import {
+  getAvailableCountsByPosition,
   getPhasesForLeague,
   getRosterSlots,
   getTeamsForLeague,
@@ -47,11 +48,14 @@ export default async function NextPhasePage() {
     );
   }
 
-  const [allTeams, previousTeams, previousSlots] = await Promise.all([
-    getTeamsForLeague(league.id),
-    getTeamsForPhase(latest.id),
-    getRosterSlots(latest.id),
-  ]);
+  const [allTeams, previousTeams, previousSlots, availableByPosition] =
+    await Promise.all([
+      getTeamsForLeague(league.id),
+      getTeamsForPhase(latest.id),
+      getRosterSlots(latest.id),
+      // The pool as it will be for the phase about to start.
+      getAvailableCountsByPosition(league.id, latest.sequence + 1),
+    ]);
 
   const playedPrevious = new Set(previousTeams.map((t) => t.id));
 
@@ -82,6 +86,7 @@ export default async function NextPhasePage() {
         previousPhaseLabel={PHASE_LABELS[latest.type as PhaseType]}
         teams={teamOptions}
         defaultSlots={defaultSlots}
+        availableByPosition={availableByPosition}
       />
     </div>
   );

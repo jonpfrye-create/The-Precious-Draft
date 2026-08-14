@@ -99,6 +99,20 @@ body {
   }
 }
 
+/* A player with no printed sticker got their name written on a blank one
+   in marker. Players with no ADP are the modern equivalent: nobody
+   expected them to go, so there was no sticker in the set.
+
+   System handwriting faces only - no web font to download, so this costs
+   nothing. Falls back to plain italic where none of them exist. */
+.sharpie {
+  font-family: "Bradley Hand", "Segoe Script", "Brush Script MT",
+    "Snell Roundhand", cursive;
+  font-style: italic;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
 /* Stickers ------------------------------------------------------------
    This league drafted on a physical board with printed player stickers.
    The tiles should read as pressed-on paper, not as table cells: a soft

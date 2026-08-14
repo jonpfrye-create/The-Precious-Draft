@@ -11,7 +11,7 @@ describe("destinationFor", () => {
     expect(destinationFor(false, 0)).toBe("/commish/setup");
   });
 
-  it("sends a finished phase to the next one, not to setup", () => {
+  it("still routes an unfinished draft to the next phase", () => {
     // The regression: completing the Main draft used to land on a blank
     // new-league form, which read as the league having been wiped and
     // would have created a second league if submitted.
@@ -25,9 +25,9 @@ describe("destinationFor", () => {
     }
   });
 
-  it("sends a completed Microwave somewhere that explains itself", () => {
-    // All three phases done. /commish/next-phase reports that the draft is
-    // over rather than offering a fourth phase.
-    expect(destinationFor(false, 3)).toBe("/commish/next-phase");
+  it("sends a finished draft back to the board, not to a dead end", () => {
+    // All three phases done. Sending this to next-phase produced a page
+    // whose only link bounced straight back to it.
+    expect(destinationFor(false, 3)).toBe("/commish/board");
   });
 });

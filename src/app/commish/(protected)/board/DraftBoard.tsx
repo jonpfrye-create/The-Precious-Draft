@@ -279,6 +279,12 @@ export default function DraftBoard({
               <span className="rounded bg-green-600 px-4 py-2 font-medium text-white">
                 {phase.type} draft complete
               </span>
+              <Link
+                href="/commish/rosters"
+                className="rounded border-2 border-black px-4 py-2 font-medium dark:border-white"
+              >
+                Rosters for Yahoo →
+              </Link>
               {phase.type !== "microwave" && (
                 <Link
                   href="/commish/next-phase"
@@ -471,7 +477,13 @@ export default function DraftBoard({
                               pick.id === newestPickId ? "sticker-press" : ""
                             }`}
                           >
-                            <div className="font-medium leading-tight">
+                            <div
+                              className={`leading-tight ${
+                                player.adp_formatted
+                                  ? "font-medium"
+                                  : "sharpie text-[15px]"
+                              }`}
+                            >
                               {player.full_name}
                             </div>
                             <div className="text-xs opacity-70">
@@ -583,7 +595,13 @@ export default function DraftBoard({
                         </span>
                       )}
                     </span>
-                    <span className="text-sm font-bold leading-tight">
+                    <span
+                      className={`text-sm leading-tight ${
+                        player.adp_formatted
+                          ? "font-bold"
+                          : "sharpie text-[15px]"
+                      }`}
+                    >
                       {player.full_name}
                     </span>
                     {!fits && onClockTeam && (

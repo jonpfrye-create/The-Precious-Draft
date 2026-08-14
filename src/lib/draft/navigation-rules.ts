@@ -8,6 +8,8 @@
  * to a blank new-league form. It looked like the league had been wiped,
  * and filling the form in would have created a second one.
  */
+export const PHASES_IN_A_DRAFT = 3;
+
 export function destinationFor(
   hasCurrentPhase: boolean,
   phaseCount: number
@@ -17,6 +19,10 @@ export function destinationFor(
 
   // Nothing has ever been set up: this really is a new league.
   if (phaseCount === 0) return "/commish/setup";
+
+  // All three done. Sending this to next-phase produced a dead end whose
+  // "back to the board" link bounced straight back to it.
+  if (phaseCount >= PHASES_IN_A_DRAFT) return "/commish/board";
 
   // A phase just finished. The next one needs configuring - the league is
   // very much still there.

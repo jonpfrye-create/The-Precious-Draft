@@ -11,6 +11,7 @@ import { commissionerDestination } from "@/lib/draft/navigation";
 import {
   getSheetPlayersForPhase,
   getCurrentPhase,
+  getPhasesForLeague,
   getPicks,
   getPlayersByIds,
   getRosterSlots,
@@ -24,10 +25,12 @@ export default async function BoardPage() {
   // the first one.
   const league = await requireCommissionerLeague();
 
-  const phase = await getCurrentPhase(league.id);
-  // Sending this to /commish/setup was the bug: once a league exists that
-  // page is a blank new-league form, so completing a draft looked like
-  // everything had been wiped.
+  // Once every phase is complete there is no "current" phase, but the
+  // board is still the thing people want to look at - it's the finished
+  // draft. Fall back to the last phase rather than redirecting.
+  const phases = await getPhasesForLeague(league.id);
+  const phase =
+    (await getCurrentPhase(league.id)) ?? phases[phases.length - 1] ?? null;
   if (!phase) redirect(await commissionerDestination(league.id));
 
   const [teams, rosterSlots, picks, sheetPlayers] = await Promise.all([

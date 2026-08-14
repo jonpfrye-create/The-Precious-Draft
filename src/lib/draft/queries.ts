@@ -296,6 +296,29 @@ export async function getSheetPlayersForPhase(
   }));
 }
 
+/**
+ * How many undrafted players are left at each position, for a phase that
+ * hasn't started yet. Feeds the scarcity check on the Start Leftovers
+ * screen - see lib/draft/scarcity.ts.
+ */
+export async function getAvailableCountsByPosition(
+  leagueId: string,
+  sequence: number
+): Promise<Record<string, number>> {
+  const [allPlayers, priorPhasePicks] = await Promise.all([
+    getAllPlayers(),
+    getPriorPhasePicks(leagueId, sequence),
+  ]);
+  const available = availablePlayersForPhase(allPlayers, priorPhasePicks, sequence);
+
+  const counts: Record<string, number> = {};
+  for (const player of available) {
+    if (!player.position) continue;
+    counts[player.position] = (counts[player.position] ?? 0) + 1;
+  }
+  return counts;
+}
+
 export async function getAvailablePlayersForPhase(phase: Phase): Promise<Player[]> {
   const [allPlayers, priorPhasePicks, thisPhasePicks] = await Promise.all([
     getAllPlayers(),
