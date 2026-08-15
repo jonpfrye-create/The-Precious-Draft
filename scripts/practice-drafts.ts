@@ -35,13 +35,17 @@ import {
  *   npm run practice-drafts -- --rm
  */
 
-const LEAGUE_NAME = "ZZZ Practice Drafts";
-const LEAGUE_CODE = "PRACT1";
+const DISASTERS = process.argv.includes("--disasters");
+
+const LEAGUE_NAME = DISASTERS ? "ZZZ Disasters" : "ZZZ Practice Drafts";
+const LEAGUE_CODE = DISASTERS ? "DSASTR" : "PRACT1";
 // Crockford base32 has no I, L, O or U, so codes survive being read
 // aloud across a room. normalizeCode turns any I into a 1 on the way in,
 // which means a secret spelled "PRACTICE" can never match itself - the
 // stored copy keeps the I, the typed copy arrives as a 1. Hence PRACT1CE.
-const COMMISSIONER_SECRET = "PRACT1CEPRACT1CEPRACT1CE77";
+const COMMISSIONER_SECRET = DISASTERS
+  ? "D1SASTERD1SASTERD1SASTER55"
+  : "PRACT1CEPRACT1CEPRACT1CE77";
 const ROUNDS = 14;
 
 const SLOTS: SlotSpec[] = [
@@ -79,8 +83,13 @@ interface Pooled {
  * `want` is the positions it reaches for in a given round; `slip` is how
  * far down the remaining board it is willing to look, which is what
  * manufactures a reach. A slip of 0 is best-available discipline; a slip
- * of 30 means happily taking someone thirty picks early because they like
- * him.
+ * of 30 means happily taking someone up to thirty places down the board
+ * because they like him.
+ *
+ * The slip is an upper bound, not a fixed offset. Used as a fixed offset
+ * it means nobody ever takes the best player available - every team steps
+ * over him - so the top of the board never gets drafted and the first
+ * pick of the draft is still sitting there in round nine.
  */
 interface Archetype {
   team: string;
@@ -175,6 +184,70 @@ const ARCHETYPES: Archetype[] = [
   },
 ];
 
+/**
+ * Rosters with holes in the starting eight.
+ *
+ * The corpus has exactly one F in it, so the grader has almost no
+ * evidence about what the bottom of the scale means and will not go
+ * below C no matter how the prompt is worded. These exist to be graded
+ * badly. Each leaves at least four of QB/RB/RB/WR/WR/TE/FLEX/DEF filled
+ * by someone nobody would start.
+ */
+const DISASTER_SET: Archetype[] = [
+  {
+    // Eight straight receivers, then everything else from the scrap heap.
+    team: "All Eggs One Basket - Fergus",
+    want: (r) =>
+      r <= 8 ? ["WR"] : r === 9 ? ["QB"] : r <= 11 ? ["RB"] :
+      r === 12 ? ["TE"] : ["DEF", "K"],
+    slip: () => 0,
+  },
+  {
+    // A defence in the second round and a kicker in the third, which
+    // costs the two picks that would have been actual starters.
+    team: "Units And Specials - Bev",
+    want: (r) =>
+      r === 1 ? ["RB"] : r === 2 ? ["DEF"] : r === 3 ? ["K"] :
+      r <= 7 ? ["WR"] : r <= 10 ? ["RB"] : r === 11 ? ["QB"] :
+      r === 12 ? ["TE"] : ["WR", "RB"],
+    slip: () => 6,
+  },
+  {
+    // Reaches so far ahead of the board that every starter is a player
+    // who should have been available seventy picks later.
+    team: "Trust The Process - Hal",
+    want: (r) =>
+      r <= 3 ? ["RB", "WR"] : r === 4 ? ["QB"] : r <= 8 ? ["WR", "RB"] :
+      r === 9 ? ["TE"] : r <= 12 ? ["RB", "WR"] : ["DEF", "K"],
+    slip: (r) => (r <= 9 ? 40 : 8),
+  },
+  // Ordinary teams, so the draft board around the disasters behaves and
+  // the pick numbers mean something.
+  ...["Kerbside Pickup - Ines", "Fourth And Long - Ola", "Bootleg Right - Sam",
+      "Playaction Pete - Ivo", "Nickel Package - Wren", "Hurry Up Offence - Gus",
+      "Cover Two - Mira", "Zone Read - Ada", "Hail Mary - Fitz"].map((team) => ({
+    team,
+    want: (r: number) =>
+      r <= 2 ? ["RB", "WR"] : r <= 5 ? ["WR", "RB"] : r === 6 ? ["QB"] :
+      r <= 10 ? ["RB", "WR", "TE"] : r === 11 ? ["TE"] : ["DEF", "K"],
+    slip: () => 1,
+  })),
+];
+
+const SET: Archetype[] = DISASTERS ? DISASTER_SET : ARCHETYPES;
+
+/**
+ * A repeatable offset in [0, range). Deterministic so two runs of this
+ * script produce the same league, which matters when the commissioner is
+ * part-way through grading one.
+ */
+function jitter(pickIndex: number, teamIndex: number, range: number): number {
+  let h = 2166136261 ^ pickIndex;
+  h = Math.imul(h ^ teamIndex, 16777619);
+  h = Math.imul(h ^ (h >>> 13), 16777619);
+  return ((h >>> 8) >>> 0) % range;
+}
+
 function snakeOrder(teams: number, rounds: number): number[] {
   const order: number[] = [];
   for (let r = 0; r < rounds; r++) {
@@ -229,18 +302,18 @@ async function create() {
     .sort((a, b) => a.adp - b.adp);
 
   console.log(`Pool: ${pool.length} players with an ADP`);
-  if (pool.length < ARCHETYPES.length * ROUNDS) {
+  if (pool.length < SET.length * ROUNDS) {
     throw new Error("Not enough players with an ADP to fill these rosters.");
   }
 
-  const rosters: Pooled[][] = ARCHETYPES.map(() => []);
+  const rosters: Pooled[][] = SET.map(() => []);
   const taken = new Set<string>();
-  const order = snakeOrder(ARCHETYPES.length, ROUNDS);
+  const order = snakeOrder(SET.length, ROUNDS);
   const picks: { team: number; player: Pooled; pickNumber: number; round: number }[] = [];
 
   order.forEach((teamIndex, i) => {
-    const round = Math.floor(i / ARCHETYPES.length) + 1;
-    const archetype = ARCHETYPES[teamIndex];
+    const round = Math.floor(i / SET.length) + 1;
+    const archetype = SET[teamIndex];
     const roster = rosters[teamIndex];
     const held = roster.map((p) => p.position);
     const available = pool.filter((p) => !taken.has(p.player_id));
@@ -267,8 +340,9 @@ async function create() {
 
     // The slip is what turns a preference into a reach: rather than the
     // best player left at the position, take one further down the board.
-    const slip = Math.min(archetype.slip(round), usable.length - 1);
-    const player = usable[slip];
+    // Jittered within the bound so the board actually drains from the top.
+    const bound = Math.min(archetype.slip(round), usable.length - 1);
+    const player = usable[bound === 0 ? 0 : jitter(i, teamIndex, bound + 1)];
 
     taken.add(player.player_id);
     roster.push(player);
@@ -288,10 +362,10 @@ async function create() {
 
   const { data: teams, error: teamsError } = await supabase
     .from("teams")
-    .insert(ARCHETYPES.map((a) => ({ league_id: league.id, name: a.team })))
+    .insert(SET.map((a) => ({ league_id: league.id, name: a.team })))
     .select("id, name");
   if (teamsError) throw teamsError;
-  const teamId = ARCHETYPES.map(
+  const teamId = SET.map(
     (a) => teams!.find((t) => t.name === a.team)!.id
   );
 
@@ -303,7 +377,7 @@ async function create() {
       completed_at: new Date().toISOString(),
       order_drawn_at: new Date().toISOString(),
       order_draw_count: 1,
-      order_revealed_count: ARCHETYPES.length,
+      order_revealed_count: SET.length,
     }).select("id").single();
   if (phaseError) throw phaseError;
 
@@ -327,8 +401,8 @@ async function create() {
   );
   if (pickError) throw pickError;
 
-  console.log(`\nCreated "${LEAGUE_NAME}" - ${ARCHETYPES.length} teams, ${picks.length} picks\n`);
-  ARCHETYPES.forEach((a, i) => {
+  console.log(`\nCreated "${LEAGUE_NAME}" - ${SET.length} teams, ${picks.length} picks\n`);
+  SET.forEach((a, i) => {
     const r = rosters[i];
     const worst = picks
       .filter((p) => p.team === i)
