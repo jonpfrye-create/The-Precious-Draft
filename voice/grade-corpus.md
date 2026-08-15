@@ -13,22 +13,22 @@ Drafted from slot 2
 Roster shape: 1 DEF, 3 QB, 6 RB, 1 TE, 3 WR
 
 Picks, in order:
-  2. Bijan Robinson (RB - ATL) -> RB1 - ADP 2.3, taken 0.3 picks early
+  2. Bijan Robinson (RB - ATL) -> RB1 - ADP 2.1, taken 0.1 picks early
   23. Omarion Hampton (RB - LAC) -> RB2 - ADP 21.8, taken 1.2 picks late
-  26. Kyren Williams (RB - LAR) -> FLEX - ADP 25.4, taken 0.6 picks late
+  26. Kyren Williams (RB - LAR) -> FLEX - ADP 29.8, taken 3.8 picks early
   47. Bucky Irving (RB - TB) -> BENCH 1 - ADP 45.9, taken 1.1 picks late
-  50. DJ Moore (WR - BUF) -> WR1 - ADP 49, taken 1 picks late
-  71. Jayden Daniels (QB - WAS) -> QB - ADP 68.5, taken 2.5 picks late
-  74. Carnell Tate (WR - TEN) -> WR2 - ADP 72.6, taken 1.4 picks late
-  95. RJ Harvey (RB - DEN) -> BENCH 2 - ADP 95.9, taken 0.9 picks early
-  98. Rashid Shaheed (WR - SEA) -> BENCH 3 - ADP 98.2, taken 0.2 picks early
-  119. Bo Nix (QB - DEN) -> BENCH 4 - ADP 120, taken 1 picks early
-  122. Kenny Gainwell (RB - TB) -> BENCH 5 - ADP 123.6, taken 1.6 picks early
-  143. Tyler Shough (QB - NO) -> BENCH 6 - ADP 144.3, taken 1.3 picks early
-  146. Hunter Henry (TE - NE) -> TE - ADP 151.9, taken 5.9 picks early
-  167. Pittsburgh Steelers (DEF - PIT) -> DEF - ADP 148.3, taken 18.7 picks late
+  50. DJ Moore (WR - BUF) -> WR1 - ADP 48.8, taken 1.2 picks late
+  71. Jayden Daniels (QB - WAS) -> QB - ADP 71.9, taken 0.9 picks early
+  74. Carnell Tate (WR - TEN) -> WR2 - ADP 74.8, taken 0.8 picks early
+  95. RJ Harvey (RB - DEN) -> BENCH 2 - ADP 88.1, taken 6.9 picks late
+  98. Rashid Shaheed (WR - SEA) -> BENCH 3 - ADP 117.6, taken 19.6 picks early
+  119. Bo Nix (QB - DEN) -> BENCH 4 - ADP 118.5, taken 0.5 picks late
+  122. Kenny Gainwell (RB - TB) -> BENCH 5 - ADP 99, taken 23 picks late
+  143. Tyler Shough (QB - NO) -> BENCH 6 - ADP 136, taken 7 picks late
+  146. Hunter Henry (TE - NE) -> TE - ADP 151.5, taken 5.5 picks early
+  167. Pittsburgh Steelers (DEF - PIT) -> DEF - ADP 148.6, taken 18.4 picks late
 
-Across the draft they took players 1.1 picks behind ADP on average.
+Across the draft they took players 2 picks behind ADP on average.
 ```
 
 > Oof those wide receivers... Great running backs. And I think Jayden's in store for a nice bounce back year. But dear lord those wide receivers.
@@ -42,22 +42,22 @@ Drafted from slot 4
 Roster shape: 1 DEF, 2 QB, 6 RB, 1 TE, 4 WR
 
 Picks, in order:
-  4. Jonathan Taylor (RB - IND) -> RB1 - ADP 4.2, taken 0.2 picks early
-  21. Chase Brown (RB - CIN) -> RB2 - ADP 18.9, taken 2.1 picks late
-  28. Breece Hall (RB - NYJ) -> FLEX - ADP 26.8, taken 1.2 picks late
-  45. Alec Pierce (WR - IND) -> WR1 - ADP 44.8, taken 0.2 picks late
-  52. Bhayshul Tuten (RB - JAX) -> BENCH 1 - ADP 50.8, taken 1.2 picks late
-  69. Brian Thomas (WR - JAX) -> WR2 - ADP 67.5, taken 1.5 picks late
-  76. Colston Loveland (TE - CHI) -> TE - ADP 73.2, taken 2.8 picks late
-  93. Jacory Croskey-Merritt (RB - WAS) -> BENCH 2 - ADP 94.3, taken 1.3 picks early
-  100. Justin Herbert (QB - LAC) -> QB - ADP 101.2, taken 1.2 picks early
-  117. Rachaad White (RB - WAS) -> BENCH 3 - ADP 114.5, taken 2.5 picks late
-  124. KC Concepcion (WR - CLE) -> BENCH 4 - ADP 126, taken 2 picks early
-  141. Jalen McMillan (WR - TB) -> BENCH 5 - ADP 140.1, taken 0.9 picks late
-  148. Daniel Jones (QB - IND) -> BENCH 6 - ADP 145.5, taken 2.5 picks late
+  4. Jonathan Taylor (RB - IND) -> RB1 - ADP 5.8, taken 1.8 picks early
+  21. Chase Brown (RB - CIN) -> RB2 - ADP 15.7, taken 5.3 picks late
+  28. Breece Hall (RB - NYJ) -> FLEX - ADP 28, right on it
+  45. Alec Pierce (WR - IND) -> WR1 - ADP 52.8, taken 7.8 picks early
+  52. Bhayshul Tuten (RB - JAX) -> BENCH 1 - ADP 52.3, taken 0.3 picks early
+  69. Brian Thomas (WR - JAX) -> WR2 - ADP 69.7, taken 0.7 picks early
+  76. Colston Loveland (TE - CHI) -> TE - ADP 63.9, taken 12.1 picks late
+  93. Jacory Croskey-Merritt (RB - WAS) -> BENCH 2 - ADP 108, taken 15 picks early
+  100. Justin Herbert (QB - LAC) -> QB - ADP 104.7, taken 4.7 picks early
+  117. Rachaad White (RB - WAS) -> BENCH 3 - ADP 107.1, taken 9.9 picks late
+  124. KC Concepcion (WR - CLE) -> BENCH 4 - ADP 126.7, taken 2.7 picks early
+  141. Jalen McMillan (WR - TB) -> BENCH 5 - ADP 136.5, taken 4.5 picks late
+  148. Daniel Jones (QB - IND) -> BENCH 6 - ADP 161.8, taken 13.8 picks early
   165. Kansas City Chiefs (DEF - KC) -> DEF - ADP 142.4, taken 22.6 picks late
 
-Across the draft they took players 2.3 picks behind ADP on average.
+Across the draft they took players 0.5 picks behind ADP on average.
 ```
 
 > This one's interesting. If Alec Pierce gets an ankle, this team could really cook. I'm high on Herbert and Colston Loveland could give you that Kelce-like advantage if he continues what he did at the end of last year. The running backs are absolutely stacked... it's just what happens if Pierce is injured and Thomas repeats last year... Then maybe you're talking to David.
@@ -71,22 +71,22 @@ Drafted from slot 3
 Roster shape: 1 DEF, 2 QB, 3 RB, 1 TE, 7 WR
 
 Picks, in order:
-  3. Puka Nacua (WR - LAR) -> WR1 - ADP 2.7, taken 0.3 picks late
-  22. A.J. Brown (WR - NE) -> WR2 - ADP 19.1, taken 2.9 picks late
-  27. Chris Olave (WR - NO) -> FLEX - ADP 26.3, taken 0.7 picks late
-  46. Drake Maye (QB - NE) -> QB - ADP 45.6, taken 0.4 picks late
-  51. Lamar Jackson (QB - BAL) -> BENCH 1 - ADP 49.3, taken 1.7 picks late
-  70. Rico Dowdle (RB - PIT) -> RB1 - ADP 68, taken 2 picks late
-  75. Quentin Johnston (WR - LAC) -> BENCH 2 - ADP 73.1, taken 1.9 picks late
-  94. Michael Pittman (WR - PIT) -> BENCH 3 - ADP 94.5, taken 0.5 picks early
-  99. Aaron Jones (RB - MIN) -> RB2 - ADP 99.7, taken 0.7 picks early
-  118. Jonathon Brooks (RB - CAR) -> BENCH 4 - ADP 119.3, taken 1.3 picks early
-  123. Tre Tucker (WR - LV) -> BENCH 5 - ADP 125.6, taken 2.6 picks early
-  142. Tank Dell (WR - HOU) -> BENCH 6 - ADP 142.2, taken 0.2 picks early
-  147. Juwan Johnson (TE - NO) -> TE - ADP 155, taken 8 picks early
-  166. Los Angeles Chargers (DEF - LAC) -> DEF - ADP 146.3, taken 19.7 picks late
+  3. Puka Nacua (WR - LAR) -> WR1 - ADP 2.9, taken 0.1 picks late
+  22. A.J. Brown (WR - NE) -> WR2 - ADP 19, taken 3 picks late
+  27. Chris Olave (WR - NO) -> FLEX - ADP 23.6, taken 3.4 picks late
+  46. Drake Maye (QB - NE) -> QB - ADP 46.1, taken 0.1 picks early
+  51. Lamar Jackson (QB - BAL) -> BENCH 1 - ADP 52.6, taken 1.6 picks early
+  70. Rico Dowdle (RB - PIT) -> RB1 - ADP 70.7, taken 0.7 picks early
+  75. Quentin Johnston (WR - LAC) -> BENCH 2 - ADP 82.2, taken 7.2 picks early
+  94. Michael Pittman (WR - PIT) -> BENCH 3 - ADP 81.2, taken 12.8 picks late
+  99. Aaron Jones (RB - MIN) -> RB2 - ADP 96.9, taken 2.1 picks late
+  118. Jonathon Brooks (RB - CAR) -> BENCH 4 - ADP 111.3, taken 6.7 picks late
+  123. Tre Tucker (WR - LV) -> BENCH 5 - ADP 136, taken 13 picks early
+  142. Tank Dell (WR - HOU) -> BENCH 6 - ADP 148.3, taken 6.3 picks early
+  147. Juwan Johnson (TE - NO) -> TE - ADP 162.3, taken 15.3 picks early
+  166. Los Angeles Chargers (DEF - LAC) -> DEF - ADP 143.4, taken 22.6 picks late
 
-Across the draft they took players 1.2 picks behind ADP on average.
+Across the draft they took players 0.5 picks behind ADP on average.
 ```
 
 > Great QB and WR... but I just don't get the Lamar pick at all. Leaves such a hole at RB. I do like Jonathon Brooks, especially with the Chuba injury, so maybe there's a way that papers over the fact you've got the unknown half of the Pittsburgh duo and the blah half of the Minnesota duo.
@@ -100,22 +100,22 @@ Drafted from slot 1
 Roster shape: 1 DEF, 2 QB, 4 RB, 2 TE, 5 WR
 
 Picks, in order:
-  1. Jahmyr Gibbs (RB - DET) -> RB1 - ADP 1.6, taken 0.6 picks early
-  24. Nico Collins (WR - HOU) -> WR1 - ADP 22.3, taken 1.7 picks late
-  25. Zay Flowers (WR - BAL) -> WR2 - ADP 24.5, taken 0.5 picks late
-  48. Ladd McConkey (WR - LAC) -> FLEX - ADP 47.7, taken 0.3 picks late
-  49. Quinshon Judkins (RB - CLE) -> RB2 - ADP 47.9, taken 1.1 picks late
-  72. Rhamondre Stevenson (RB - NE) -> BENCH 1 - ADP 69.1, taken 2.9 picks late
-  73. Jalen Hurts (QB - PHI) -> QB - ADP 69.4, taken 3.6 picks late
-  96. Patrick Mahomes (QB - KC) -> BENCH 2 - ADP 96.1, taken 0.1 picks early
-  97. Kyle Monangai (RB - CHI) -> BENCH 3 - ADP 96.3, taken 0.7 picks late
-  120. Jalen Coker (WR - CAR) -> BENCH 4 - ADP 121.6, taken 1.6 picks early
-  121. George Kittle (TE - SF) -> TE - ADP 122, taken 1 picks early
-  144. Jalen Nailor (WR - LV) -> BENCH 5 - ADP 144.8, taken 0.8 picks early
-  145. Dalton Kincaid (TE - BUF) -> BENCH 6 - ADP 144.9, taken 0.1 picks late
-  168. Tennessee Titans (DEF - TEN) -> DEF - ADP 161.1, taken 6.9 picks late
+  1. Jahmyr Gibbs (RB - DET) -> RB1 - ADP 1.5, taken 0.5 picks early
+  24. Nico Collins (WR - HOU) -> WR1 - ADP 22.9, taken 1.1 picks late
+  25. Zay Flowers (WR - BAL) -> WR2 - ADP 25, right on it
+  48. Ladd McConkey (WR - LAC) -> FLEX - ADP 44.2, taken 3.8 picks late
+  49. Quinshon Judkins (RB - CLE) -> RB2 - ADP 50, taken 1 picks early
+  72. Rhamondre Stevenson (RB - NE) -> BENCH 1 - ADP 71, taken 1 picks late
+  73. Jalen Hurts (QB - PHI) -> QB - ADP 75.7, taken 2.7 picks early
+  96. Patrick Mahomes (QB - KC) -> BENCH 2 - ADP 99.5, taken 3.5 picks early
+  97. Kyle Monangai (RB - CHI) -> BENCH 3 - ADP 105.1, taken 8.1 picks early
+  120. Jalen Coker (WR - CAR) -> BENCH 4 - ADP 120.9, taken 0.9 picks early
+  121. George Kittle (TE - SF) -> TE - ADP 118.8, taken 2.2 picks late
+  144. Jalen Nailor (WR - LV) -> BENCH 5 - ADP 142.3, taken 1.7 picks late
+  145. Dalton Kincaid (TE - BUF) -> BENCH 6 - ADP 141.8, taken 3.2 picks late
+  168. Tennessee Titans (DEF - TEN) -> DEF - ADP 166.5, taken 1.5 picks late
 
-Across the draft they took players 1 picks behind ADP on average.
+Across the draft they took players 0.2 picks ahead of ADP on average.
 ```
 
 > Not sure about Quinshon as an RB2, but Rhamondre is okay depth. And is Kittle healthy? Hurts isn't great for our league but presumably healthy. Gibbs papers over a lot.
