@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { GRADES, gradeColor } from "@/lib/draft/grades";
 import { splitTeamName } from "@/lib/teams/branding";
 import { saveGrade } from "./actions";
+import ClamsPanel, { type ClamsState } from "./ClamsPanel";
 
 export interface RosterLine {
   slotName: string;
@@ -20,6 +21,7 @@ export default function GradeCard({
   roster,
   initialGrade,
   initialComment,
+  clams,
 }: {
   phaseId: string;
   teamId: string;
@@ -27,6 +29,7 @@ export default function GradeCard({
   roster: RosterLine[];
   initialGrade: string | null;
   initialComment: string | null;
+  clams: ClamsState;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -128,6 +131,13 @@ export default function GradeCard({
           <span className="text-green-700 dark:text-green-400">Saved</span>
         )}
       </div>
+
+      <ClamsPanel
+        phaseId={phaseId}
+        teamId={teamId}
+        state={clams}
+        commissionerGrade={grade || null}
+      />
     </div>
   );
 }

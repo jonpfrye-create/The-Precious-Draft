@@ -15,9 +15,11 @@
     "check-pool": "tsx scripts/check-pool.ts",
     "simulate": "tsx scripts/simulate-draft.ts",
     "verify-cascade": "tsx scripts/verify-cascade.ts",
-    "refresh-adp": "tsx scripts/ingest-adp.ts"
+    "refresh-adp": "tsx scripts/ingest-adp.ts",
+    "export-voice": "tsx scripts/export-voice.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.117.1",
     "@supabase/supabase-js": "^2.110.7",
     "next": "16.2.10",
     "react": "19.2.4",

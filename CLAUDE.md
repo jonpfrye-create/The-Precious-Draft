@@ -52,6 +52,9 @@ Commands:
   draft mechanics against; `npm run test-league -- --rm` deletes it.
   **Use this rather than the real league** for anything one-shot (see the
   draft order draw below).
+- `npm run export-voice` — save every hand-written grade, with the roster
+  it was about, to `voice/grade-corpus.json`. Run it after any grading
+  session. See "Clams AI" below for why this is not optional.
 
 `.env.local` holds `NEXT_PUBLIC_SUPABASE_URL`,
 `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` (the
@@ -125,6 +128,50 @@ the board shows a warning in that state. Applied via
 Draft order is per-phase, so Leftovers and Microwave each get their own
 draw through the same page.
 
+## Clams AI
+
+The AI grader. It imitates the commissioner's own grading voice, and the
+whole thing rests on two rules that are easy to break by accident.
+
+**1. The corpus is the product, and it is fragile.** `team_grades`
+cascades from phases, which cascade from leagues, so
+`npm run test-league -- --rm` deletes grades. Hand-written grades are the
+only record of how this commissioner grades and cannot be regenerated.
+`npm run export-voice` copies them into `voice/grade-corpus.json`, which
+is committed. **It merges rather than overwrites** — a plain overwrite
+would empty the corpus the first time it ran after the source league was
+deleted. Run it after every grading session.
+
+**2. Clams AI must never see the commissioner's grade for the team it is
+grading.** `examplesFor()` in `src/lib/ai/corpus.ts` enforces this rather
+than trusting callers, because the failure is silent: the key is built
+from league name + phase + team, and a mismatch leaks the answer into the
+prompt with nothing looking wrong. The keys come from `corpusKey()` on
+both sides for exactly this reason.
+
+The grade is **sealed, not just generated**: written early, hidden,
+timestamped, revealed on a button. Generating after the commissioner
+announces looks like the machine paraphrasing him; showing it before he
+speaks makes him a man reacting to a robot. `sealed_at` is the evidence it
+came first. Two consequences to preserve:
+
+- an unrevealed grade is **stripped server-side** in `grades/page.tsx` —
+  never sent to the browser and hidden with CSS
+- RLS on `team_grades` gates AI rows on `revealed_at is not null`, so the
+  anon key can't read a sealed grade either (`supabase/007-clams-ai.sql`)
+- a revealed grade **cannot be resealed**, or the commissioner could roll
+  until he liked the answer
+
+**No model ever does arithmetic.** `src/lib/draft/scouting.ts` computes
+reach, value and roster shape, and `describeReport` states them as plain
+facts. It is tested to stay neutral — it says "taken 19 picks early",
+never "reached". Judgement comes from the examples; one confidently wrong
+number in front of the league ends the trick.
+
+Needs `ANTHROPIC_API_KEY` in `.env.local` and in Vercel. Without it the
+seal button reports it's not configured and nothing else on the page is
+affected.
+
 ## Locked-in decisions (don't relitigate without asking)
 
 - **Commissioner access is a separate secret/link** from the plain league
@@ -171,9 +218,15 @@ the Next.js/TS stack.
 
 ## Ideas for later
 
-It’s tradition for me to go through everyone’s teams after the main draft and assign them a letter grade, much like Yahoo does. I’d love to figure out a way to do that.
+Letter grades and Clams AI are both built — see "Clams AI" above.
 
-Furthermore, I’ll be building my own rankings and would love to somehow figure out a way for Claude to use those rankings and give an AI Jon Frye grade and commentary, which would be sort of a magic trick.
+Still outstanding from that original idea: **the commissioner's own
+rankings**. Clams AI currently reasons against consensus ADP, which makes
+it a good mimic of his prose but not of his opinions — it can't disagree
+with the market the way he does, because it doesn't know where he
+disagrees. Feeding in a personal ranking list is the change that would
+make it genuinely his rather than a well-imitated voice. Needs a rankings
+source first; nothing about the current design blocks it.
 
 Visual idea for the sticker-board feel (Phase 5 polish): stickers on the
 physical board never sat quite straight — each pick tile should get a
