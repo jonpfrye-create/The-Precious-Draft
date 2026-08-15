@@ -13,14 +13,21 @@ import { matchKey } from "../src/lib/draft/player-match";
 //
 // FFC publishes a free JSON endpoint aggregated from real mock drafts, and
 // reports the sample size and date range, so it's possible to tell how
-// stale it is. Standard (non-PPR), 12 teams, to match this league.
+// stale it is.
+//
+// Half-PPR, 12 teams, to match this league. The format matters more than
+// it looks: every "taken N picks early" in a draft grade is measured
+// against this, so pulling standard scoring for a half-PPR league quietly
+// mis-states the market on every receiver in the pool - and nobody in the
+// league is looking at standard rankings anyway.
 //
 // There is no shared id with Sleeper, so players are matched by name and
 // position - see lib/draft/player-match.ts. Anything unmatched keeps a null
 // ADP and simply shows no number, which is better than showing a wrong one.
 
 const YEAR = new Date().getFullYear();
-const ADP_URL = `https://fantasyfootballcalculator.com/api/v1/adp/standard?teams=12&year=${YEAR}`;
+const FORMAT = "half-ppr";
+const ADP_URL = `https://fantasyfootballcalculator.com/api/v1/adp/${FORMAT}?teams=12&year=${YEAR}`;
 
 interface FfcPlayer {
   name: string;
@@ -40,13 +47,14 @@ async function main() {
     throw new Error(`ADP feed returned ${res.status}`);
   }
   const payload = (await res.json()) as {
-    meta: { total_drafts: number; start_date: string; end_date: string };
+    meta: { total_drafts: number; start_date: string; end_date: string; type: string };
     players: FfcPlayer[];
   };
 
   console.log(
-    `  ${payload.players.length} players, from ${payload.meta.total_drafts} drafts ` +
-      `between ${payload.meta.start_date} and ${payload.meta.end_date}\n`
+    `  ${payload.meta.type}, ${payload.players.length} players, from ` +
+      `${payload.meta.total_drafts} drafts between ${payload.meta.start_date} ` +
+      `and ${payload.meta.end_date}\n`
   );
 
   // FFC calls kickers PK; everything else lines up with Sleeper.

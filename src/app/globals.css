@@ -231,6 +231,40 @@ body {
   }
 }
 
+/* Clams AI reveal -----------------------------------------------------
+   The card turns over, the way you'd flip a sealed envelope face up. It
+   only plays on the click, never on a later page load - replaying the
+   moment every time the page is read would cheapen it. */
+
+@keyframes flip {
+  0% {
+    transform: perspective(900px) rotateX(-92deg);
+    opacity: 0;
+  }
+  55% {
+    transform: perspective(900px) rotateX(12deg);
+    opacity: 1;
+  }
+  78% {
+    transform: perspective(900px) rotateX(-5deg);
+  }
+  100% {
+    transform: perspective(900px) rotateX(0deg);
+    opacity: 1;
+  }
+}
+
+.animate-flip {
+  transform-origin: top center;
+  animation: flip 620ms cubic-bezier(0.2, 0.8, 0.3, 1.05) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-flip {
+    animation: none;
+  }
+}
+
 /* Draft order reveal ------------------------------------------------- */
 
 /* The card arrives fast and overshoots slightly before settling, which

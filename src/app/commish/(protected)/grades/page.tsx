@@ -10,7 +10,9 @@ import {
   getTeamsForPhase,
 } from "@/lib/draft/queries";
 import { assignRoster } from "@/lib/draft/roster-fit";
+import { corpusSize, hasStatedViews } from "@/lib/ai/clams";
 import GradeCard from "./GradeCard";
+import SealAllButton from "./SealAllButton";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +43,13 @@ export default async function GradesPage() {
     (grades ?? []).map((g) => [g.team_id, g])
   );
 
+  const { data: clamsRows } = await supabase
+    .from("team_grades")
+    .select("team_id, grade, comment, model, sealed_at, revealed_at")
+    .eq("phase_id", main.id)
+    .eq("source", "ai");
+  const clamsByTeam = new Map((clamsRows ?? []).map((g) => [g.team_id, g]));
+
   const slotSpecs = slots.map((slot) => ({
     slotName: slot.slot_name,
     eligiblePositions: slot.eligible_positions,
@@ -64,6 +73,15 @@ export default async function GradesPage() {
         </Link>
       </div>
 
+      <div className="w-full max-w-3xl">
+        <SealAllButton
+          phaseId={main.id}
+          unsealed={teams.filter((t) => !clamsByTeam.has(t.id)).length}
+          corpusSize={corpusSize()}
+          hasViews={hasStatedViews()}
+        />
+      </div>
+
       <div className="flex w-full max-w-3xl flex-col gap-4">
         {teams.map((team) => {
           // Same slot assignment the Yahoo export uses, so a team's roster
@@ -83,6 +101,14 @@ export default async function GradesPage() {
           );
 
           const existing = gradeByTeam.get(team.id);
+          const clams = clamsByTeam.get(team.id);
+
+          // A sealed grade is stripped here, not hidden with CSS. Sending
+          // it down and rendering it invisible would leave the answer one
+          // devtools panel away, on a laptop in a room full of people who
+          // would think spoiling it was funny.
+          const revealed = Boolean(clams?.revealed_at);
+
           return (
             <GradeCard
               key={team.id}
@@ -92,6 +118,13 @@ export default async function GradesPage() {
               roster={roster}
               initialGrade={existing?.grade ?? null}
               initialComment={existing?.comment ?? null}
+              clams={{
+                sealedAt: clams?.sealed_at ?? null,
+                revealedAt: clams?.revealed_at ?? null,
+                grade: revealed ? (clams?.grade ?? null) : null,
+                comment: revealed ? (clams?.comment ?? null) : null,
+                model: revealed ? (clams?.model ?? null) : null,
+              }}
             />
           );
         })}
