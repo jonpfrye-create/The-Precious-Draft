@@ -119,3 +119,293 @@ Across the draft they took players 0.2 picks ahead of ADP on average.
 ```
 
 > Not sure about Quinshon as an RB2, but Rhamondre is okay depth. And is Kittle healthy? Hurts isn't great for our league but presumably healthy. Gibbs papers over a lot.
+
+## Belt And Braces - Nina - B
+*ZZZ Practice Drafts / main*
+
+```
+Team: Belt And Braces - Nina
+Drafted from slot 5
+Roster shape: 1 DEF, 1 K, 3 QB, 2 RB, 1 TE, 6 WR
+
+Picks, in order:
+  5. De'Von Achane (RB - MIA) -> RB1 - ADP 11.2, taken 6.2 picks early
+  16. Justin Jefferson (WR - MIN) -> WR1 - ADP 14.9, taken 1.1 picks late
+  25. Joe Burrow (QB - CIN) -> QB - ADP 57.1, taken 32.1 picks early
+  36. Emeka Egbuka (WR - TB) -> WR2 - ADP 33.1, taken 2.9 picks late
+  45. Rome Odunze (WR - CHI) -> FLEX - ADP 44.8, taken 0.2 picks late
+  56. Jayden Daniels (QB - WAS) -> BENCH 1 - ADP 71.9, taken 15.9 picks early
+  65. Marvin Harrison (WR - ARI) -> BENCH 2 - ADP 62.6, taken 2.4 picks late
+  76. Jadarian Price (RB - SEA) -> RB2 - ADP 72, taken 4 picks late
+  85. Quentin Johnston (WR - LAC) -> BENCH 3 - ADP 82.2, taken 2.8 picks late
+  96. Deebo Samuel (WR) -> BENCH 4 - ADP 94.1, taken 1.9 picks late
+  105. Isaiah Likely (TE - NYG) -> TE - ADP 136.5, taken 31.5 picks early
+  116. Brandon Aubrey (K - DAL) -> BENCH 5 - ADP 130, taken 14 picks early
+  125. Pittsburgh Steelers (DEF - PIT) -> DEF - ADP 148.6, taken 23.6 picks early
+  136. Justin Herbert (QB - LAC) -> BENCH 6 - ADP 104.7, taken 31.3 picks late
+
+Across the draft they took players 5.5 picks ahead of ADP on average.
+```
+
+> Some things I love, some things I hate. Joe Burrow's always my guy in this league. So why draft Jayden then too? Love JJ and now he has a QB. And I think Emeka should shine if Baker's healthy. Rom worries me with his foot but I think Marvin Harrison could keep building, even if he's never the talent people thought he'd be. I like Price but that could be an annoying time share like last year. And Achane will be the guy and the early results are promising for a team everyone thinks is the worst in the league... A couple questionable decisions held this one back from greatness.
+
+## Gridiron Bakery - Anne - A+
+*ZZZ Practice Drafts / main*
+
+```
+Team: Gridiron Bakery - Anne
+Drafted from slot 1
+Roster shape: 1 DEF, 1 K, 1 QB, 4 RB, 2 TE, 5 WR
+
+Picks, in order:
+  1. Jahmyr Gibbs (RB - DET) -> RB1 - ADP 1.5, taken 0.5 picks early
+  20. Bijan Robinson (RB - ATL) -> RB2 - ADP 2.1, taken 17.9 picks late
+  21. Drake London (WR - ATL) -> WR1 - ADP 10, taken 11 picks late
+  40. Garrett Wilson (WR - NYJ) -> WR2 - ADP 31, taken 9 picks late
+  41. Breece Hall (RB - NYJ) -> FLEX - ADP 28, taken 13 picks late
+  60. Tee Higgins (WR - CIN) -> BENCH 1 - ADP 36.9, taken 23.1 picks late
+  61. Drake Maye (QB - NE) -> QB - ADP 46.1, taken 14.9 picks late
+  80. DK Metcalf (WR - PIT) -> BENCH 2 - ADP 62.9, taken 17.1 picks late
+  81. Tyler Warren (TE - IND) -> TE - ADP 70.6, taken 10.4 picks late
+  100. Michael Wilson (WR - ARI) -> BENCH 3 - ADP 82.5, taken 17.5 picks late
+  101. RJ Harvey (RB - DEN) -> BENCH 4 - ADP 88.1, taken 12.9 picks late
+  120. George Kittle (TE - SF) -> BENCH 5 - ADP 118.8, taken 1.2 picks late
+  121. Minnesota Vikings (DEF - MIN) -> DEF - ADP 119.1, taken 1.9 picks late
+  140. Will Reichard (K - MIN) -> BENCH 6 - ADP 153.2, taken 13.2 picks early
+
+Across the draft they took players 9.7 picks behind ADP on average.
+```
+
+> I don't understand how this draft happened. There's no way Gibbs and Robinson, the two best players, are on the same teams. Add some stud Wide receivers, a great QB and defense and excellent depth... this would be A+++.
+
+## Gut Feeling - Ray - C-
+*ZZZ Practice Drafts / main*
+
+```
+Team: Gut Feeling - Ray
+Drafted from slot 6
+Roster shape: 1 DEF, 1 K, 2 QB, 5 RB, 2 TE, 3 WR
+
+Picks, in order:
+  6. Kenneth Walker (RB - KC) -> RB1 - ADP 25.7, taken 19.7 picks early
+  15. Cam Skattebo (RB - NYG) -> RB2 - ADP 34.6, taken 19.6 picks early
+  26. Jeremiyah Love (RB - ARI) -> FLEX - ADP 30, taken 4 picks early
+  35. Quinshon Judkins (RB - CLE) -> BENCH 1 - ADP 50, taken 15 picks early
+  46. Tony Pollard (RB - TEN) -> BENCH 2 - ADP 66.9, taken 20.9 picks early
+  55. Carnell Tate (WR - TEN) -> WR1 - ADP 74.8, taken 19.8 picks early
+  66. Daniel Jones (QB - IND) -> QB - ADP 161.8, taken 95.8 picks early
+  75. Jordyn Tyson (WR - NO) -> WR2 - ADP 87.5, taken 12.5 picks early
+  86. Jordan Addison (WR - MIN) -> BENCH 3 - ADP 91.1, taken 5.1 picks early
+  95. Tucker Kraft (TE - GB) -> TE - ADP 99.8, taken 4.8 picks early
+  106. Dallas Goedert (TE - PHI) -> BENCH 4 - ADP 111.9, taken 5.9 picks early
+  115. Jake Bates (K - DET) -> BENCH 5 - ADP 146.4, taken 31.4 picks early
+  126. New York Giants (DEF - NYG) -> DEF - ADP 182, taken 56 picks early
+  135. Bo Nix (QB - DEN) -> BENCH 6 - ADP 118.5, taken 16.5 picks late
+
+Across the draft they took players 21 picks ahead of ADP on average.
+```
+
+> Did you maybe want to find a QB and some Wide Receivers? Absolutely stacked at RB but Tate is going to take awhile to get going in that offense I fear and sort of the same with Tyson. I think if they surge the way rookies often do, you may already be out of the playoff race. But if I'm wrong, there's some upside to win it all... it just feels like the team that wins the consolation bracket.
+
+## Hand Off Please - Priya - A
+*ZZZ Practice Drafts / main*
+
+```
+Team: Hand Off Please - Priya
+Drafted from slot 3
+Roster shape: 1 DEF, 1 QB, 4 RB, 1 TE, 7 WR
+
+Picks, in order:
+  3. Jonathan Taylor (RB - IND) -> RB1 - ADP 5.8, taken 2.8 picks early
+  18. Ashton Jeanty (RB - LV) -> RB2 - ADP 15.1, taken 2.9 picks late
+  23. Omarion Hampton (RB - LAC) -> FLEX - ADP 21.8, taken 1.2 picks late
+  38. Javonte Williams (RB - DAL) -> BENCH 1 - ADP 36.2, taken 1.8 picks late
+  43. Terry McLaurin (WR - WAS) -> WR1 - ADP 43.3, taken 0.3 picks early
+  58. Mike Evans (WR - SF) -> WR2 - ADP 55.7, taken 2.3 picks late
+  63. Courtland Sutton (WR - DEN) -> BENCH 2 - ADP 58.3, taken 4.7 picks late
+  78. Parker Washington (WR - JAX) -> BENCH 3 - ADP 67.1, taken 10.9 picks late
+  83. Brock Purdy (QB - SF) -> QB - ADP 81.3, taken 1.7 picks late
+  98. Denver Broncos (DEF - DEN) -> DEF - ADP 90.1, taken 7.9 picks late
+  103. Sam LaPorta (TE - DET) -> TE - ADP 92.3, taken 10.7 picks late
+  118. Khalil Shakir (WR - BUF) -> BENCH 4 - ADP 103.7, taken 14.3 picks late
+  123. Romeo Doubs (WR - NE) -> BENCH 5 - ADP 109, taken 14 picks late
+  138. Ricky Pearsall (WR - SF) -> BENCH 6 - ADP 112, taken 26 picks late
+
+Across the draft they took players 6.8 picks behind ADP on average.
+```
+
+> A beautiful team. Love Purdy given his low cost. Those three starting RBs our choice and even the 4th RB is a dude. I like the wide receivers and Parker Washington was a monster to end last season. Pearsall was a wasted pick but that's it. This feels like a championship team.
+
+## Legs Not Arms - Toby - B
+*ZZZ Practice Drafts / main*
+
+```
+Team: Legs Not Arms - Toby
+Drafted from slot 4
+Roster shape: 1 DEF, 1 K, 2 QB, 4 RB, 2 TE, 4 WR
+
+Picks, in order:
+  4. Christian McCaffrey (RB - SF) -> RB1 - ADP 6.7, taken 2.7 picks early
+  17. Jalen Hurts (QB - PHI) -> QB - ADP 75.7, taken 58.7 picks early
+  24. Saquon Barkley (RB - PHI) -> RB2 - ADP 18.2, taken 5.8 picks late
+  37. Kyren Williams (RB - LAR) -> FLEX - ADP 29.8, taken 7.2 picks late
+  44. Travis Etienne (RB - NO) -> BENCH 1 - ADP 41.5, taken 2.5 picks late
+  57. Alec Pierce (WR - IND) -> WR1 - ADP 52.8, taken 4.2 picks late
+  64. Luther Burden (WR - CHI) -> WR2 - ADP 57.3, taken 6.7 picks late
+  77. Colston Loveland (TE - CHI) -> TE - ADP 63.9, taken 13.1 picks late
+  84. Jakobi Meyers (WR - JAX) -> BENCH 2 - ADP 81.4, taken 2.6 picks late
+  97. Harold Fannin (TE - CLE) -> BENCH 3 - ADP 83.9, taken 13.1 picks late
+  104. Josh Downs (WR - IND) -> BENCH 4 - ADP 94.2, taken 9.8 picks late
+  117. Detroit Lions (DEF - DET) -> DEF - ADP 125.9, taken 8.9 picks early
+  124. Jason Myers (K - SEA) -> BENCH 5 - ADP 134, taken 10 picks early
+  137. Caleb Williams (QB - CHI) -> BENCH 6 - ADP 100.8, taken 36.2 picks late
+
+Across the draft they took players 1.5 picks behind ADP on average.
+```
+
+> Pretty decent. You either win or lose based on CMC, which is every year, but winning half the time is better than average. I like Burden and Pierce but both dealing with injuries and not much to back it up. Not sure why you drafted a kicker? Loveland could be a monster in year 2 after going nuclear in his final four games last year... I don't love Hurts but maybe there's some upside with a real OC. Which helps Saquon too. If you find a way to get a real WR, this grade goes from B to A-.
+
+## Market Price - Wes - B+
+*ZZZ Practice Drafts / main*
+
+```
+Team: Market Price - Wes
+Drafted from slot 10
+Roster shape: 1 DEF, 1 K, 2 QB, 4 RB, 2 TE, 4 WR
+
+Picks, in order:
+  10. Puka Nacua (WR - LAR) -> WR1 - ADP 2.9, taken 7.1 picks late
+  11. Ja'Marr Chase (WR - CIN) -> WR2 - ADP 4.1, taken 6.9 picks late
+  30. CeeDee Lamb (WR - DAL) -> FLEX - ADP 12.6, taken 17.4 picks late
+  31. Josh Jacobs (RB - GB) -> RB1 - ADP 24, taken 7 picks late
+  50. Bhayshul Tuten (RB - JAX) -> RB2 - ADP 52.3, taken 2.3 picks early
+  51. Josh Allen (QB - BUF) -> QB - ADP 26.6, taken 24.4 picks late
+  70. Trey McBride (TE - ARI) -> TE - ADP 42.9, taken 27.1 picks late
+  71. TreVeyon Henderson (RB - NE) -> BENCH 1 - ADP 58, taken 13 picks late
+  90. Rhamondre Stevenson (RB - NE) -> BENCH 2 - ADP 71, taken 19 picks late
+  91. Kyle Pitts (TE - ATL) -> BENCH 3 - ADP 81.8, taken 9.2 picks late
+  110. Jayden Reed (WR - GB) -> BENCH 4 - ADP 90.4, taken 19.6 picks late
+  111. Seattle Seahawks (DEF - SEA) -> DEF - ADP 97.3, taken 13.7 picks late
+  130. Cameron Dicker (K - LAC) -> BENCH 5 - ADP 144.5, taken 14.5 picks early
+  131. Dak Prescott (QB - DAL) -> BENCH 6 - ADP 67.1, taken 63.9 picks late
+
+Across the draft they took players 15.1 picks behind ADP on average.
+```
+
+> This team should win it all (and I'm not sure how they got both Puka and Ja'Marr Chase) but I still wish they had a clearer RB1. That's the only wart I see though, as they have the best QB, two of the top WRs, one of the tops TEs. Oh wait, three top WRs with Lamb... I mean I really don't know how they got this team together. The only weakness being that RB1 is often most league's most important position. Ours is QB though, so this team has got a great shot to win it all.
+
+## Seam Route - Otis - A-
+*ZZZ Practice Drafts / main*
+
+```
+Team: Seam Route - Otis
+Drafted from slot 9
+Roster shape: 1 DEF, 1 K, 1 QB, 4 RB, 1 TE, 6 WR
+
+Picks, in order:
+  9. Derrick Henry (RB - BAL) -> RB1 - ADP 10.1, taken 1.1 picks early
+  12. Brock Bowers (TE - LV) -> TE - ADP 44, taken 32 picks early
+  29. George Pickens (WR - DAL) -> WR1 - ADP 19.4, taken 9.6 picks late
+  32. Malik Nabers (WR - NYG) -> WR2 - ADP 29.4, taken 2.6 picks late
+  49. D'Andre Swift (RB - CHI) -> RB2 - ADP 43.4, taken 5.6 picks late
+  52. Ladd McConkey (WR - LAC) -> FLEX - ADP 44.2, taken 7.8 picks late
+  69. David Montgomery (RB - HOU) -> BENCH 1 - ADP 61.1, taken 7.9 picks late
+  72. Matthew Stafford (QB - LAR) -> QB - ADP 75.9, taken 3.9 picks early
+  89. Jaylen Warren (RB - PIT) -> BENCH 2 - ADP 74.8, taken 14.2 picks late
+  92. Wan'Dale Robinson (WR - TEN) -> BENCH 3 - ADP 84.1, taken 7.9 picks late
+  109. Stefon Diggs (WR) -> BENCH 4 - ADP 94.9, taken 14.1 picks late
+  112. Makai Lemon (WR - PHI) -> BENCH 5 - ADP 103, taken 9 picks late
+  129. Ka'imi Fairbairn (K - HOU) -> BENCH 6 - ADP 130.3, taken 1.3 picks early
+  132. Kansas City Chiefs (DEF - KC) -> DEF - ADP 142.4, taken 10.4 picks early
+
+Across the draft they took players 2.1 picks behind ADP on average.
+```
+
+> Yeah, Otis has got it. Stafford was the runaway league winner last year, I still believe in Derrick Henry, Pickens and Nabers are ballers, and Bowers could be insane this year. Love Ladd now that the Chargers have an OL again. And Montgomery's sort of interesting if he's the guy in Houston with a rebuilt line. Also curious what Lemon does. Love it.
+
+## Special Teams Guy - Dermot - B
+*ZZZ Practice Drafts / main*
+
+```
+Team: Special Teams Guy - Dermot
+Drafted from slot 7
+Roster shape: 1 DEF, 1 K, 1 QB, 4 RB, 1 TE, 6 WR
+
+Picks, in order:
+  7. James Cook (RB - BUF) -> RB1 - ADP 11.2, taken 4.2 picks early
+  14. Chase Brown (RB - CIN) -> RB2 - ADP 15.7, taken 1.7 picks early
+  27. Chris Olave (WR - NO) -> WR1 - ADP 23.6, taken 3.4 picks late
+  34. Tetairoa McMillan (WR - CAR) -> WR2 - ADP 35.9, taken 1.9 picks early
+  47. Houston Texans (DEF - HOU) -> DEF - ADP 106.2, taken 59.2 picks early
+  54. DJ Moore (WR - BUF) -> FLEX - ADP 48.8, taken 5.2 picks late
+  67. Harrison Mevis (K - LAR) -> BENCH 1 - ADP 132, taken 65 picks early
+  74. Trevor Lawrence (QB - JAX) -> QB - ADP 90.2, taken 16.2 picks early
+  87. Michael Pittman (WR - PIT) -> BENCH 2 - ADP 81.2, taken 5.8 picks late
+  94. Chris Godwin (WR - TB) -> BENCH 3 - ADP 87, taken 7 picks late
+  107. Aaron Jones (RB - MIN) -> BENCH 4 - ADP 96.9, taken 10.1 picks late
+  114. Kyle Monangai (RB - CHI) -> BENCH 5 - ADP 105.1, taken 8.9 picks late
+  127. Matthew Golden (WR - GB) -> BENCH 6 - ADP 115.3, taken 11.7 picks late
+  134. Dalton Kincaid (TE - BUF) -> TE - ADP 141.8, taken 7.8 picks early
+
+Across the draft they took players 7.4 picks ahead of ADP on average.
+```
+
+> Totally solid team. I like the RBs and the WRs are decent too. Good value all around and a decent bench... My only worry is that this team is lacking upside. Should make the playoffs though and could go further if you hit on a waiver pick or guys like Cook/Brown/Tet find another level.
+
+## Sunday Scaries - Marcus - C
+*ZZZ Practice Drafts / main*
+
+```
+Team: Sunday Scaries - Marcus
+Drafted from slot 2
+Roster shape: 1 DEF, 1 QB, 6 RB, 1 TE, 5 WR
+
+Picks, in order:
+  2. Jaxon Smith-Njigba (WR - SEA) -> WR1 - ADP 5.3, taken 3.3 picks early
+  19. A.J. Brown (WR - NE) -> WR2 - ADP 19, right on it
+  22. Nico Collins (WR - HOU) -> FLEX - ADP 22.9, taken 0.9 picks early
+  39. Davante Adams (WR - LAR) -> BENCH 1 - ADP 38.8, taken 0.2 picks late
+  42. Jameson Williams (WR - DET) -> BENCH 2 - ADP 40.4, taken 1.6 picks late
+  59. Lamar Jackson (QB - BAL) -> QB - ADP 52.6, taken 6.4 picks late
+  62. Rico Dowdle (RB - PIT) -> RB1 - ADP 70.7, taken 8.7 picks early
+  79. Chuba Hubbard (RB - CAR) -> RB2 - ADP 75.9, taken 3.1 picks late
+  82. J.K. Dobbins (RB - DEN) -> BENCH 3 - ADP 87.8, taken 5.8 picks early
+  99. Kenny Gainwell (RB - TB) -> BENCH 4 - ADP 99, right on it
+  102. Rachaad White (RB - WAS) -> BENCH 5 - ADP 107.1, taken 5.1 picks early
+  119. Jordan Mason (RB - MIN) -> BENCH 6 - ADP 116.4, taken 2.6 picks late
+  122. Philadelphia Eagles (DEF - PHI) -> DEF - ADP 136, taken 14 picks early
+  139. Jake Ferguson (TE - DAL) -> TE - ADP 146.6, taken 7.6 picks early
+
+Across the draft they took players 2.3 picks ahead of ADP on average.
+```
+
+> This team is stacked at wide receiver to the detriment of almost everything else. Five great WRs means the position that's hardest to replace off the waiver wire won't need it... but you have three iffy RBs, none of guaranteed to be bell cows. I love Lamar in the real game but he's not a great fit for our league and is coming off a down year.
+
+## The Long Game - Cassie - F
+*ZZZ Practice Drafts / main*
+
+```
+Team: The Long Game - Cassie
+Drafted from slot 8
+Roster shape: 1 DEF, 1 QB, 4 RB, 1 TE, 7 WR
+
+Picks, in order:
+  8. Amon-Ra St. Brown (WR - DET) -> WR1 - ADP 7.6, taken 0.4 picks late
+  13. Rashee Rice (WR - KC) -> WR2 - ADP 13.4, taken 0.4 picks early
+  28. Zay Flowers (WR - BAL) -> FLEX - ADP 25, taken 3 picks late
+  33. DeVonta Smith (WR - PHI) -> BENCH 1 - ADP 31.2, taken 1.8 picks late
+  48. Bucky Irving (RB - TB) -> RB1 - ADP 45.9, taken 2.1 picks late
+  53. Jaylen Waddle (WR - DEN) -> BENCH 2 - ADP 49.6, taken 3.4 picks late
+  68. Christian Watson (WR - GB) -> BENCH 3 - ADP 61.6, taken 6.4 picks late
+  73. Brian Thomas (WR - JAX) -> BENCH 4 - ADP 69.7, taken 3.3 picks late
+  88. Cam Ward (QB - TEN) -> QB - ADP 180.7, taken 92.7 picks early
+  93. New England Patriots (DEF - NE) -> DEF - ADP 129.3, taken 36.3 picks early
+  108. Tyrone Tracy (RB - NYG) -> RB2 - ADP 155.5, taken 47.5 picks early
+  113. Brian Robinson (RB - ATL) -> BENCH 5 - ADP 157.5, taken 44.5 picks early
+  128. Tank Bigsby (RB - PHI) -> BENCH 6 - ADP 162.1, taken 34.1 picks early
+  133. Chig Okonkwo (TE - WAS) -> TE - ADP 168.2, taken 35.2 picks early
+
+Across the draft they took players 19.3 picks ahead of ADP on average.
+```
+
+> I really don't think you should punt half your team? Where's the QB? Where's the RB1? Where's the RB2? Where's the TE? Good receivers. And your mom loves you.

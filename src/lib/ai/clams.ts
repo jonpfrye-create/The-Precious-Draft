@@ -66,10 +66,30 @@ export async function gradeLikeClams(
 
   const client = new Anthropic({ apiKey });
 
+  // The system block - the rules plus his stated views - is identical for
+  // every team in a sealing run, so it is cached and read back at a tenth
+  // of the price on the eleven calls that follow the first.
+  //
+  // The examples deliberately are not cached. Each call leaves out the
+  // grade for the team being graded, so there is no shared prefix to
+  // cache, and the only way to create one would be to show every model
+  // every grade - including the answer for the team in front of it. That
+  // is the one thing this whole feature cannot do, and it is not for sale
+  // at any discount.
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: 1000,
-    system: prompt.system,
+    system: [
+      // Everything up to and including this block is cached. The grade
+      // distribution and word target come after it, because both are
+      // derived from the leave-one-out set and so differ for every team.
+      {
+        type: "text",
+        text: prompt.systemStable,
+        cache_control: { type: "ephemeral" },
+      },
+      { type: "text", text: prompt.systemVariable },
+    ],
     messages: [{ role: "user", content: prompt.user }],
   });
 

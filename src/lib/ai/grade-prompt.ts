@@ -34,6 +34,20 @@ export interface GradePromptInput {
 }
 
 export interface GradePrompt {
+  /**
+   * Identical for every team in a sealing run, so it can be cached and
+   * read back at a tenth of the price on each call after the first.
+   */
+  systemStable: string;
+  /**
+   * Varies per team, so it sits after the cache breakpoint. The grade
+   * distribution lives here for a reason: it is computed from the
+   * leave-one-out set, and computing it over the whole corpus instead
+   * would let the model infer the held-out grade whenever a grade is
+   * rare - "the spread says one F, and I have been shown no F".
+   */
+  systemVariable: string;
+  /** The two joined, which is what the model actually sees. */
   system: string;
   user: string;
   /** How many examples survived the leave-one-out filter. */
@@ -58,7 +72,6 @@ export function buildGradePrompt(input: GradePromptInput): GradePrompt {
     `Answer with a letter grade from this scale: ${GRADES.join(", ")}.`,
     "",
     "Rules:",
-    `- Write roughly ${targetWords} words. His comments are short. A long one is wrong even if it is good.`,
     hasPhilosophy || hasPlayerViews
       ? "- Every factual claim must come from the roster you are given, or from his stated views below. The roster states each pick's ADP and how far off it the pick was. Do not compute anything yourself and do not invent injuries, depth charts, or news."
       : "- Every factual claim must come from the roster you are given. It states each pick's ADP and how far off it the pick was. Do not compute anything yourself and do not invent injuries, depth charts, or news.",
@@ -66,15 +79,6 @@ export function buildGradePrompt(input: GradePromptInput): GradePrompt {
     "- Do not use analyst filler: no \"solid value\", no \"nice upside\", no \"time will tell\".",
     "- Grade the draft in front of you, not the average draft.",
   ];
-
-  if (distribution.length > 0) {
-    systemParts.push(
-      "",
-      "His grades so far have been distributed like this:",
-      distribution.map((d) => `  ${d.grade}: ${d.count}`).join("\n"),
-      "Match this spread. Do not drift upward into praise for everyone - that is the single most common way this goes wrong."
-    );
-  }
 
   if (hasPhilosophy) {
     systemParts.push(
@@ -98,7 +102,22 @@ export function buildGradePrompt(input: GradePromptInput): GradePrompt {
     );
   }
 
-  systemParts.push(
+  const variableParts: string[] = [
+    `Write roughly ${targetWords} words. His comments are short. A long one is wrong even if it is good.`,
+  ];
+
+  if (distribution.length > 0) {
+    variableParts.push(
+      "",
+      "His grades so far have been distributed like this:",
+      distribution.map((d) => `  ${d.grade}: ${d.count}`).join("\n"),
+      "Match this spread. Do not drift upward into praise for everyone - that is the single most common way this goes wrong.",
+      "",
+      "Use the whole scale. He gives out A pluses and he gives out Fs, and a grader who never leaves the Bs and Cs is not imitating him - it is hedging. If a roster is as good as the best he has graded, say so; if it is as broken as the worst, say that."
+    );
+  }
+
+  variableParts.push(
     "",
     "Reply in exactly this format and nothing else:",
     "GRADE: <letter>",
@@ -138,8 +157,13 @@ export function buildGradePrompt(input: GradePromptInput): GradePrompt {
     input.targetRoster
   );
 
+  const systemStable = systemParts.join("\n");
+  const systemVariable = variableParts.join("\n");
+
   return {
-    system: systemParts.join("\n"),
+    systemStable,
+    systemVariable,
+    system: `${systemStable}\n\n${systemVariable}`,
     user: userParts.join("\n"),
     exampleCount: examples.length,
   };

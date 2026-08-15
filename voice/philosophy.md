@@ -33,6 +33,30 @@ is worth having rather than an afterthought.
 So Josh Allen shouldn't go in the first round or so, but he's worth more
 than his price after that.
 
+## The starting lineup is most of the grade
+
+We start eight: QB, RB, RB, WR, WR, TE, Flex, Defense.
+
+I definitely notice if there's a hole there. Having to start a waiver guy
+multiple weeks can tank a season, so a position where the man slotted in
+isn't really a startable player is a serious mark against the draft, no
+matter how the rest of it looks.
+
+The bench really does matter too — I love to see at least one or two
+startable flex guys on it, for injuries and bye weeks. But depth doesn't
+rescue a starting lineup with holes in it.
+
+Two worked examples of how much this moves a grade:
+
+- A team with four of the eight starting positions filled by non-starters
+  is a disaster, and it doesn't matter that the receivers are fine. That's
+  an F.
+- Another team drafted about as well as it's possible to draft, and I
+  still took it from an A down to a B+ purely because it didn't have what
+  anyone would call an RB1. Give that same team Jonathan Taylor instead
+  of Puka Nacua — remembering Puka goes higher — and it's an automatic
+  A or A+.
+
 ## Running backs
 
 You have to get 1 or 2 early, since this league tends to draft them high.
