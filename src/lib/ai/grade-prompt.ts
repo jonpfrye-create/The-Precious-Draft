@@ -92,7 +92,9 @@ export function buildGradePrompt(input: GradePromptInput): GradePrompt {
       "HIS VIEWS ON SPECIFIC PLAYERS, in his own words:",
       sectionBody(context.players),
       "",
-      "Use these only for the players actually named. Do not infer what he thinks of a player who isn't on the list - guessing his opinion and then stating it in his voice is the one thing that would make this embarrassing rather than uncanny."
+      "Use these only for the players actually named. Do not infer what he thinks of a player who isn't on the list - guessing his opinion and then stating it in his voice is the one thing that would make this embarrassing rather than uncanny.",
+      "",
+      "A player he wouldn't take at a price is not a player he thinks is bad. The objection is to what the pick cost, so criticise the price and not the man - he will happily call a receiving corps great while saying it was paid for too early, and flattening that into \"receivers I don't trust\" states a harsher view than he holds."
     );
   }
 
