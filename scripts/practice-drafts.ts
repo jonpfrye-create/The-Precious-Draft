@@ -2,6 +2,10 @@ import { config } from "dotenv";
 config({ path: ".env.local", quiet: true });
 
 import { createAdminSupabaseClient } from "../src/lib/supabase/admin-client";
+import {
+  isValidCommissionerSecretShape,
+  isValidLeagueCodeShape,
+} from "../src/lib/auth/codes";
 import { fetchAllPlayers } from "../src/lib/draft/player-pool";
 import {
   draftablePositions,
@@ -33,7 +37,11 @@ import {
 
 const LEAGUE_NAME = "ZZZ Practice Drafts";
 const LEAGUE_CODE = "PRACT1";
-const COMMISSIONER_SECRET = "PRACTICEPRACTICEPRACTICE77";
+// Crockford base32 has no I, L, O or U, so codes survive being read
+// aloud across a room. normalizeCode turns any I into a 1 on the way in,
+// which means a secret spelled "PRACTICE" can never match itself - the
+// stored copy keeps the I, the typed copy arrives as a 1. Hence PRACT1CE.
+const COMMISSIONER_SECRET = "PRACT1CEPRACT1CEPRACT1CE77";
 const ROUNDS = 14;
 
 const SLOTS: SlotSpec[] = [
@@ -191,6 +199,17 @@ async function remove() {
 
 async function create() {
   const supabase = createAdminSupabaseClient();
+
+  // Fail here rather than after writing a league nobody can sign into.
+  if (!isValidLeagueCodeShape(LEAGUE_CODE)) {
+    throw new Error(`League code "${LEAGUE_CODE}" is not a valid code shape.`);
+  }
+  if (!isValidCommissionerSecretShape(COMMISSIONER_SECRET)) {
+    throw new Error(
+      `Commissioner secret "${COMMISSIONER_SECRET}" is not a valid code shape - ` +
+        `Crockford base32 excludes I, L, O and U.`
+    );
+  }
 
   const { data: existing } = await supabase
     .from("leagues").select("id").eq("name", LEAGUE_NAME);
