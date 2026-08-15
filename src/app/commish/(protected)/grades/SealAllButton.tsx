@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { sealAllClamsGrades } from "./clams-actions";
+import { ACTION_FAILED } from "@/lib/errors";
 
 /**
  * Seals every team at once, before grading night starts.
@@ -68,7 +69,7 @@ export default function SealAllButton({
                 );
                 router.refresh();
               } catch {
-                setError("Couldn't reach the server.");
+                setError(ACTION_FAILED);
               }
             });
           }}

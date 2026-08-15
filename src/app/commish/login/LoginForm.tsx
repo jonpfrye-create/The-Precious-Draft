@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { signInAsCommissioner } from "./actions";
+import { ACTION_FAILED } from "@/lib/errors";
 
 export default function LoginForm({
   initialError,
@@ -27,7 +28,7 @@ export default function LoginForm({
           setError(result.error ?? "That didn't work.");
         }
       } catch {
-        setError("Couldn't reach the server. Check your connection.");
+        setError(ACTION_FAILED);
       }
     });
   }

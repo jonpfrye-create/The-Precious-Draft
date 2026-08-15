@@ -6,6 +6,7 @@ import { GRADES, gradeColor } from "@/lib/draft/grades";
 import { splitTeamName } from "@/lib/teams/branding";
 import { saveGrade } from "./actions";
 import ClamsPanel, { type ClamsState } from "./ClamsPanel";
+import { ACTION_FAILED } from "@/lib/errors";
 
 export interface RosterLine {
   slotName: string;
@@ -54,7 +55,7 @@ export default function GradeCard({
         setTimeout(() => setSaved(false), 1500);
         router.refresh();
       } catch {
-        setError("Couldn't reach the server.");
+        setError(ACTION_FAILED);
       }
     });
   }

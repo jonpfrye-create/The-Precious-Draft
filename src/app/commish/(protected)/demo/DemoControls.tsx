@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { resetDemo, simulatePicks } from "./actions";
+import { ACTION_FAILED } from "@/lib/errors";
 
 export default function DemoControls({
   phaseLabel,
@@ -35,7 +36,7 @@ export default function DemoControls({
         );
         router.refresh();
       } catch {
-        setError("Couldn't reach the server. Check your connection.");
+        setError(ACTION_FAILED);
       }
     });
   }

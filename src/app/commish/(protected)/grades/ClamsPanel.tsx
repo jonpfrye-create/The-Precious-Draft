@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { gradeColor } from "@/lib/draft/grades";
 import { sealClamsGrade, revealClamsGrade } from "./clams-actions";
+import { ACTION_FAILED } from "@/lib/errors";
 
 /**
  * The sealed envelope, per team.
@@ -68,7 +69,7 @@ export default function ClamsPanel({
         onDone?.();
         router.refresh();
       } catch {
-        setError("Couldn't reach the server.");
+        setError(ACTION_FAILED);
       }
     });
   }

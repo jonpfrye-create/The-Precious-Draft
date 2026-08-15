@@ -172,6 +172,25 @@ Needs `ANTHROPIC_API_KEY` in `.env.local` and in Vercel. Without it the
 seal button reports it's not configured and nothing else on the page is
 affected.
 
+## Do not deploy on draft day
+
+Server action ids are baked into a build. Any deploy makes every page
+already open in a browser post to ids the new build doesn't have, so
+every button silently fails until that page is reloaded — the board on
+the TV, and every phone in the room, all at once.
+
+Nothing warns you. The server stays up and healthy, so the pages look
+fine right until someone presses something.
+
+So: **no pushes to `main` on 29 August**, however small the fix looks.
+If something genuinely has to change mid-draft, tell the room to reload
+before carrying on. The same applies to any Vercel redeploy, including
+the one Vercel offers after an environment variable change.
+
+`src/lib/errors.ts` holds the shared message for a failed action, which
+says to refresh — the advice that actually fixes this, and harmless when
+the cause really is the network.
+
 ## Locked-in decisions (don't relitigate without asking)
 
 - **Commissioner access is a separate secret/link** from the plain league

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { PHASE_LABELS, type PhaseType } from "@/lib/draft/phase-templates";
 import { scarcityWarnings } from "@/lib/draft/scarcity";
 import { splitTeamName } from "@/lib/teams/branding";
+import { ACTION_FAILED } from "@/lib/errors";
 import {
   releaseLastPickOfPosition,
   startNextPhase,
@@ -77,7 +78,7 @@ export default function NextPhaseForm({
         // push() already fetches the destination fresh.
         router.push("/commish/order");
       } catch {
-        setError("Couldn't reach the server. Check your connection.");
+        setError(ACTION_FAILED);
       }
     });
   }

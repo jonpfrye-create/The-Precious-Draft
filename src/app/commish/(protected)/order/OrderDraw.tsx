@@ -18,6 +18,7 @@ import { pickNumbersForPosition } from "@/lib/draft/snake-order";
 import { playFanfare, playStinger, playSuspense } from "@/lib/audio/fanfare";
 import Confetti from "./Confetti";
 import { drawDraftOrder, revealNextPosition } from "./actions";
+import { ACTION_FAILED } from "@/lib/errors";
 
 interface Announcement {
   teamName: string;
@@ -85,7 +86,7 @@ export default function OrderDraw({
         setShowRedraw(false);
         router.refresh();
       } catch {
-        setError("Couldn't reach the server. Check your connection.");
+        setError(ACTION_FAILED);
       }
     });
   }
@@ -137,7 +138,7 @@ export default function OrderDraw({
           }, CARD_HOLD_MS);
         }
       } catch {
-        setError("Couldn't reach the server. Check your connection.");
+        setError(ACTION_FAILED);
       }
     });
   }
