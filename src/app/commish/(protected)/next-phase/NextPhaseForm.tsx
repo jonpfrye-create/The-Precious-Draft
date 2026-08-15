@@ -5,11 +5,7 @@ import { useRouter } from "next/navigation";
 import { PHASE_LABELS, type PhaseType } from "@/lib/draft/phase-templates";
 import { scarcityWarnings } from "@/lib/draft/scarcity";
 import { splitTeamName } from "@/lib/teams/branding";
-import {
-  releaseLastPickOfPosition,
-  startNextPhase,
-  type StartPhaseSlotInput,
-} from "./actions";
+import { startNextPhase, type StartPhaseSlotInput } from "./actions";
 
 interface TeamOption {
   id: string;
@@ -42,9 +38,6 @@ export default function NextPhaseForm({
   );
   const [slots, setSlots] = useState<StartPhaseSlotInput[]>(defaultSlots);
   const [editingSlots, setEditingSlots] = useState(false);
-  // Players put back into the pool to cover a shortage. Tracked here only
-  // so the page can say what happened; the real record is on the pick.
-  const [released, setReleased] = useState<string[]>([]);
 
   function toggle(teamId: string) {
     setSelected((prev) => {
@@ -252,51 +245,11 @@ export default function NextPhaseForm({
             ))}
           </ul>
           <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
-            At least one team would be left without a starter. Releasing the
-            last {warnings[0].position} taken in {previousPhaseLabel} puts him
-            back in the pool for this phase —{" "}
-            <strong>he stays on his {previousPhaseLabel} roster</strong>, since
-            these are separate leagues. You can start the phase either way;
-            this is a warning, not a block.
-          </p>
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={() =>
-              startTransition(async () => {
-                const result = await releaseLastPickOfPosition(
-                  warnings[0].position
-                );
-                if (!result.ok) {
-                  setError(result.error ?? "Couldn't release anyone.");
-                  return;
-                }
-                setReleased((prev) => [
-                  ...prev,
-                  `${result.playerName} (${result.teamName})`,
-                ]);
-                router.refresh();
-              })
-            }
-            className="mt-3 rounded bg-red-600 px-5 py-3 font-medium text-white disabled:opacity-40"
-          >
-            Release the last {warnings[0].position} from {previousPhaseLabel}
-          </button>
-        </div>
-      )}
-
-      {released.length > 0 && (
-        <div className="rounded border border-zinc-300 p-4 text-sm dark:border-zinc-700">
-          <p className="font-medium">
-            Released back into the pool for {label}:
-          </p>
-          <ul className="mt-1 list-disc pl-5 text-zinc-600 dark:text-zinc-400">
-            {released.map((entry) => (
-              <li key={entry}>{entry}</li>
-            ))}
-          </ul>
-          <p className="mt-2 text-zinc-500">
-            Each still counts on their {previousPhaseLabel} roster.
+            At least one team would be left without a starter. The usual fix
+            is to undo the last {warnings[0].position} taken in{" "}
+            {previousPhaseLabel} so it returns to the pool, or to drop that
+            slot from this phase&apos;s roster. You can still start the phase
+            — this is a warning, not a block.
           </p>
         </div>
       )}

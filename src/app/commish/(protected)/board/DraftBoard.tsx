@@ -259,12 +259,6 @@ export default function DraftBoard({
               className="text-blue-600 hover:underline dark:text-blue-400"
             >
               Rosters for Yahoo
-            </Link>{" "}
-            <Link
-              href="/commish/grades"
-              className="text-blue-600 hover:underline dark:text-blue-400"
-            >
-              Grades
             </Link>
             {isDemo && (
               <>

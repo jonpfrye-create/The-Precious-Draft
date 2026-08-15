@@ -59,9 +59,6 @@ export interface Pick {
   player_id: string;
   pick_number: number;
   round: number;
-  // Set when this player was put back into the pool for later phases. He
-  // keeps his place on this roster; he just stops being excluded.
-  released_at: string | null;
   // Where the commissioner pressed the sticker onto the board. Null for
   // auto-drafted picks, which fall back to a tilt derived from the pick id.
   placement_x: number | null;
@@ -185,7 +182,7 @@ export async function getPicks(phaseId: string): Promise<Pick[]> {
   const { data, error } = await supabase
     .from("picks")
     .select(
-      "id, phase_id, team_id, player_id, pick_number, round, released_at, placement_x, placement_y, placement_rotation"
+      "id, phase_id, team_id, player_id, pick_number, round, placement_x, placement_y, placement_rotation"
     )
     .eq("phase_id", phaseId)
     .order("pick_number", { ascending: true });
@@ -233,11 +230,7 @@ export async function getPriorPhasePicks(
     .in(
       "phase_id",
       priorPhases.map((p) => p.id)
-    )
-    // A released player still sits on his original team's roster, but no
-    // longer blocks anyone in a later phase - see
-    // supabase/006-releases-and-grades.sql.
-    .is("released_at", null);
+    );
   if (picksError) throw picksError;
 
   const sequenceByPhaseId = new Map(priorPhases.map((p) => [p.id, p.sequence]));
