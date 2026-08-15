@@ -24,6 +24,15 @@ the player.
 
 I also don't like paying a lot for a backup.
 
+**Why the position matters here at all.** A valuable quarterback is a
+valuable quarterback. Last season Josh Allen scored 511 points, while
+CMC — the top flex player — scored 369. Matt Stafford scored 564. That is
+the gap this league's scoring creates, and it's the reason a quarterback
+is worth having rather than an afterthought.
+
+So Josh Allen shouldn't go in the first round or so, but he's worth more
+than his price after that.
+
 ## Running backs
 
 You have to get 1 or 2 early, since this league tends to draft them high.

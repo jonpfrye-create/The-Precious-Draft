@@ -9,8 +9,10 @@ is never sent to the model. Write below it.
 The reason matters more than the name. "I don't trust him" teaches more
 than a list, because it transfers to players who aren't on the list.
 
-ADPs are half-PPR, 12 team, as of 14 Aug 2026. They will drift before
-draft day — the opinions are the durable part, not the numbers.
+ADPs are half-PPR, 12 team, as of 14 Aug 2026. Injury and camp notes are
+dated where they're the whole point — they go stale fastest, and a
+confident claim about a player's health in December that was true in
+August is worse than saying nothing.
 
 ---
 
@@ -32,7 +34,9 @@ K9 is the truth, I love him so much. Chiefs interior OL is much better
 than the Seahawks.
 
 **Josh Allen** (QB, BUF) — going 3.03
-A stud in any league, including ours.
+A stud in any league, including ours. He shouldn't go in the first round
+or so, but he scored 511 points last year while CMC, the top flex player,
+scored 369. A valuable quarterback is a valuable quarterback.
 
 **Ladd McConkey** (WR, LAC) — going 4.08
 Should have way more opportunities — and Herbert as well — now that they
@@ -69,22 +73,71 @@ Getting tons of camp buzz.
 Had some insane measurables, Raiders improved their OL, and it seems like
 he'd be the guy if Jeanty went down.
 
+### Liked with a real caveat
+
+**Matt Stafford** (QB, LAR)
+Scored 564 points last year, which was even more valuable than Allen, and
+I probably should have had him on the positive list. But I don't think
+there's much chance he replicates it, with a stronger defense and
+off-field questions around his left tackle and his top receiver.
+
 ## I wouldn't touch these at that price
 
-Reasons still to come — for now, treat the price as the objection, not
-the player.
+**Puka Nacua** (WR, LAR) — going 1.03
+It's all about what's happening off the field, none of which I like. I'm
+worried we're entering Antonio Brown territory.
 
-- **Puka Nacua** (WR, LAR) — going 1.03
-- **Rashee Rice** (WR, KC) — going 2.01
-- **A.J. Brown** (WR, NE) — going 2.07
-- **Josh Jacobs** (RB, GB) — going 2.12
-- **Travis Etienne** (RB, NO) — going 4.06
-- **Rome Odunze** (WR, CHI) — going 4.09
-- **DJ Moore** (WR, BUF) — going 5.01
-- **Alec Pierce** (WR, IND) — going 5.05
-- **Carnell Tate** (WR, TEN) — going 7.03
-- **Wan'Dale Robinson** (WR, TEN) — going 7.12
-- **Denver Broncos** (DEF, DEN) — going 8.06
-- **Jaxson Dart** (QB, NYG) — going 9.09
-- **Ricky Pearsall** (WR, SF) — going 10.04
-- **Rashid Shaheed** (WR, SEA) — going 10.10
+**Rashee Rice** (WR, KC) — going 2.01
+Same thing off the field, plus a knee injury.
+
+**A.J. Brown** (WR, NE) — going 2.07
+Looked so bad last year compared to years prior, and couldn't get
+separation. Maye is better than Hurts, but I still would have liked to
+see more production. I don't dislike him — just not at this price.
+
+**Josh Jacobs** (RB, GB) — going 2.12
+Injury issues and off-field issues.
+
+**Travis Etienne** (RB, NO) — going 4.06
+Underwhelming, and the Saints are already dealing with OL issues.
+
+**Rome Odunze** (WR, CHI) — going 4.09
+Said his foot will never be the same, which worries me.
+
+**DJ Moore** (WR, BUF) — going 5.01
+Hasn't been productive in a while. Though he did have a nice preseason
+game on 15 Aug, so this one is genuinely unsettled — treat it as a soft
+objection rather than a hard one.
+
+**Alec Pierce** (WR, IND) — going 5.05
+Injury concerns.
+
+**Carnell Tate** (WR, TEN) — going 7.03
+I don't like the Titans offense, and I didn't love him that much as a
+prospect.
+
+**Wan'Dale Robinson** (WR, TEN) — going 7.12
+Just has no upside.
+
+**Denver Broncos** (DEF, DEN) — going 8.06
+Too early for a defense, especially one that isn't so stacked that
+there's no room for falloff.
+
+**Jaxson Dart** (QB, NYG) — going 9.09
+Both a runner rather than a pocket passer, and injury issues — found his
+way to the medical tent again on 15 Aug. I do think he's talented.
+
+**Ricky Pearsall** (WR, SF) — going 10.04
+Already out for the year (as of 15 Aug). His ADP hasn't caught up.
+
+**Rashid Shaheed** (WR, SEA) — going 10.10
+I like him and think he'll be better than last year with the Seahawks,
+but he was just so unproductive that such a turnaround to fantasy
+relevance seems unlikely.
+
+## Note on the mid-round receivers
+
+Several of the players above are wide receivers going in rounds 4 to 7.
+That is not a view about the tier — it's these individuals. Getting a
+couple of starting receivers inside the first six rounds is still the
+plan.
