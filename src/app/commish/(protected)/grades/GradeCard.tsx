@@ -13,6 +13,16 @@ export interface RosterLine {
   playerName: string | null;
   position: string | null;
   nflTeam: string | null;
+  round: number | null;
+  pickInRound: number | null;
+  overall: number | null;
+  adp: number | null;
+}
+
+/** Round and pick, written the way ADP is - 1.02 is round one, pick two. */
+function pickLabel(line: RosterLine): string | null {
+  if (line.round === null || line.pickInRound === null) return null;
+  return `${line.round}.${String(line.pickInRound).padStart(2, "0")}`;
 }
 
 export default function GradeCard({
@@ -81,19 +91,41 @@ export default function GradeCard({
       </div>
 
       <ol className="flex flex-col gap-0.5 text-sm">
-        {roster.map((line, index) => (
-          <li key={index} className="flex gap-3">
-            <span className="w-16 shrink-0 font-mono text-xs uppercase text-zinc-500">
-              {line.slotName}
-            </span>
-            <span className={line.playerName ? "" : "text-zinc-400"}>
-              {line.playerName ?? "—"}
-              {line.nflTeam && (
-                <span className="text-zinc-500"> ({line.nflTeam})</span>
-              )}
-            </span>
-          </li>
-        ))}
+        {roster.map((line, index) => {
+          const label = pickLabel(line);
+          // Positive means taken ahead of the market.
+          const vsAdp =
+            line.adp !== null && line.overall !== null
+              ? Math.round(line.adp - line.overall)
+              : null;
+          return (
+            <li key={index} className="flex items-baseline gap-3">
+              <span className="w-14 shrink-0 font-mono text-xs uppercase text-zinc-500">
+                {line.slotName}
+              </span>
+              <span className="w-12 shrink-0 font-mono text-xs tabular-nums text-zinc-400">
+                {label ?? ""}
+              </span>
+              <span className={line.playerName ? "" : "text-zinc-400"}>
+                {line.playerName ?? "—"}
+                {line.nflTeam && (
+                  <span className="text-zinc-500"> ({line.nflTeam})</span>
+                )}
+                {vsAdp !== null && Math.abs(vsAdp) >= 8 && (
+                  <span
+                    className={`ml-2 font-mono text-xs ${
+                      vsAdp > 0
+                        ? "text-amber-700 dark:text-amber-500"
+                        : "text-emerald-700 dark:text-emerald-500"
+                    }`}
+                  >
+                    {vsAdp > 0 ? `+${vsAdp} early` : `${-vsAdp} late`}
+                  </span>
+                )}
+              </span>
+            </li>
+          );
+        })}
       </ol>
 
       <div className="flex flex-wrap items-center gap-2">

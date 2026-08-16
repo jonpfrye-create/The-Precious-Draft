@@ -91,13 +91,31 @@ export default async function GradesPage() {
             .map((pick) => playerById.get(pick.player_id))
             .filter((p) => p !== undefined);
 
+          // Where each player was taken, shown against the slot he ended
+          // up in. Reading "RB1 — pick 120" in one line is most of what
+          // grading a starting lineup actually involves.
+          const pickByPlayer = new Map(
+            picks.filter((p) => p.team_id === team.id).map((p) => [p.player_id, p])
+          );
+
           const roster = assignRoster(teamPlayers, slotSpecs).map(
-            (assignment) => ({
-              slotName: assignment.slot.slotName,
-              playerName: assignment.player?.full_name ?? null,
-              position: assignment.player?.position ?? null,
-              nflTeam: assignment.player?.nfl_team ?? null,
-            })
+            (assignment) => {
+              const pick = assignment.player
+                ? pickByPlayer.get(assignment.player.player_id)
+                : undefined;
+              return {
+                slotName: assignment.slot.slotName,
+                playerName: assignment.player?.full_name ?? null,
+                position: assignment.player?.position ?? null,
+                nflTeam: assignment.player?.nfl_team ?? null,
+                round: pick?.round ?? null,
+                pickInRound: pick
+                  ? ((pick.pick_number - 1) % teams.length) + 1
+                  : null,
+                overall: pick?.pick_number ?? null,
+                adp: assignment.player?.adp ?? null,
+              };
+            }
           );
 
           const existing = gradeByTeam.get(team.id);

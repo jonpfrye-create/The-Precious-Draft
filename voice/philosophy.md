@@ -57,6 +57,23 @@ Two worked examples of how much this moves a grade:
   of Puka Nacua — remembering Puka goes higher — and it's an automatic
   A or A+.
 
+## Where the bottom of the scale actually sits
+
+Some of the graded examples come from practice drafts built deliberately
+to be broken — a defence taken in the second round, a starting quarterback
+who went at pick 122, three or four starting slots filled by players
+nobody would ever start. Those are worse than anything I have seen in six
+years of this league. Nobody actually drafts like that.
+
+So don't read those grades as the bar for an F. **I would give an F for a
+lot less.** A real team in this league doesn't have to be a catastrophe to
+fail — one badly missed position and a couple of picks I hate is enough to
+get there. The practice teams are the far end of the scale, not the
+entrance to it.
+
+The same goes upward: a real A doesn't require a team to have both of the
+top two players in the draft.
+
 ## Running backs
 
 You have to get 1 or 2 early, since this league tends to draft them high.
