@@ -1,7 +1,15 @@
 "use server";
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import { requireCommissionerLeagueForAction } from "@/lib/auth/commissioner";
+import {
+  getCommissionerLeague,
+  requireCommissionerLeagueForAction,
+} from "@/lib/auth/commissioner";
+import { getDrafterTeamForAction } from "@/lib/auth/drafter";
+import {
+  checkPickPermission,
+  refusalMessage,
+} from "@/lib/draft/pick-permission";
 import { generateSnakeOrder } from "@/lib/draft/snake-order";
 import { availablePlayersForPhase } from "@/lib/draft/pool-exclusion";
 import { isPositionDraftable } from "@/lib/draft/roster-fit";
@@ -37,12 +45,27 @@ export async function makePick(
   playerId: string,
   placement?: PickPlacement
 ): Promise<MakePickResult> {
-  const league = await requireCommissionerLeagueForAction();
+  // Two kinds of caller now that everyone drafts from their own phone:
+  // the commissioner, who may pick for anybody, and a drafter, who may
+  // pick only for their own team and only on their turn. Neither is
+  // trusted from the request - both are re-established here, because a
+  // server action is its own endpoint and runs no layout.
+  const [commissionerLeague, drafterTeam] = await Promise.all([
+    getCommissionerLeague(),
+    getDrafterTeamForAction(),
+  ]);
 
   const phase = await getPhaseById(phaseId);
   if (!phase) throw new Error("Phase not found");
-  if (phase.league_id !== league.id) {
-    throw new Error("That phase belongs to a different league");
+
+  // Whichever credential they hold has to belong to this phase's league.
+  const isCommissioner = commissionerLeague?.id === phase.league_id;
+  const claimedTeamId =
+    drafterTeam && drafterTeam.leagueId === phase.league_id
+      ? drafterTeam.teamId
+      : null;
+  if (!isCommissioner && !claimedTeamId) {
+    throw new Error("You don't have access to this draft");
   }
 
   const [teams, picks, priorPhasePicks] = await Promise.all([
@@ -61,6 +84,25 @@ export async function makePick(
   }
 
   const onTheClock = snakeOrder[picks.length];
+
+  // The clock is recomputed from the picks table, never taken from the
+  // caller, so a phone that has been asleep and thinks it is still on the
+  // clock is refused rather than believed.
+  //
+  // makePick always picks for whoever is on the clock - it takes no team
+  // argument - so the team being asked about is the drafter's own. Passing
+  // the on-clock team as both would make "not your turn" unreachable and
+  // tell someone waiting their turn that it isn't their team.
+  const permission = checkPickPermission({
+    isCommissioner,
+    claimedTeamId,
+    forTeamId: claimedTeamId ?? onTheClock.teamId,
+    onClockTeamId: onTheClock.teamId,
+    phaseIsComplete: phase.status === "completed",
+  });
+  if (!permission.allowed) {
+    throw new Error(refusalMessage(permission.reason!));
+  }
 
   // Recompute the available pool server-side rather than trusting the
   // client's idea of what's available - this is the one place a stale
