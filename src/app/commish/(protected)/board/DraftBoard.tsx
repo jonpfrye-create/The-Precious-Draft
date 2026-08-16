@@ -281,6 +281,12 @@ export default function DraftBoard({
               className="text-blue-600 hover:underline dark:text-blue-400"
             >
               Grades
+            </Link>{" "}
+            <Link
+              href="/commish/claims"
+              className="text-blue-600 hover:underline dark:text-blue-400"
+            >
+              Claims
             </Link>
             {isDemo && (
               <>
