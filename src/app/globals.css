@@ -25,6 +25,95 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* The poster ----------------------------------------------------------
+   Every year the league renames itself after a film with "Precious"
+   wedged into the title. This year it's One Precious After Another, so
+   the front door is a one-sheet.
+
+   The photograph does the work; everything here is the darkroom. Grade,
+   grain and vignette are what separate a holiday snap from something
+   that looks printed. */
+
+.poster-shot {
+  /* Crushed, contrastier, and pushed warm - the sun-blasted look the
+     source photo is already halfway to. */
+  filter: contrast(1.22) saturate(1.18) brightness(0.92) sepia(0.14);
+  object-fit: cover;
+  /* Keeps his head in the upper third when a landscape photo is cropped
+     into a portrait poster. */
+  object-position: 58% 24%;
+}
+
+/* Teal in the shadows, amber through the highlights. */
+.poster-grade {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 176, 91, 0.22) 0%,
+      rgba(255, 255, 255, 0) 38%,
+      rgba(6, 34, 54, 0.42) 78%,
+      rgba(4, 12, 22, 0.92) 100%
+    );
+  mix-blend-mode: multiply;
+}
+
+.poster-lift {
+  background: radial-gradient(
+    120% 70% at 62% 22%,
+    rgba(255, 214, 150, 0.4) 0%,
+    rgba(255, 214, 150, 0) 55%
+  );
+  mix-blend-mode: screen;
+}
+
+/* Film grain. Turbulence rendered inline so nothing is fetched. */
+.poster-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  opacity: 0.16;
+  mix-blend-mode: overlay;
+}
+
+/* Condensed poster faces, system only. Impact is on both macOS and
+   Windows, which is why film posters and gig flyers have leaned on it
+   for thirty years. */
+.poster-title {
+  font-family: Haettenschweiler, Impact, "Arial Narrow", "Helvetica Neue",
+    sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.005em;
+  line-height: 0.82;
+  text-transform: uppercase;
+}
+
+.billing {
+  font-family: "Arial Narrow", "Helvetica Neue Condensed", Impact, sans-serif;
+  font-stretch: condensed;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  line-height: 1.5;
+}
+
+@keyframes poster-in {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-poster-in {
+  animation: poster-in 1.1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-poster-in {
+    animation: none;
+  }
+}
+
 /* Welcome screen ------------------------------------------------------
    Clicky Draft is buried; this one climbs out of the grave behind it. */
 
@@ -103,14 +192,24 @@ body {
    in marker. Players with no ADP are the modern equivalent: nobody
    expected them to go, so there was no sticker in the set.
 
-   System handwriting faces only - no web font to download, so this costs
-   nothing. Falls back to plain italic where none of them exist. */
+   Print-style faces, not joined-up script. The first version reached for
+   Brush Script and Snell Roundhand, which are formal calligraphy - a
+   wedding invitation, not a bloke leaning over a board with a Sharpie.
+   Marker Felt and Chalkboard are blunt and upright, which is what a
+   marker actually looks like.
+
+   System faces only - no web font to download, so this costs nothing. */
 .sharpie {
-  font-family: "Bradley Hand", "Segoe Script", "Brush Script MT",
-    "Snell Roundhand", cursive;
-  font-style: italic;
+  font-family: "Marker Felt", "Chalkboard SE", "Segoe Print", "Comic Sans MS",
+    cursive;
   font-weight: 700;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.005em;
+  /* A marker lays down more ink than a printer. */
+  -webkit-text-stroke: 0.35px currentColor;
+  /* Nobody writes perfectly level into a box. */
+  transform: rotate(-0.6deg);
+  transform-origin: left center;
+  display: inline-block;
 }
 
 /* Stickers ------------------------------------------------------------

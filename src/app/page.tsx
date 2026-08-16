@@ -1,6 +1,6 @@
+import Image from "next/image";
 import Link from "next/link";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
-import { unitFromSeed } from "@/lib/random/seeded";
 import {
   isValidCommissionerSecretShape,
   normalizeCode,
@@ -9,16 +9,30 @@ import {
 // Shows a live player count - must never be statically prerendered.
 export const dynamic = "force-dynamic";
 
-// Stars are placed from a hash rather than Math.random: randomness during
-// render isn't allowed, and would re-scatter them on every request anyway.
-const STARS = Array.from({ length: 60 }, (_, i) => ({
-  key: i,
-  left: unitFromSeed(`star:${i}:x`) * 100,
-  top: unitFromSeed(`star:${i}:y`) * 62,
-  size: 1 + unitFromSeed(`star:${i}:s`) * 2,
-  opacity: 0.25 + unitFromSeed(`star:${i}:o`) * 0.75,
-  delay: unitFromSeed(`star:${i}:d`) * 4,
-}));
+/**
+ * The front door, as a film poster.
+ *
+ * The league renames itself every year after a film with "Precious"
+ * wedged into the title; this year it's One Precious After Another, so
+ * the commissioner is the one on the one-sheet. The billing block is the
+ * whole league, in draft order of nothing in particular, and the studio
+ * credit at the bottom buries Clicky Draft where the gravestone used to.
+ */
+
+const CAST = [
+  "James",
+  "Chris",
+  "Enzo",
+  "David",
+  "Sam",
+  "Jon",
+  "Scott",
+  "Larry",
+  "Parker",
+  "Phil",
+  "Brandon",
+  "Deonte",
+];
 
 export default async function Home({
   searchParams,
@@ -27,7 +41,7 @@ export default async function Home({
 }) {
   // A commissioner link normally jumps straight to the board, which skips
   // this page entirely. Handing someone "/?secret=..." instead lets them
-  // see the graveyard first and then walk in - the front door rather than
+  // see the poster first and then walk in - the front door rather than
   // the side entrance.
   //
   // The shape is checked before it goes anywhere near an href, so a junk
@@ -44,152 +58,74 @@ export default async function Home({
     .select("*", { count: "exact", head: true });
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-[#05070f] via-[#0b1020] to-[#161022]">
-      {/* Night sky */}
-      <div aria-hidden className="pointer-events-none absolute inset-0">
-        {STARS.map((star) => (
-          <span
-            key={star.key}
-            className="absolute rounded-full bg-white animate-twinkle"
-            style={{
-              left: `${star.left}%`,
-              top: `${star.top}%`,
-              width: `${star.size}px`,
-              height: `${star.size}px`,
-              opacity: star.opacity,
-              animationDelay: `${star.delay}s`,
-            }}
+    <div className="flex min-h-screen flex-col items-center justify-center gap-8 bg-[#08090c] px-4 py-10">
+      <div className="animate-poster-in w-full max-w-[540px]">
+        <div className="relative aspect-[2/3] w-full overflow-hidden rounded-sm shadow-[0_30px_80px_-20px_rgba(0,0,0,0.9)] ring-1 ring-white/10">
+          <Image
+            src="/james.png"
+            alt="James, in profile against the ocean"
+            fill
+            priority
+            sizes="(max-width: 640px) 100vw, 540px"
+            className="poster-shot"
           />
-        ))}
-        <div
-          className="absolute right-[12%] top-[10%] h-24 w-24 rounded-full bg-[#f5f0dc] opacity-80"
-          style={{ boxShadow: "0 0 70px 20px rgba(245,240,220,0.28)" }}
-        />
+
+          {/* Darkroom passes, in order: grade, lift, grain. */}
+          <div aria-hidden className="poster-grade absolute inset-0" />
+          <div aria-hidden className="poster-lift absolute inset-0" />
+          <div aria-hidden className="poster-grain absolute inset-0" />
+
+          {/* Top matter */}
+          <div className="absolute inset-x-0 top-0 px-6 pt-6 text-center">
+            <p className="billing text-[9px] text-white/70 sm:text-[10px]">
+              The Precious Draft presents &middot; a Jonny Clams production
+            </p>
+          </div>
+
+          {/* Title and billing */}
+          <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-5 pb-5 text-center">
+            <p className="billing mb-2 text-[10px] tracking-[0.34em] text-[#f0b46a] sm:text-[11px]">
+              James
+            </p>
+
+            <h1 className="poster-title text-[clamp(2.6rem,12vw,4.6rem)] text-[#f6efe2] drop-shadow-[0_2px_18px_rgba(0,0,0,0.85)]">
+              One Precious
+              <br />
+              After Another
+            </h1>
+
+            <p className="billing mt-3 text-[9px] tracking-[0.3em] text-white/75 sm:text-[10px]">
+              Draft Day &middot; August 29
+            </p>
+
+            {/* The billing block, set the way real ones are: everything
+                in one unbroken condensed run, too small to read
+                comfortably and there to be read anyway. */}
+            <p className="billing mt-3 max-w-[92%] text-[6.5px] leading-[1.7] text-white/55 sm:text-[7.5px]">
+              The Precious Draft presents a Jonny Clams production &ldquo;One
+              Precious After Another&rdquo; starring {CAST.join(" · ")} casting
+              by Sleeper &middot; average draft position by Fantasy Football
+              Calculator &middot; grades by Clams AI &middot; snake order drawn
+              live &middot; no pick timer &middot; in loving memory of Clicky
+              Draft 2020&ndash;2025
+            </p>
+          </div>
+        </div>
       </div>
 
-      <main className="relative z-10 flex min-h-screen flex-col items-center justify-end pb-0">
-        {/* The ghost, rising */}
-        <div className="animate-rise flex flex-col items-center px-6 text-center">
-          <p className="mb-2 text-sm font-semibold uppercase tracking-[0.5em] text-emerald-300/70">
-            It rises
-          </p>
-          <h1
-            className="text-5xl font-black uppercase leading-[0.9] tracking-tight text-emerald-100 sm:text-7xl md:text-8xl"
-            style={{
-              textShadow:
-                "0 0 18px rgba(110,231,183,0.65), 0 0 48px rgba(52,211,153,0.45), 0 0 90px rgba(16,185,129,0.3)",
-            }}
-          >
-            The Precious
-            <br />
-            Draft
-          </h1>
-        </div>
-
-        {/* Graveyard */}
-        <div className="relative mt-6 flex w-full justify-center">
-          <svg
-            viewBox="0 0 320 220"
-            className="h-[280px] w-[380px] md:h-[340px] md:w-[460px]"
-            role="img"
-            aria-label="A gravestone reading Clicky Draft, Rest In Pieces"
-          >
-            {/* Glow leaking out of the grave */}
-            <ellipse
-              cx="160"
-              cy="196"
-              rx="96"
-              ry="16"
-              fill="rgba(52,211,153,0.22)"
-              className="animate-grave-glow"
-            />
-
-            {/* Headstone, leaning the way old stones do */}
-            <g transform="rotate(-2.5 160 150)">
-              <path
-                d="M104 196 V96 a56 56 0 0 1 112 0 V196 Z"
-                fill="#4b5563"
-              />
-              <path
-                d="M110 190 V98 a50 50 0 0 1 100 0 V190 Z"
-                fill="#6b7280"
-              />
-              <text
-                x="160"
-                y="86"
-                textAnchor="middle"
-                className="fill-zinc-300"
-                style={{ font: "700 15px system-ui", letterSpacing: "3px" }}
-              >
-                R.I.P.
-              </text>
-              <text
-                x="160"
-                y="126"
-                textAnchor="middle"
-                className="fill-zinc-200"
-                style={{ font: "800 21px system-ui" }}
-              >
-                CLICKY
-              </text>
-              <text
-                x="160"
-                y="150"
-                textAnchor="middle"
-                className="fill-zinc-200"
-                style={{ font: "800 21px system-ui" }}
-              >
-                DRAFT
-              </text>
-              <text
-                x="160"
-                y="170"
-                textAnchor="middle"
-                className="fill-zinc-300"
-                style={{ font: "700 13px system-ui", letterSpacing: "1px" }}
-              >
-                2020 &ndash; 2025
-              </text>
-              <text
-                x="160"
-                y="186"
-                textAnchor="middle"
-                className="fill-zinc-400"
-                style={{ font: "600 11px system-ui", letterSpacing: "1px" }}
-              >
-                rest in pieces
-              </text>
-            </g>
-
-            {/* Ground */}
-            <path
-              d="M0 196 Q80 186 160 196 T320 194 V220 H0 Z"
-              fill="#14121c"
-            />
-            <path
-              d="M0 200 Q80 192 160 200 T320 198"
-              fill="none"
-              stroke="rgba(52,211,153,0.18)"
-              strokeWidth="2"
-            />
-          </svg>
-        </div>
-
-        {/* Doors */}
-        <div className="relative z-10 -mt-6 flex flex-col items-center gap-4 pb-12">
-          <Link
-            href={entryHref}
-            className="rounded-lg bg-emerald-400 px-8 py-4 text-lg font-bold uppercase tracking-wider text-emerald-950 transition-transform hover:scale-105"
-          >
-            Enter the draft
-          </Link>
-          <p className="text-xs text-zinc-500">
-            {error
-              ? `Player pool unavailable: ${error.message}`
-              : `${count?.toLocaleString()} players in the pool`}
-          </p>
-        </div>
-      </main>
+      <div className="flex flex-col items-center gap-3">
+        <Link
+          href={entryHref}
+          className="rounded-sm bg-[#e8622c] px-10 py-4 text-lg font-bold uppercase tracking-[0.2em] text-[#1a0a04] transition-transform hover:scale-105"
+        >
+          Enter the draft
+        </Link>
+        <p className="text-xs text-zinc-600">
+          {error
+            ? `Player pool unavailable: ${error.message}`
+            : `${count?.toLocaleString()} players in the pool`}
+        </p>
+      </div>
     </div>
   );
 }

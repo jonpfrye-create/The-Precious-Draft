@@ -492,7 +492,11 @@ export default function DraftBoard({
                             >
                               {player.full_name}
                             </div>
-                            <div className="text-xs opacity-70">
+                            <div
+                              className={`text-xs opacity-70 ${
+                                player.adp_formatted ? "" : "sharpie"
+                              }`}
+                            >
                               {player.position}
                               {player.nfl_team ? ` · ${player.nfl_team}` : ""}
                             </div>
