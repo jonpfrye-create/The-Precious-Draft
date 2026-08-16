@@ -19,7 +19,11 @@ import {
 } from "@/lib/draft/queries";
 import DraftBoard from "./DraftBoard";
 
-export default async function BoardPage() {
+export default async function BoardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ phase?: string }>;
+}) {
   // The league comes from the commissioner's own secret, not from "whichever
   // league is oldest" - so creating a second league doesn't strand them on
   // the first one.
@@ -29,8 +33,16 @@ export default async function BoardPage() {
   // board is still the thing people want to look at - it's the finished
   // draft. Fall back to the last phase rather than redirecting.
   const phases = await getPhasesForLeague(league.id);
-  const phase =
-    (await getCurrentPhase(league.id)) ?? phases[phases.length - 1] ?? null;
+  const live = (await getCurrentPhase(league.id)) ?? phases[phases.length - 1];
+
+  // A phase can be asked for by id so finished boards stay reachable -
+  // the three drafts are one continuous story and people want to look
+  // back at Main while Leftovers is running. The id is matched against
+  // this league's own phases rather than trusted, so a phase id from
+  // someone else's league resolves to nothing and falls through to the
+  // live one.
+  const { phase: requested } = await searchParams;
+  const phase = (requested && phases.find((p) => p.id === requested)) || live;
   if (!phase) redirect(await commissionerDestination(league.id));
 
   const [teams, rosterSlots, picks, sheetPlayers] = await Promise.all([
@@ -58,6 +70,12 @@ export default async function BoardPage() {
       picks={picks}
       pickedPlayers={pickedPlayers}
       sheetPlayers={sheetPlayers}
+      allPhases={phases.map((p) => ({
+        id: p.id,
+        type: p.type,
+        status: p.status,
+        isLive: p.id === live?.id,
+      }))}
     />
   );
 }

@@ -36,16 +36,23 @@ import {
  */
 
 const DISASTERS = process.argv.includes("--disasters");
+const ROUNDTWO = process.argv.includes("--round-two");
 
-const LEAGUE_NAME = DISASTERS ? "ZZZ Disasters" : "ZZZ Practice Drafts";
-const LEAGUE_CODE = DISASTERS ? "DSASTR" : "PRACT1";
+const LEAGUE_NAME = ROUNDTWO
+  ? "ZZZ Practice Two"
+  : DISASTERS
+    ? "ZZZ Disasters"
+    : "ZZZ Practice Drafts";
+const LEAGUE_CODE = ROUNDTWO ? "PRACT2" : DISASTERS ? "DSASTR" : "PRACT1";
 // Crockford base32 has no I, L, O or U, so codes survive being read
 // aloud across a room. normalizeCode turns any I into a 1 on the way in,
 // which means a secret spelled "PRACTICE" can never match itself - the
 // stored copy keeps the I, the typed copy arrives as a 1. Hence PRACT1CE.
-const COMMISSIONER_SECRET = DISASTERS
-  ? "D1SASTERD1SASTERD1SASTER55"
-  : "PRACT1CEPRACT1CEPRACT1CE77";
+const COMMISSIONER_SECRET = ROUNDTWO
+  ? "PRACT2PRACT2PRACT2PRACT2ZZ"
+  : DISASTERS
+    ? "D1SASTERD1SASTERD1SASTER55"
+    : "PRACT1CEPRACT1CEPRACT1CE77";
 const ROUNDS = 14;
 
 const SLOTS: SlotSpec[] = [
@@ -234,7 +241,106 @@ const DISASTER_SET: Archetype[] = [
   })),
 ];
 
-const SET: Archetype[] = DISASTERS ? DISASTER_SET : ARCHETYPES;
+/**
+ * A second set of twelve, none of them repeating the first ten.
+ *
+ * These are all plausible - no punting, no defence in the second round.
+ * The corpus is thickest at the extremes and thin through the middle,
+ * which is exactly where real teams land, so this set is built to
+ * produce arguable B-minus-to-A-minus drafts rather than obvious ones.
+ */
+const ROUND_TWO_SET: Archetype[] = [
+  {
+    // One elite back and then receivers all the way down.
+    team: "Hero Ball - Reg",
+    want: (r) => (r === 1 ? ["RB"] : r <= 6 ? ["WR"] : r === 7 ? ["QB"] :
+      r <= 10 ? ["RB", "WR"] : r === 11 ? ["TE"] : ["DEF", "K"]),
+    slip: () => 1,
+  },
+  {
+    // Never takes a quarterback until the very end.
+    team: "Stream Team - Bex",
+    want: (r) => (r <= 3 ? ["RB", "WR"] : r <= 8 ? ["WR", "RB"] :
+      r === 9 ? ["TE"] : r <= 11 ? ["RB", "WR"] : r === 12 ? ["QB"] : ["DEF", "K"]),
+    slip: () => 2,
+  },
+  {
+    // Elite tight end early and a second one hoarded behind him.
+    team: "Big Slot - Coop",
+    want: (r) => (r <= 2 ? ["RB", "WR"] : r === 3 ? ["TE"] : r <= 7 ? ["WR", "RB"] :
+      r === 8 ? ["QB"] : r === 9 ? ["TE"] : r <= 12 ? ["RB", "WR"] : ["DEF", "K"]),
+    slip: () => 1,
+  },
+  {
+    // Pure best-available, no plan at all beyond the board.
+    team: "Chalk Eater - Val",
+    want: () => ["QB", "RB", "WR", "TE"],
+    slip: () => 0,
+  },
+  {
+    // Takes the backup to every back it owns.
+    team: "Insurance Policy - Nate",
+    want: (r) => (r <= 4 ? ["RB"] : r <= 7 ? ["WR"] : r === 8 ? ["QB"] :
+      r <= 11 ? ["RB"] : r === 12 ? ["TE"] : ["DEF", "K"]),
+    slip: (r) => (r >= 9 ? 12 : 1),
+  },
+  {
+    // Balanced, disciplined, faintly boring.
+    team: "By The Book - Suki",
+    want: (r) => (r <= 2 ? ["RB"] : r <= 4 ? ["WR"] : r === 5 ? ["RB"] :
+      r === 6 ? ["QB"] : r === 7 ? ["WR"] : r === 8 ? ["TE"] :
+      r <= 12 ? ["RB", "WR"] : ["DEF", "K"]),
+    slip: () => 0,
+  },
+  {
+    // Two quarterbacks, both cheap, both late.
+    team: "Double Dip - Ozzy",
+    want: (r) => (r <= 5 ? ["RB", "WR"] : r <= 7 ? ["WR", "RB"] :
+      r === 8 || r === 10 ? ["QB"] : r === 11 ? ["TE"] : r === 12 ? ["RB", "WR"] : ["DEF", "K"]),
+    slip: () => 2,
+  },
+  {
+    // Receivers with the first four picks and no apology.
+    team: "Air Raid - Della",
+    want: (r) => (r <= 4 ? ["WR"] : r <= 8 ? ["RB"] : r === 9 ? ["QB"] :
+      r === 10 ? ["TE"] : r <= 12 ? ["WR", "RB"] : ["DEF", "K"]),
+    slip: () => 1,
+  },
+  {
+    // Waits on everything and swings late.
+    team: "Patience Please - Ike",
+    want: (r) => (r <= 2 ? ["RB", "WR"] : r <= 7 ? ["WR", "RB"] :
+      r === 8 ? ["TE"] : r === 9 ? ["QB"] : ["RB", "WR"]),
+    slip: (r) => (r >= 10 ? 16 : 2),
+  },
+  {
+    // Mild reacher - a few picks early, never absurd.
+    team: "Slight Reach - Moss",
+    want: (r) => (r <= 2 ? ["RB"] : r <= 6 ? ["WR", "RB"] : r === 7 ? ["QB"] :
+      r === 8 ? ["TE"] : r <= 12 ? ["RB", "WR"] : ["DEF", "K"]),
+    slip: () => 7,
+  },
+  {
+    // Tight end and defence both left to the last possible moment.
+    team: "Last Call - Trix",
+    want: (r) => (r <= 3 ? ["RB", "WR"] : r <= 8 ? ["WR", "RB"] :
+      r === 9 ? ["QB"] : r <= 12 ? ["RB", "WR"] : r === 13 ? ["TE"] : ["DEF"]),
+    slip: () => 1,
+  },
+  {
+    // Backs and a quarterback early, receivers as an afterthought.
+    team: "Ground Control - Hux",
+    want: (r) => (r <= 3 ? ["RB"] : r === 4 ? ["QB"] : r <= 9 ? ["WR"] :
+      r === 10 ? ["TE"] : r <= 12 ? ["RB", "WR"] : ["DEF", "K"]),
+    slip: () => 1,
+  },
+];
+
+const SET: Archetype[] = ROUNDTWO
+  ? ROUND_TWO_SET
+  : DISASTERS
+    ? DISASTER_SET
+    : ARCHETYPES;
 
 /**
  * A repeatable offset in [0, range). Deterministic so two runs of this

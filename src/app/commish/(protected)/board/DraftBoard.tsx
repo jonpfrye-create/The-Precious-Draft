@@ -28,6 +28,15 @@ interface DraftBoardProps {
   picks: Pick[];
   pickedPlayers: Player[];
   sheetPlayers: SheetPlayer[];
+  allPhases: PhaseLink[];
+}
+
+export interface PhaseLink {
+  id: string;
+  type: string;
+  status: string;
+  /** The phase the draft is actually on right now. */
+  isLive: boolean;
 }
 
 export default function DraftBoard({
@@ -40,6 +49,7 @@ export default function DraftBoard({
   picks,
   pickedPlayers,
   sheetPlayers,
+  allPhases,
 }: DraftBoardProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -62,6 +72,12 @@ export default function DraftBoard({
   const [zoomOrigin, setZoomOrigin] = useState<{ x: number; y: number } | null>(
     null
   );
+
+  // Whether this is the board the draft is actually on. Looking back at a
+  // finished phase must stay read-only: undo there would reopen a
+  // completed draft that a later phase has already excluded players from.
+  const viewingLive = allPhases.find((p) => p.id === phase.id)?.isLive ?? true;
+  const livePhase = allPhases.find((p) => p.isLive);
 
   const snakeOrder = useMemo(
     () => generateSnakeOrder(teams.map((t) => t.id), phase.rounds),
@@ -280,6 +296,29 @@ export default function DraftBoard({
           </p>
         </div>
         <div className="flex items-center gap-4">
+          {allPhases.length > 1 && (
+            <div className="flex items-center gap-1 rounded border border-zinc-300 p-1 dark:border-zinc-700">
+              {allPhases.map((p) => (
+                <Link
+                  key={p.id}
+                  href={`/commish/board?phase=${p.id}`}
+                  className={`rounded px-3 py-1.5 text-sm font-medium capitalize ${
+                    p.id === phase.id
+                      ? "bg-black text-white dark:bg-white dark:text-black"
+                      : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+                  }`}
+                >
+                  {p.type}
+                  {p.isLive && p.id !== phase.id && (
+                    <span
+                      className="ml-1.5 inline-block h-2 w-2 rounded-full bg-green-500 align-middle"
+                      title="the draft is here right now"
+                    />
+                  )}
+                </Link>
+              ))}
+            </div>
+          )}
           {phase.status === "completed" ? (
             <div className="flex items-center gap-3">
               <span className="rounded bg-green-600 px-4 py-2 font-medium text-white">
@@ -291,7 +330,7 @@ export default function DraftBoard({
               >
                 Rosters for Yahoo →
               </Link>
-              {phase.type !== "microwave" && (
+              {phase.type !== "microwave" && viewingLive && (
                 <Link
                   href="/commish/next-phase"
                   className="rounded bg-black px-4 py-2 font-medium text-white dark:bg-white dark:text-black"
@@ -307,7 +346,12 @@ export default function DraftBoard({
           )}
           <button
             onClick={handleUndo}
-            disabled={isPending || picks.length === 0}
+            disabled={isPending || picks.length === 0 || !viewingLive}
+            title={
+              viewingLive
+                ? undefined
+                : "Undo only works on the board the draft is on"
+            }
             className="rounded border border-red-300 px-4 py-2 text-red-600 disabled:opacity-30 dark:border-red-800 dark:text-red-400"
           >
             Undo last pick
@@ -356,6 +400,22 @@ export default function DraftBoard({
           Draft order was redrawn {phase.order_draw_count - 1}{" "}
           {phase.order_draw_count - 1 === 1 ? "time" : "times"}.
         </p>
+      )}
+
+      {!viewingLive && livePhase && (
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded border border-amber-300 bg-amber-50 px-4 py-3 dark:border-amber-800 dark:bg-amber-950/40">
+          <span className="text-sm text-amber-900 dark:text-amber-200">
+            You&apos;re looking back at the finished{" "}
+            <span className="font-semibold capitalize">{phase.type}</span>{" "}
+            board. Nothing here can be changed.
+          </span>
+          <Link
+            href={`/commish/board?phase=${livePhase.id}`}
+            className="rounded bg-amber-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-amber-500"
+          >
+            Back to <span className="capitalize">{livePhase.type}</span> &rarr;
+          </Link>
+        </div>
       )}
 
       {forced.length > 0 && onClockTeam && phase.status !== "completed" && (
