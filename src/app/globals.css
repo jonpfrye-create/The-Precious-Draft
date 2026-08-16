@@ -34,36 +34,70 @@ body {
    grain and vignette are what separate a holiday snap from something
    that looks printed. */
 
-.poster-shot {
-  /* Crushed, contrastier, and pushed warm - the sun-blasted look the
-     source photo is already halfway to. */
-  filter: contrast(1.22) saturate(1.18) brightness(0.92) sepia(0.14);
-  object-fit: cover;
-  /* Keeps his head in the upper third when a landscape photo is cropped
-     into a portrait poster. */
-  object-position: 58% 24%;
+/* Framing the face.
+   These three are the only numbers worth touching if the crop is wrong:
+   the origin is the point on the photo that stays put while everything
+   grows around it, so it should sit on his head. */
+.poster-face {
+  --face-x: 62%;
+  --face-y: 30%;
+  --face-zoom: 1.6;
+  transform: scale(var(--face-zoom));
+  transform-origin: var(--face-x) var(--face-y);
 }
 
-/* Teal in the shadows, amber through the highlights. */
+/* The source is a blue photograph and the reference poster is rust and
+   amber all the way through. sepia flattens it to one warm channel
+   first; saturate and hue-rotate then push that channel where it needs
+   to go. Grading the blue directly would leave the sky fighting it. */
+.poster-shot {
+  filter: sepia(0.92) saturate(2.4) hue-rotate(-14deg) contrast(1.18)
+    brightness(0.92);
+  object-fit: cover;
+  object-position: 58% 26%;
+}
+
+/* Rust up top, near-black at the horizon, the way the reference sits a
+   burning sky over a dark road. */
 .poster-grade {
-  background:
-    linear-gradient(
-      180deg,
-      rgba(255, 176, 91, 0.22) 0%,
-      rgba(255, 255, 255, 0) 38%,
-      rgba(6, 34, 54, 0.42) 78%,
-      rgba(4, 12, 22, 0.92) 100%
-    );
+  background: linear-gradient(
+    180deg,
+    rgba(120, 42, 8, 0.5) 0%,
+    rgba(180, 74, 18, 0.16) 26%,
+    rgba(40, 14, 4, 0.24) 58%,
+    rgba(14, 6, 3, 0.86) 84%,
+    rgba(8, 4, 2, 0.98) 100%
+  );
   mix-blend-mode: multiply;
 }
 
 .poster-lift {
   background: radial-gradient(
-    120% 70% at 62% 22%,
-    rgba(255, 214, 150, 0.4) 0%,
-    rgba(255, 214, 150, 0) 55%
+    95% 55% at 66% 24%,
+    rgba(255, 186, 104, 0.42) 0%,
+    rgba(255, 140, 60, 0.12) 42%,
+    rgba(255, 140, 60, 0) 62%
   );
   mix-blend-mode: screen;
+}
+
+/* The road running to the horizon at the foot of the poster. */
+.poster-road {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(10, 5, 2, 0) 0%,
+      rgba(10, 5, 2, 0.75) 45%,
+      rgba(6, 3, 1, 1) 100%
+    ),
+    conic-gradient(
+      from 180deg at 50% 0%,
+      rgba(70, 40, 20, 0) 40%,
+      rgba(120, 70, 34, 0.5) 49%,
+      rgba(160, 96, 46, 0.6) 50%,
+      rgba(120, 70, 34, 0.5) 51%,
+      rgba(70, 40, 20, 0) 60%
+    );
 }
 
 /* Film grain. Turbulence rendered inline so nothing is fetched. */
