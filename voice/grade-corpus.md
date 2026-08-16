@@ -33,6 +33,122 @@ Across the draft they took players 7.7 picks behind ADP on average.
 
 > How drunk was Fergus? They only want scrubs at RB? The rest of the team is decent... I just don't know why they punted the most valuable position in most fantasy leagues.
 
+## Fourth And Long - Ola - B-
+*ZZZ Disasters / main*
+
+```
+Team: Fourth And Long - Ola
+Drafted from slot 5
+Roster shape: 1 DEF, 1 K, 1 QB, 2 RB, 2 TE, 7 WR
+
+Picks, in order:
+  5. Ja'Marr Chase (WR - CIN) -> WR1 - ADP 4.1, taken 0.9 picks late
+  20. A.J. Brown (WR - NE) -> WR2 - ADP 19, taken 1 picks late
+  29. Josh Jacobs (RB - GB) -> RB1 - ADP 24, taken 5 picks late
+  44. Terry McLaurin (WR - WAS) -> FLEX - ADP 43.3, taken 0.7 picks late
+  53. Jaylen Waddle (WR - DEN) -> BENCH 1 - ADP 49.6, taken 3.4 picks late
+  68. Matthew Stafford (QB - LAR) -> QB - ADP 75.9, taken 7.9 picks early
+  77. Bucky Irving (RB - TB) -> RB2 - ADP 45.9, taken 31.1 picks late
+  92. Chris Godwin (WR - TB) -> BENCH 2 - ADP 87, taken 5 picks late
+  101. Sam LaPorta (TE - DET) -> TE - ADP 92.3, taken 8.7 picks late
+  116. Matthew Golden (WR - GB) -> BENCH 3 - ADP 115.3, taken 0.7 picks late
+  125. Travis Kelce (TE - KC) -> BENCH 4 - ADP 126.7, taken 1.7 picks early
+  140. Ka'imi Fairbairn (K - HOU) -> BENCH 5 - ADP 130.3, taken 9.7 picks late
+  149. Pittsburgh Steelers (DEF - PIT) -> DEF - ADP 148.6, taken 0.4 picks late
+  164. Jayden Higgins (WR - HOU) -> BENCH 6 - ADP 128.6, taken 35.4 picks late
+
+Across the draft they took players 6.6 picks behind ADP on average.
+```
+
+> Stafford was a league winner. Don't love the RBs... but the rest of the team is great. Just need to hit the waiver wire and hope that Jacobs doesn't get suspended.
+
+## Kerbside Pickup - Ines - A
+*ZZZ Disasters / main*
+
+```
+Team: Kerbside Pickup - Ines
+Drafted from slot 4
+Roster shape: 1 DEF, 1 K, 1 QB, 5 RB, 2 TE, 4 WR
+
+Picks, in order:
+  4. Bijan Robinson (RB - ATL) -> RB1 - ADP 2.1, taken 1.9 picks late
+  21. George Pickens (WR - DAL) -> WR1 - ADP 19.4, taken 1.6 picks late
+  28. Omarion Hampton (RB - LAC) -> RB2 - ADP 21.8, taken 6.2 picks late
+  45. D'Andre Swift (RB - CHI) -> FLEX - ADP 43.4, taken 1.6 picks late
+  52. DJ Moore (WR - BUF) -> WR2 - ADP 48.8, taken 3.2 picks late
+  69. Brock Purdy (QB - SF) -> QB - ADP 81.3, taken 12.3 picks early
+  76. Brock Bowers (TE - LV) -> TE - ADP 44, taken 32 picks late
+  93. J.K. Dobbins (RB - DEN) -> BENCH 1 - ADP 87.8, taken 5.2 picks late
+  100. Jordan Addison (WR - MIN) -> BENCH 2 - ADP 91.1, taken 8.9 picks late
+  117. Jordan Mason (RB - MIN) -> BENCH 3 - ADP 116.4, taken 0.6 picks late
+  124. George Kittle (TE - SF) -> BENCH 4 - ADP 118.8, taken 5.2 picks late
+  141. Harrison Mevis (K - LAR) -> BENCH 5 - ADP 132, taken 9 picks late
+  148. Los Angeles Chargers (DEF - LAC) -> DEF - ADP 143.4, taken 4.6 picks late
+  165. Calvin Ridley (WR - TEN) -> BENCH 6 - ADP 131.7, taken 33.3 picks late
+
+Across the draft they took players 7.2 picks behind ADP on average.
+```
+
+> Stacked. Bijan's great. Love the RBs, although good luck with Dobbins... Best TE room in the league. I like Purdy even if it's an overpay. Great team.
+
+## Nickel Package - Wren - A-
+*ZZZ Disasters / main*
+
+```
+Team: Nickel Package - Wren
+Drafted from slot 8
+Roster shape: 1 DEF, 1 K, 1 QB, 3 RB, 1 TE, 7 WR
+
+Picks, in order:
+  8. Christian McCaffrey (RB - SF) -> RB1 - ADP 6.7, taken 1.3 picks late
+  17. Ashton Jeanty (RB - LV) -> RB2 - ADP 15.1, taken 1.9 picks late
+  32. Breece Hall (RB - NYJ) -> FLEX - ADP 28, taken 4 picks late
+  41. Tee Higgins (WR - CIN) -> WR1 - ADP 36.9, taken 4.1 picks late
+  56. Luther Burden (WR - CHI) -> WR2 - ADP 57.3, taken 1.3 picks early
+  65. Dak Prescott (QB - DAL) -> QB - ADP 67.1, taken 2.1 picks early
+  80. Parker Washington (WR - JAX) -> BENCH 1 - ADP 67.1, taken 12.9 picks late
+  89. Quentin Johnston (WR - LAC) -> BENCH 2 - ADP 82.2, taken 6.8 picks late
+  104. Stefon Diggs (WR) -> BENCH 3 - ADP 94.9, taken 9.1 picks late
+  113. Romeo Doubs (WR - NE) -> BENCH 4 - ADP 109, taken 4 picks late
+  128. Dalton Kincaid (TE - BUF) -> TE - ADP 141.8, taken 13.8 picks early
+  137. Los Angeles Rams (DEF - LAR) -> DEF - ADP 126.5, taken 10.5 picks late
+  152. Will Reichard (K - MIN) -> BENCH 5 - ADP 153.2, taken 1.2 picks early
+  161. Rashid Shaheed (WR - SEA) -> BENCH 6 - ADP 117.6, taken 43.4 picks late
+
+Across the draft they took players 5.7 picks behind ADP on average.
+```
+
+> Love Dak this year... And those RBs could be league winners. Or it could be an injured CMC year and you're screwed, but hey, i've never won the league either. Burden and Washington are both young and exciting.
+
+## Playaction Pete - Ivo - B
+*ZZZ Disasters / main*
+
+```
+Team: Playaction Pete - Ivo
+Drafted from slot 7
+Roster shape: 1 DEF, 1 K, 1 QB, 5 RB, 3 TE, 3 WR
+
+Picks, in order:
+  7. Jonathan Taylor (RB - IND) -> RB1 - ADP 5.8, taken 1.2 picks late
+  18. Chase Brown (RB - CIN) -> RB2 - ADP 15.7, taken 2.3 picks late
+  31. Kenneth Walker (RB - KC) -> FLEX - ADP 25.7, taken 5.3 picks late
+  42. Davante Adams (WR - LAR) -> WR1 - ADP 38.8, taken 3.2 picks late
+  55. Bhayshul Tuten (RB - JAX) -> BENCH 1 - ADP 52.3, taken 2.7 picks late
+  66. Jayden Daniels (QB - WAS) -> QB - ADP 71.9, taken 5.9 picks early
+  79. Tony Pollard (RB - TEN) -> BENCH 2 - ADP 66.9, taken 12.1 picks late
+  90. Harold Fannin (TE - CLE) -> TE - ADP 83.9, taken 6.1 picks late
+  103. Josh Downs (WR - IND) -> WR2 - ADP 94.2, taken 8.8 picks late
+  114. Dallas Goedert (TE - PHI) -> BENCH 3 - ADP 111.9, taken 2.1 picks late
+  127. Mark Andrews (TE - BAL) -> BENCH 4 - ADP 137.4, taken 10.4 picks early
+  138. New England Patriots (DEF - NE) -> DEF - ADP 129.3, taken 8.7 picks late
+  151. Jake Bates (K - DET) -> BENCH 5 - ADP 146.4, taken 4.6 picks late
+  162. John Metchie (WR - CAR) -> BENCH 6 - ADP 122.8, taken 39.2 picks late
+
+Across the draft they took players 5.7 picks behind ADP on average.
+```
+
+> Needs a WR2. Otherwise a good team. Jayden's a little early for me. But those RBs are beastly.
+
 ## Trust The Process - Hal - F
 *ZZZ Disasters / main*
 
