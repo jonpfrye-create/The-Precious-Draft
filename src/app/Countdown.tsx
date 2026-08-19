@@ -87,47 +87,49 @@ export default function Countdown({
           </span>
         </div>
       ) : (
-        <div className="ml-auto flex flex-col items-end gap-4">
-          {/* The door, shut.
+        <div className="ml-auto flex flex-col items-end gap-7 sm:gap-8">
+          {/* Two objects, deliberately kept apart: a clock, and the door
+              it is holding shut.
 
-              The same button, in the same place, at the same size as the
-              one that appears at five o'clock - only dead, with the clock
-              counting down on its face. The point is that nobody should
-              have to work out what this page is for: the way in is
-              visibly right there, visibly not open yet, and the thing
-              standing between them and it is the number that is moving.
-
-              Not a <button disabled>, which is a control that exists and
-              refuses. There is nothing to press here yet. */}
+              They were briefly one bordered block with the numbers
+              stacked above the words, which read as a single strange
+              control rather than as a countdown and an entrance. The
+              clock keeps its own cells, the door keeps the shape and
+              position of the live button so the same thing lights up at
+              five o'clock, and there is real space between them. The door
+              is dashed and flat where the live one is solid with a hard
+              offset shadow - the whole difference between a thing you may
+              press and a thing you may not. */}
           <div
-            aria-disabled="true"
-            className="flex cursor-not-allowed flex-col items-center gap-4 border-4 border-[#3b2f26] bg-[#191410] px-5 py-5 shadow-[9px_9px_0_#241c16] sm:px-9 sm:py-6"
+            className="flex gap-2 sm:gap-3"
+            // Read as one unit when it changes, rather than four separate
+            // numbers shouting over each other every second.
+            role="timer"
+            aria-live="off"
+            aria-label={`${clock.days} days, ${clock.hours} hours, ${clock.minutes} minutes and ${clock.seconds} seconds until the draft room opens`}
           >
-            <div
-              className="flex gap-2 sm:gap-3"
-              // Read as one unit when it changes, rather than four
-              // separate numbers shouting over each other every second.
-              role="timer"
-              aria-live="off"
-              aria-label={`${clock.days} days, ${clock.hours} hours, ${clock.minutes} minutes and ${clock.seconds} seconds until the draft room opens`}
-            >
-              <Cell value={clock.days} label="Days" />
-              <Cell value={clock.hours} label="Hrs" />
-              <Cell value={clock.minutes} label="Min" />
-              <Cell value={clock.seconds} label="Sec" accent />
-            </div>
-
-            <span className="font-arcade text-center text-[11px] leading-relaxed text-[#6b5340] sm:text-[18px]">
-              ENTER THE DRAFT ROOM
-            </span>
+            <Cell value={clock.days} label="Days" />
+            <Cell value={clock.hours} label="Hrs" />
+            <Cell value={clock.minutes} label="Min" />
+            <Cell value={clock.seconds} label="Sec" accent />
           </div>
 
-          {/* Capped so it wraps onto two lines on a phone. At a full em
-              per character this tagline is forty-eight ems long, which is
-              wider than any phone made. */}
-          <span className="font-arcade animate-opa-blink max-w-[17rem] text-right text-[9px] leading-loose text-[#c1391f] sm:max-w-none sm:text-[11px]">
-            SOME SEARCH FOR BATTLE. OTHERS ARE BORN INTO IT.
-          </span>
+          <div className="flex flex-col items-center gap-3 sm:items-end">
+            {/* Not a <button disabled>, which is a control that exists and
+                refuses. There is nothing to press here yet. */}
+            <span
+              aria-disabled="true"
+              className="font-arcade cursor-not-allowed border-4 border-dashed border-[#3b2f26] px-6 py-5 text-center text-[11px] leading-relaxed text-[#6b5340] sm:px-9 sm:py-6 sm:text-[18px]"
+            >
+              ENTER THE DRAFT ROOM
+            </span>
+            {/* Capped so it wraps onto two lines on a phone. At a full em
+                per character this tagline is forty-eight ems long, which
+                is wider than any phone made. */}
+            <span className="font-arcade animate-opa-blink max-w-[17rem] text-center text-[9px] leading-loose text-[#c1391f] sm:max-w-none sm:text-right sm:text-[11px]">
+              SOME SEARCH FOR BATTLE. OTHERS ARE BORN INTO IT.
+            </span>
+          </div>
         </div>
       )}
     </div>
