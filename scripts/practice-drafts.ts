@@ -37,18 +37,31 @@ import {
 
 const DISASTERS = process.argv.includes("--disasters");
 const ROUNDTWO = process.argv.includes("--round-two");
+// A league left mid-draft, for testing phones against. The others are all
+// finished by design - they exist to be graded - so there is nothing in
+// them to pick and /draft correctly says so.
+const LIVE = process.argv.includes("--live");
+const LIVE_PICKS = (() => {
+  const i = process.argv.indexOf("--picks");
+  const n = i === -1 ? NaN : Number(process.argv[i + 1]);
+  return Number.isFinite(n) ? n : 18;
+})();
 
-const LEAGUE_NAME = ROUNDTWO
+const LEAGUE_NAME = LIVE
+  ? "ZZZ Live Draft"
+  : ROUNDTWO
   ? "ZZZ Practice Two"
   : DISASTERS
     ? "ZZZ Disasters"
     : "ZZZ Practice Drafts";
-const LEAGUE_CODE = ROUNDTWO ? "PRACT2" : DISASTERS ? "DSASTR" : "PRACT1";
+const LEAGUE_CODE = LIVE ? "ACT1VE" : ROUNDTWO ? "PRACT2" : DISASTERS ? "DSASTR" : "PRACT1";
 // Crockford base32 has no I, L, O or U, so codes survive being read
 // aloud across a room. normalizeCode turns any I into a 1 on the way in,
 // which means a secret spelled "PRACTICE" can never match itself - the
 // stored copy keeps the I, the typed copy arrives as a 1. Hence PRACT1CE.
-const COMMISSIONER_SECRET = ROUNDTWO
+const COMMISSIONER_SECRET = LIVE
+  ? "ACT1VEDRAFTACT1VEDRAFTACT1"
+  : ROUNDTWO
   ? "PRACT2PRACT2PRACT2PRACT2ZZ"
   : DISASTERS
     ? "D1SASTERD1SASTERD1SASTER55"
@@ -336,7 +349,7 @@ const ROUND_TWO_SET: Archetype[] = [
   },
 ];
 
-const SET: Archetype[] = ROUNDTWO
+const SET: Archetype[] = LIVE || ROUNDTWO
   ? ROUND_TWO_SET
   : DISASTERS
     ? DISASTER_SET
@@ -477,10 +490,11 @@ async function create() {
 
   const { data: phase, error: phaseError } = await supabase
     .from("phases").insert({
-      league_id: league.id, type: "main", sequence: 1, status: "completed",
+      league_id: league.id, type: "main", sequence: 1,
+      status: LIVE ? "active" : "completed",
       rounds: ROUNDS,
       started_at: new Date().toISOString(),
-      completed_at: new Date().toISOString(),
+      completed_at: LIVE ? null : new Date().toISOString(),
       order_drawn_at: new Date().toISOString(),
       order_draw_count: 1,
       order_revealed_count: SET.length,
@@ -499,15 +513,20 @@ async function create() {
   );
   if (slotError) throw slotError;
 
+  const kept = LIVE ? picks.slice(0, LIVE_PICKS) : picks;
   const { error: pickError } = await supabase.from("picks").insert(
-    picks.map((p) => ({
+    kept.map((p) => ({
       phase_id: phase.id, team_id: teamId[p.team], player_id: p.player.player_id,
       pick_number: p.pickNumber, round: p.round,
     }))
   );
   if (pickError) throw pickError;
 
-  console.log(`\nCreated "${LEAGUE_NAME}" - ${SET.length} teams, ${picks.length} picks\n`);
+  console.log(
+    `\nCreated "${LEAGUE_NAME}" - ${SET.length} teams, ${kept.length} picks` +
+      (LIVE ? ` of ${picks.length} (draft is LIVE, ${SET[snakeOrder(SET.length, ROUNDS)[kept.length]].team} on the clock)` : "") +
+      "\n"
+  );
   SET.forEach((a, i) => {
     const r = rosters[i];
     const worst = picks
