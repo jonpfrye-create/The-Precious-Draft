@@ -304,6 +304,51 @@ export async function getSheetPlayersForPhase(
 }
 
 /**
+ * The sheet, trimmed to what a phone can carry.
+ *
+ * The full sheet is 4,254 players and 483 KB. On a laptop driving a
+ * television that is a one-off cost; on twelve phones it is paid again on
+ * every load and again after every pick, which is what made drafting feel
+ * like it had failed before it resolved.
+ *
+ * Cutting to the most draftable few hundred is safe because the three
+ * drafts take at most 300 players between them, and getSheetPlayersForPhase
+ * already returns them in draft order. Anyone further down is reachable
+ * through searchPool below, so nothing is actually unavailable - it just
+ * is not carried around in advance.
+ */
+export async function getDrafterSheetForPhase(
+  phase: Phase,
+  limit = 700
+): Promise<SheetPlayer[]> {
+  const sheet = await getSheetPlayersForPhase(phase);
+  return sheet.filter((p) => !p.taken).slice(0, limit);
+}
+
+/**
+ * Finds anyone the trimmed sheet left out.
+ *
+ * Matters most in the last rounds, when somebody wants a specific
+ * handcuff nobody has ranked. Excludes players already taken in this
+ * phase or an earlier one, so a search can never surface someone who
+ * cannot be drafted.
+ */
+export async function searchPool(
+  phase: Phase,
+  query: string,
+  limit = 30
+): Promise<SheetPlayer[]> {
+  const trimmed = query.trim();
+  if (trimmed.length < 3) return [];
+
+  const sheet = await getSheetPlayersForPhase(phase);
+  const needle = trimmed.toLowerCase();
+  return sheet
+    .filter((p) => !p.taken && p.full_name.toLowerCase().includes(needle))
+    .slice(0, limit);
+}
+
+/**
  * How many undrafted players are left at each position, for a phase that
  * hasn't started yet. Feeds the scarcity check on the Start Leftovers
  * screen - see lib/draft/scarcity.ts.

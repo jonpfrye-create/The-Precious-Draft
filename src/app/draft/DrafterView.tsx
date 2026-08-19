@@ -8,6 +8,7 @@ import { splitTeamName } from "@/lib/teams/branding";
 import { ACTION_FAILED } from "@/lib/errors";
 import type { SheetPlayer } from "@/lib/draft/queries";
 import { makePick } from "@/app/commish/(protected)/board/actions";
+import { searchDeepPool } from "./actions";
 
 /**
  * The phone half of a pick.
@@ -70,6 +71,13 @@ export default function DrafterView({
   const [position, setPosition] = useState<string>(POSITIONS[0]);
   const [selected, setSelected] = useState<SheetPlayer | null>(null);
   const [peeling, setPeeling] = useState<string | null>(null);
+  // Everything below exists to make a pick feel finished the moment it is
+  // made. The server call is quick; it was the refetch behind it that made
+  // it look as though nothing had happened, or that it had failed.
+  const [justDrafted, setJustDrafted] = useState<SheetPlayer | null>(null);
+  const [gone, setGone] = useState<Set<string>>(new Set());
+  const [deep, setDeep] = useState<SheetPlayer[]>([]);
+  const [searching, setSearching] = useState(false);
 
   const { teamName: shortName, manager } = splitTeamName(teamName);
 
@@ -83,11 +91,11 @@ export default function DrafterView({
   const visible = useMemo(() => {
     const query = search.trim().toLowerCase();
     return sheetPlayers
-      .filter((p) => !p.taken)
+      .filter((p) => !p.taken && !gone.has(p.player_id))
       .filter((p) => (position === POSITIONS[0] ? true : p.position === position))
       .filter((p) => !query || p.full_name.toLowerCase().includes(query))
       .slice(0, 60);
-  }, [sheetPlayers, position, search]);
+  }, [sheetPlayers, position, search, gone]);
 
   function draft(player: SheetPlayer) {
     setError(null);
@@ -95,12 +103,42 @@ export default function DrafterView({
     startTransition(async () => {
       try {
         await makePick(phaseId, player.player_id);
+        // Believed immediately. The pick is already in the database, and
+        // waiting for the page to come back before admitting it is what
+        // made this feel broken.
+        setGone((g) => new Set(g).add(player.player_id));
+        setJustDrafted(player);
         setSelected(null);
+        setPeeling(null);
         router.refresh();
       } catch (e) {
-        setError(e instanceof Error ? e.message : ACTION_FAILED);
-      } finally {
+        // Rolled back only on a real failure.
+        setGone((g) => {
+          const next = new Set(g);
+          next.delete(player.player_id);
+          return next;
+        });
+        setJustDrafted(null);
         setPeeling(null);
+        setError(e instanceof Error ? e.message : ACTION_FAILED);
+      }
+    });
+  }
+
+  // Anyone the trimmed sheet does not carry. Only asked for once a search
+  // is specific enough to be worth a round trip and the local list has
+  // little to show.
+  function lookDeeper() {
+    const q = search.trim();
+    if (q.length < 3) return;
+    setSearching(true);
+    startTransition(async () => {
+      try {
+        setDeep(await searchDeepPool(phaseId, q));
+      } catch {
+        setDeep([]);
+      } finally {
+        setSearching(false);
       }
     });
   }
@@ -167,6 +205,22 @@ export default function DrafterView({
           )}
         </div>
       </div>
+
+      {justDrafted && (
+        <div className="mb-3 flex items-center justify-between gap-3 rounded-lg bg-green-50 px-4 py-3 dark:bg-green-950/50">
+          <span className="text-sm text-green-900 dark:text-green-200">
+            <span className="font-semibold">{justDrafted.full_name}</span> is
+            yours — watch the board.
+          </span>
+          <button
+            type="button"
+            onClick={() => setJustDrafted(null)}
+            className="shrink-0 text-xs uppercase tracking-wider text-green-700 dark:text-green-400"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* My roster so far */}
       <section className="mb-4">
@@ -262,9 +316,64 @@ export default function DrafterView({
             </li>
           );
         })}
-        {visible.length === 0 && (
-          <li className="py-8 text-center text-sm text-zinc-500">
+        {deep
+          .filter((p) => !gone.has(p.player_id))
+          .filter((p) => !visible.some((v) => v.player_id === p.player_id))
+          .map((player) => {
+            const fits = !player.position || canTake.has(player.position);
+            const isSelected = selected?.player_id === player.player_id;
+            return (
+              <li key={`deep-${player.player_id}`}>
+                <button
+                  type="button"
+                  disabled={!fits || isPending}
+                  onClick={() => setSelected(isSelected ? null : player)}
+                  className={`sticker flex w-full items-center justify-between gap-2 border px-3 py-3 text-left ${positionColor(
+                    player.position
+                  )} ${peeling === player.player_id ? "sticker-peel" : ""} ${
+                    isSelected ? "ring-2 ring-black dark:ring-white" : ""
+                  } ${!fits ? "opacity-35" : ""}`}
+                >
+                  <span className="min-w-0">
+                    <span className="sharpie block truncate text-[15px]">
+                      {player.full_name}
+                    </span>
+                    <span className="block text-[11px] opacity-70">
+                      {player.position}
+                      {player.nfl_team ? ` · ${player.nfl_team}` : ""}
+                    </span>
+                  </span>
+                  {!fits && (
+                    <span className="shrink-0 text-[10px] italic opacity-70">
+                      no slot
+                    </span>
+                  )}
+                </button>
+              </li>
+            );
+          })}
+
+        {visible.length === 0 && deep.length === 0 && (
+          <li className="py-6 text-center text-sm text-zinc-500">
             Nobody left matching that.
+          </li>
+        )}
+
+        {/* The phone carries the few hundred most draftable players, not
+            all four thousand. Anyone further down is one tap away rather
+            than absent - which matters most in the last rounds. */}
+        {search.trim().length >= 3 && visible.length < 12 && (
+          <li className="pt-2">
+            <button
+              type="button"
+              onClick={lookDeeper}
+              disabled={searching || isPending}
+              className="w-full rounded-lg border border-dashed border-zinc-400 px-4 py-3 text-sm text-zinc-600 disabled:opacity-50 dark:border-zinc-600 dark:text-zinc-400"
+            >
+              {searching
+                ? "Looking…"
+                : `Search the rest of the pool for “${search.trim()}”`}
+            </button>
           </li>
         )}
       </ul>

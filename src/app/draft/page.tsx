@@ -8,10 +8,11 @@ import {
   getPicks,
   getPlayersByIds,
   getRosterSlots,
-  getSheetPlayersForPhase,
+  getDrafterSheetForPhase,
   getTeamsForPhase,
 } from "@/lib/draft/queries";
 import DrafterView from "./DrafterView";
+import Tabs from "./Tabs";
 
 // Reads live draft state on every load - never prerender.
 export const dynamic = "force-dynamic";
@@ -46,7 +47,7 @@ export default async function DraftPage() {
     getTeamsForPhase(phase.id),
     getRosterSlots(phase.id),
     getPicks(phase.id),
-    getSheetPlayersForPhase(phase),
+    getDrafterSheetForPhase(phase),
   ]);
 
   // A team that isn't in this phase - sat out Leftovers, say - gets told
@@ -88,6 +89,9 @@ export default async function DraftPage() {
 
   return (
     <>
+      <div className="mx-auto w-full max-w-md px-4 pt-4">
+        <Tabs />
+      </div>
       <DrafterView
         teamName={me.teamName}
         leagueName={me.leagueName}
