@@ -481,3 +481,324 @@ body {
     animation: none;
   }
 }
+
+/* The front door ------------------------------------------------------
+   "One Precious After Another" as an 8-bit one-sheet: a dithered
+   commissioner filling the sky, the mascot standing on the road below,
+   and a counter that turns into the way in when the draft opens.
+
+   Everything is sized in `cqw` - percentages of the poster's own width -
+   so the composition scales as a single picture rather than as a layout
+   whose pieces drift apart. That is why `.opa-stage` declares
+   `container-type`. Positions are the ones from the approved design,
+   converted from its 1180x900 canvas: an offset of 46px there is
+   46/1180 = 3.9cqw here, and holds at any width. */
+
+.opa-stage {
+  container-type: inline-size;
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 1180 / 900;
+  /* Hard-banded rather than smooth. A continuous gradient reads as a
+     photograph of a sunset; the steps are what make it a sprite of one. */
+  background: linear-gradient(
+    to bottom,
+    #2a1206 0 11%,
+    #5a1f0a 11% 23%,
+    #8c2f0e 23% 35%,
+    #b8481a 35% 47%,
+    #d97a2c 47% 59%,
+    #e8a33d 59% 69%,
+    #f2c877 69% 77%,
+    #f6e0b0 77% 83%,
+    #6d3315 83% 88%,
+    #3a1a0c 88% 100%
+  );
+}
+
+.opa-sun {
+  position: absolute;
+  left: 50%;
+  bottom: 12.9cqw;
+  width: 22cqw;
+  height: 22cqw;
+  margin-left: -5.1cqw;
+  border-radius: 50%;
+  background: #fbeecd;
+  box-shadow: 0 0 0 2.2cqw rgba(251, 238, 205, 0.35);
+}
+
+.opa-road {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 12.9cqw;
+  background: linear-gradient(
+    to bottom,
+    #6d3315 0 18%,
+    #4a2210 18% 46%,
+    #2c1409 46% 100%
+  );
+}
+
+/* The road's vanishing point, and the dashes running into it. */
+.opa-verge {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 12.9cqw;
+  clip-path: polygon(47% 0, 55% 0, 82% 100%, 20% 100%);
+  background: #241009;
+}
+
+.opa-dashes {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 0.85cqw;
+  height: 12.9cqw;
+  margin-left: -0.1cqw;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(246, 224, 176, 0.85) 0 1.2cqw,
+    rgba(0, 0, 0, 0) 1.2cqw 2.9cqw
+  );
+}
+
+.opa-james {
+  position: absolute;
+  left: 30.4%;
+  top: 5.4cqw;
+  width: 69.4cqw;
+  height: 66.5cqw;
+  z-index: 1;
+  /* `contain` rather than the design's fixed width and height, which
+     stretched him about a tenth wider than the source. Nobody would name
+     it looking at the poster, but a face is the one thing people can tell
+     is off without knowing why. */
+  object-fit: contain;
+  /* Both images are dithered - the picture is *made of* the dot pattern.
+     Smooth downscaling averages neighbouring dots together and turns him
+     into a faint brown wash that reads as a low-quality photograph
+     rather than as pixel art. Nearest-neighbour keeps the dots dots. */
+  image-rendering: pixelated;
+}
+
+.opa-mascot {
+  position: absolute;
+  left: 67%;
+  top: 27.8cqw;
+  height: 44.8cqw;
+  width: auto;
+  z-index: 2;
+  filter: drop-shadow(0.68cqw 0.68cqw 0 rgba(44, 16, 8, 0.4));
+  image-rendering: pixelated;
+}
+
+/* Title block. Sits above the face on purpose - the reference poster
+   runs its lettering straight across the portrait. */
+.opa-billboard {
+  position: absolute;
+  left: 4.1cqw;
+  top: 21.9cqw;
+  width: 44cqw;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.opa-presents {
+  font-family: var(--font-press-start), monospace;
+  font-size: 0.93cqw;
+  letter-spacing: 0.06em;
+  color: #fbeecd;
+  text-shadow: 0.17cqw 0.17cqw 0 rgba(26, 8, 4, 0.85);
+  text-transform: uppercase;
+  margin-bottom: 1.7cqw;
+}
+
+.opa-title {
+  font-family: var(--font-press-start), monospace;
+  display: flex;
+  flex-direction: column;
+  gap: 1.36cqw;
+  line-height: 1;
+  font-size: 3.9cqw;
+  color: #fbeecd;
+  text-shadow: 0.42cqw 0.42cqw 0 #7a2c0c;
+  margin: 0;
+  font-weight: 400;
+}
+
+.opa-season {
+  margin-top: 2.2cqw;
+  font-size: 0.93cqw;
+  letter-spacing: 0.18em;
+  white-space: nowrap;
+  color: #2c1409;
+  text-transform: uppercase;
+}
+
+/* Scanlines, over the lot. */
+.opa-scan {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.2) 0px,
+    rgba(0, 0, 0, 0.2) 2px,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(0, 0, 0, 0) 4px
+  );
+}
+
+/* The poster is landscape, and a landscape poster on a phone is a
+   postage stamp with unreadable lettering. Below 720px it becomes a
+   portrait one-sheet instead: the same pieces, re-hung. */
+@media (max-width: 720px) {
+  .opa-stage {
+    aspect-ratio: 3 / 4;
+  }
+
+  .opa-sun {
+    width: 40cqw;
+    height: 40cqw;
+    bottom: 20cqw;
+    margin-left: -20cqw;
+    box-shadow: 0 0 0 4cqw rgba(251, 238, 205, 0.35);
+  }
+
+  .opa-road,
+  .opa-verge,
+  .opa-dashes {
+    height: 22cqw;
+  }
+
+  .opa-dashes {
+    width: 1.6cqw;
+    margin-left: -0.8cqw;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(246, 224, 176, 0.85) 0 2.2cqw,
+      rgba(0, 0, 0, 0) 2.2cqw 5.2cqw
+    );
+  }
+
+  .opa-james {
+    left: 2%;
+    top: 1cqw;
+    width: 96cqw;
+    height: 74cqw;
+  }
+
+  /* Pushed out to the right-hand edge so he stands clear of the title
+     rather than through the middle of it. On the wide poster there is
+     room for them to overlap; here there is not. */
+  .opa-mascot {
+    left: 74%;
+    top: 76cqw;
+    height: 42cqw;
+    filter: drop-shadow(1.2cqw 1.2cqw 0 rgba(44, 16, 8, 0.4));
+  }
+
+  /* 70cqw, not the full width, because the mascot stands at 74% and the
+     billing line underneath the title is long enough to run straight
+     into his shins otherwise. Narrowing the block wraps that line early
+     instead, which is what the space actually allows. */
+  .opa-billboard {
+    left: 4cqw;
+    top: 54cqw;
+    width: 70cqw;
+  }
+
+  .opa-presents {
+    font-size: 2.6cqw;
+    margin-bottom: 3cqw;
+    text-shadow: 0.4cqw 0.4cqw 0 rgba(26, 8, 4, 0.85);
+  }
+
+  /* Press Start 2P advances a full em per character, so the longest word
+     sets the ceiling: "PRECIOUS" is eight characters, and 8 x 8cqw = 64cqw
+     inside an 88cqw block. Going bigger doesn't wrap the word, it pushes
+     it out of the poster and widens the whole page. */
+  .opa-title {
+    font-size: 8cqw;
+    gap: 2.4cqw;
+    text-shadow: 0.9cqw 0.9cqw 0 #7a2c0c;
+    /* On the wide poster the title sits to the left of the sun. Here it
+       spans the whole width and crosses it, and cream lettering on the
+       cream disc disappears completely. The stroke is what keeps the
+       letterforms readable over both the sky and the sun; `paint-order`
+       puts it behind the fill so it reads as an outline rather than
+       thickening the type. */
+    -webkit-text-stroke: 0.3cqw #7a2c0c;
+    paint-order: stroke fill;
+  }
+
+  .opa-season {
+    margin-top: 3.2cqw;
+    font-size: 2.4cqw;
+    /* The desktop rule keeps this on one line; at this width it has to be
+       allowed to fall onto two rather than run off the edge. */
+    white-space: normal;
+  }
+}
+
+/* The blinking tagline, and the frame's slow tic. Both are steps(1) so
+   they snap rather than fade - a crossfade is the wrong century. */
+@keyframes opa-blink {
+  0%,
+  60% {
+    opacity: 1;
+  }
+  61%,
+  100% {
+    opacity: 0.1;
+  }
+}
+
+@keyframes opa-jitter {
+  0%,
+  93% {
+    transform: translate(0, 0);
+  }
+  95% {
+    transform: translate(-2px, 1px);
+  }
+  97% {
+    transform: translate(2px, -1px);
+  }
+  99%,
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+.animate-opa-blink {
+  animation: opa-blink 1.5s steps(1, end) infinite;
+}
+
+.animate-opa-jitter {
+  animation: opa-jitter 11s steps(1, end) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-opa-blink,
+  .animate-opa-jitter {
+    animation: none;
+  }
+}
+
+/* The two faces the poster is set in, as plain classes so the markup
+   doesn't repeat a var() every second element. */
+.font-arcade {
+  font-family: var(--font-press-start), monospace;
+  font-weight: 400;
+}
+
+.font-plex {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+}

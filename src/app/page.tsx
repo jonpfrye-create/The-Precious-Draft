@@ -1,30 +1,41 @@
-import Image from "next/image";
 import Link from "next/link";
-import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
+import Countdown from "./Countdown";
+import { draftClock } from "@/lib/draft/draft-clock";
 import {
   isValidCommissionerSecretShape,
+  isValidLeagueCodeShape,
   normalizeCode,
 } from "@/lib/auth/codes";
 
-// Shows a live player count - must never be statically prerendered.
-export const dynamic = "force-dynamic";
-
 /**
- * The front door, as a film poster.
+ * The front door: an 8-bit one-sheet with a countdown that turns into the
+ * way in.
  *
- * The league renames itself every year after a film with "Precious"
- * wedged into the title; this year it's One Precious After Another, so
- * the commissioner goes where DiCaprio was. It is a mashup made of CSS
- * rather than a composite - the photograph is graded rust and amber to
- * meet the reference, and the layout borrows its bones: one enormous
- * face, the title stacked in white beside it, a road running out at the
- * bottom.
+ * Every year the league renames itself after a film with "Precious"
+ * wedged into the title, and this year it is One Precious After Another,
+ * so the commissioner goes where DiCaprio was - dithered, filling the
+ * sky, with the mascot standing on the road underneath.
  *
- * The face sits on the right rather than the left, which is the one
- * place this departs from the original. Mirroring the photo would put
- * him on the correct side and reverse the lettering on his shirt and the
- * flag on his sleeve, which reads as a mistake rather than a joke.
+ * This is a link sent round the league ten days early, so it has to hold
+ * two states without anybody touching it in between. It counts down
+ * until 5:00 PM Pacific on 29 August and then shows the door instead.
+ * The flip happens in the browser, which is not a detail: the one thing
+ * that must not happen that day is a deploy (see CLAUDE.md), so a page
+ * that needs shipping to change state would be a page that could not
+ * change state.
+ *
+ * The counter is scenery, not a lock. `/join` is open the whole time and
+ * always was - the draft is gated by the league code, not by the clock.
+ * Anyone who finds the counter and tries the URL anyway gets exactly
+ * what they would have got yesterday.
  */
+
+// Required, not decorative. The countdown's first reading is taken here,
+// on the server, and handed to the browser as the authority on what time
+// it is. Let this page go static and that reading would be frozen at
+// build time, so the poster would insist there were ten days left on the
+// night itself.
+export const dynamic = "force-dynamic";
 
 const CAST = [
   "James",
@@ -41,105 +52,168 @@ const CAST = [
   "Deonte",
 ];
 
+const HARDWARE = [
+  {
+    name: "THE PRECIOUS",
+    border: "#e8a33d",
+    tint: "rgba(232,163,61,0.06)",
+    line: "First place. Handed over in silence, reclaimed without ceremony.",
+  },
+  {
+    name: "LEFTOVERS",
+    border: "#6b5340",
+    tint: "transparent",
+    line: "Everything between glory and disgrace. Nobody has asked to see it.",
+  },
+  {
+    name: "MICROWAVE",
+    border: "#c1391f",
+    tint: "rgba(193,57,31,0.07)",
+    line: "Last place. It heats things. That is the whole of the punishment.",
+  },
+];
+
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ secret?: string }>;
+  searchParams: Promise<{ secret?: string; code?: string; open?: string }>;
 }) {
-  // A commissioner link normally jumps straight to the board, which skips
-  // this page entirely. Handing someone "/?secret=..." instead lets them
-  // see the poster first and then walk in - the front door rather than
-  // the side entrance.
-  //
-  // The shape is checked before it goes anywhere near an href, so a junk
-  // query param is ignored rather than reflected back into the page.
-  const { secret } = await searchParams;
-  const normalized = normalizeCode(secret ?? "");
-  const entryHref = isValidCommissionerSecretShape(normalized)
-    ? `/commish/enter?secret=${normalized}`
-    : "/commish";
+  const params = await searchParams;
 
-  const supabase = createBrowserSupabaseClient();
-  const { count, error } = await supabase
-    .from("players")
-    .select("*", { count: "exact", head: true });
+  // Both codes are passed straight through to the doors that know what to
+  // do with them, and both are shape-checked before they go anywhere near
+  // an href so a junk query param is dropped rather than reflected back
+  // into the page.
+  //
+  // `?code=` means the commissioner can post one link to the league chat
+  // and nobody has to type six characters correctly on a phone. The bare
+  // domain stays safe to paste anywhere, because without the code it
+  // leads to the code form and no further.
+  const secret = normalizeCode(params.secret ?? "");
+  const code = normalizeCode(params.code ?? "");
+
+  const commissionerHref = isValidCommissionerSecretShape(secret)
+    ? `/commish/enter?secret=${secret}`
+    : "/commish";
+  const enterHref = isValidLeagueCodeShape(code)
+    ? `/join?code=${code}`
+    : "/join";
+
+  // The escape hatch. If the draft slips, or it has to be opened early to
+  // show someone, `?open=1` opens the door without a deploy - which on
+  // the day is the difference between a fix and a broken room.
+  const forceOpen = params.open === "1";
+
+  // Reading the clock during a render is normally a bug, and the rule
+  // below is right to say so - a component that re-renders would get a
+  // different answer each time and drift out of step with itself. This
+  // one cannot: it is an async server component on a `force-dynamic`
+  // route, so it runs exactly once per request, on the server, and the
+  // reading it takes is the whole point. It is handed to the browser as
+  // the authority on the time rather than being re-read there.
+  // eslint-disable-next-line react-hooks/purity
+  const serverNow = Date.now();
+  const initial = draftClock(serverNow);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-8 bg-[#08070a] px-4 py-10">
-      <div className="animate-poster-in w-full max-w-[520px]">
-        <div className="relative aspect-[2/3] w-full overflow-hidden rounded-sm shadow-[0_30px_80px_-20px_rgba(0,0,0,0.9)] ring-1 ring-white/10">
-          <div className="poster-face absolute inset-0">
-            <Image
-              src="/james.png"
-              alt="James, in profile against the ocean"
-              fill
-              priority
-              // Deliberately soft. It's a mashup pulled together out of a
-              // holiday photo, and a pin-sharp one would look like it was
-              // trying to pass for the real thing.
-              quality={55}
-              sizes="(max-width: 640px) 100vw, 520px"
-              className="poster-shot"
-            />
-          </div>
+    <main className="flex min-h-screen flex-col items-center bg-[#17140f] px-3 py-6 sm:px-8 sm:py-12">
+      <div className="w-full max-w-[1180px] border-2 border-[#2a1f18] bg-[#0b0908] text-[#efe6d2]">
+        <div className="opa-stage">
+          <div aria-hidden className="opa-sun" />
+          <div aria-hidden className="opa-road" />
+          <div aria-hidden className="opa-verge" />
+          <div aria-hidden className="opa-dashes" />
 
-          {/* Darkroom passes, in order: grade, sun lift, road, grain. */}
-          <div aria-hidden className="poster-grade absolute inset-0" />
-          <div aria-hidden className="poster-lift absolute inset-0" />
-          <div aria-hidden className="poster-road absolute inset-x-0 bottom-0 h-[34%]" />
-          <div aria-hidden className="poster-grain absolute inset-0" />
+          {/* Plain <img> rather than next/image on purpose. Both are
+              hand-dithered pixel art already sized for the page and
+              together weigh 120KB; putting them through the optimiser
+              resamples the dither into mush and bills for the privilege. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/james-8bit.png"
+            alt="James, the commissioner, rendered in 8-bit and filling the sky"
+            width={1728}
+            height={1840}
+            className="opa-james"
+          />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/mascot-8bit.png"
+            alt="The league mascot, as an 8-bit sprite, standing in the road"
+            width={610}
+            height={1640}
+            className="opa-mascot"
+          />
 
-          {/* Title, stacked left of the face the way the reference stacks
-              it right of DiCaprio. */}
-          <div className="absolute left-0 top-[34%] w-full px-5">
-            <h1 className="poster-title text-left text-[clamp(2.1rem,9.4vw,3.4rem)] text-white drop-shadow-[0_3px_16px_rgba(0,0,0,0.95)]">
-              One
-              <br />
-              Precious
-              <br />
-              After
-              <br />
-              Another
+          <div className="opa-billboard animate-opa-jitter">
+            <p className="opa-presents">The Commissioner Presents</p>
+            <h1 className="opa-title">
+              <span>ONE</span>
+              <span>PRECIOUS</span>
+              <span>AFTER</span>
+              <span>ANOTHER</span>
             </h1>
-          </div>
-
-          {/* Bottom matter */}
-          <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-5 pb-4 text-center">
-            <p className="billing text-[10px] tracking-[0.34em] text-[#f0a05a] sm:text-[11px]">
-              James
-            </p>
-            <p className="billing mt-1 text-[9px] tracking-[0.3em] text-white/70 sm:text-[10px]">
-              Draft Day &middot; August 29
-            </p>
-
-            {/* The billing block, set the way real ones are: one unbroken
-                condensed run, too small to read comfortably and there to
-                be read anyway. */}
-            <p className="billing mt-2 max-w-[94%] text-[6px] leading-[1.7] text-white/45 sm:text-[7px]">
-              The Precious Draft presents &ldquo;One Precious After
-              Another&rdquo; starring {CAST.join(" · ")} casting by Sleeper
-              &middot; average draft position by Fantasy Football Calculator
-              &middot; grades by Clams AI &middot; snake order drawn live
-              &middot; no pick timer &middot; in loving memory of Clicky Draft
-              2020&ndash;2025
+            <p className="opa-season font-plex">
+              Season XVIII · Twelve teams · Snake draft
             </p>
           </div>
+
+          <div aria-hidden className="opa-scan" />
+        </div>
+
+        <Countdown
+          initial={initial}
+          serverNow={serverNow}
+          enterHref={enterHref}
+          forceOpen={forceOpen}
+        />
+
+        <div className="flex flex-col gap-10 bg-[#0f0c0a] px-6 py-12 sm:px-14 sm:py-14">
+          <section className="flex flex-col gap-6">
+            <h2 className="font-arcade text-[11px] text-[#e8a33d] sm:text-[13px]">
+              THE HARDWARE
+            </h2>
+            <div className="grid gap-4 sm:grid-cols-3 sm:gap-5">
+              {HARDWARE.map((item) => (
+                <div
+                  key={item.name}
+                  className="flex flex-col items-center gap-3 border-[3px] px-5 py-7 text-center"
+                  style={{ borderColor: item.border, background: item.tint }}
+                >
+                  <span className="font-arcade text-[12px] sm:text-[14px]">
+                    {item.name}
+                  </span>
+                  <span className="font-plex text-[11px] leading-[1.85] text-[#a3937d] sm:text-xs">
+                    {item.line}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* The billing block, set the way real ones are: one unbroken
+              condensed run, too small to read comfortably and there to be
+              read anyway. */}
+          <p className="font-plex max-w-[820px] self-center text-center text-[7px] leading-[2] tracking-[0.14em] text-[#7d6f5e] uppercase sm:text-[9px]">
+            The Precious Draft presents &ldquo;One Precious After
+            Another&rdquo; starring {CAST.join(" · ")} · casting by Sleeper ·
+            average draft position by Fantasy Football Calculator · grades by
+            Clams AI · snake order drawn live · no pick timer · three drafts,
+            one shrinking pool · in loving memory of Clicky Draft 2020&ndash;2025
+          </p>
+
+          {/* Not in the poster, and deliberately quiet. The commissioner
+              still has to get in to draw the order and start the phase,
+              and the counter must never be the thing standing between him
+              and his own draft. */}
+          <Link
+            href={commissionerHref}
+            className="font-plex self-center text-[10px] uppercase tracking-[0.3em] text-[#4d4438] underline-offset-4 transition-colors hover:text-[#e8a33d] hover:underline"
+          >
+            Commissioner
+          </Link>
         </div>
       </div>
-
-      <div className="flex flex-col items-center gap-3">
-        <Link
-          href={entryHref}
-          className="rounded-sm bg-[#e8622c] px-10 py-4 text-lg font-bold uppercase tracking-[0.2em] text-[#1a0a04] transition-transform hover:scale-105"
-        >
-          Enter the draft
-        </Link>
-        <p className="text-xs text-zinc-600">
-          {error
-            ? `Player pool unavailable: ${error.message}`
-            : `${count?.toLocaleString()} players in the pool`}
-        </p>
-      </div>
-    </div>
+    </main>
   );
 }
