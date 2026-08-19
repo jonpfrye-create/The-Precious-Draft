@@ -255,7 +255,24 @@ export default function DraftBoard({
     <div className="flex min-h-screen flex-col gap-6 bg-zinc-50 p-6 dark:bg-black">
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">{league.name}</h1>
+          <h1 className="flex items-center gap-2 text-2xl font-semibold">
+            {league.name}
+            {/* Present on every throwaway league, absent on the real one.
+                A commissioner cookie lasts ninety days, so opening the
+                site drops you straight onto whichever board you were last
+                on - which is how a real league once got its order drawn
+                and three picks made during a phone test. The badge is
+                there to be noticed by its absence. */}
+            {isDemo ? (
+              <span className="rounded bg-amber-500 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-amber-950">
+                Test league
+              </span>
+            ) : (
+              <span className="rounded bg-red-600 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-white">
+                Real league
+              </span>
+            )}
+          </h1>
           <p className="text-sm uppercase tracking-wide text-zinc-500">
             {phase.type} draft
           </p>
