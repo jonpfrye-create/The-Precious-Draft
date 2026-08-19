@@ -1,12 +1,7 @@
 import { redirect } from "next/navigation";
-import { normalizeCode } from "@/lib/auth/codes";
 import { findLeagueIdByLeagueCode } from "@/lib/auth/secrets";
 import { claimedTeamIds } from "@/lib/auth/claims";
-import {
-  getDrafterTeam,
-  getLeagueCodeFromSession,
-  startLeagueSession,
-} from "@/lib/auth/drafter";
+import { getDrafterTeam, getLeagueCodeFromSession } from "@/lib/auth/drafter";
 import { getCurrentPhase, getLeagueById, getTeamsForLeague } from "@/lib/draft/queries";
 import CodeForm from "./CodeForm";
 import TeamPicker from "./TeamPicker";
@@ -33,17 +28,12 @@ export default async function JoinPage({
   const existing = await getDrafterTeam();
   if (existing) redirect("/draft");
 
-  // A code in the link wins over whatever this browser last used, so a
-  // fresh link always lands in the league it names.
+  // Handing the code to the route handler rather than acting on it here:
+  // a server component cannot set a cookie, and the first version of this
+  // tried to, which silently did nothing and dropped people on the code
+  // form wondering why the link had not worked.
   const { code: fromLink } = await searchParams;
-  if (fromLink) {
-    const normalized = normalizeCode(fromLink);
-    const found = await findLeagueIdByLeagueCode(normalized);
-    if (found) {
-      await startLeagueSession(normalized);
-      redirect("/join");
-    }
-  }
+  if (fromLink) redirect(`/join/enter?code=${encodeURIComponent(fromLink)}`);
 
   const code = await getLeagueCodeFromSession();
   const leagueId = code ? await findLeagueIdByLeagueCode(code) : null;
