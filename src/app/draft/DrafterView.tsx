@@ -85,27 +85,24 @@ export default function DrafterView({
   const [gone, setGone] = useState<Set<string>>(new Set());
   const [deep, setDeep] = useState<SheetPlayer[]>([]);
   const [searching, setSearching] = useState(false);
-  const [livePicks, setLivePicks] = useState(picksMade);
-
-  // The clock is recomputed here rather than refetched. The snake order is
-  // a pure function of the team ids and the round count, both of which the
-  // page already sent, so knowing how many picks have been made is enough
-  // to know whose turn it is.
+  // The clock comes from the server's pick count, never from a tally kept
+  // here. The first version incremented on every realtime event, which
+  // meant an undo - a delete - advanced the draft on every phone instead
+  // of reversing it, while the boards showed the truth. A counter that can
+  // disagree with the database is worse than one extra fetch.
   const order = useMemo(
     () => generateSnakeOrder(teamIds, Math.ceil(totalPicks / teamIds.length)),
     [teamIds, totalPicks]
   );
-  const onClock = currentPick(order, livePicks);
+  const onClock = currentPick(order, picksMade);
   const isMyTurn = onClock?.teamId === myTeamId;
   const currentTeamName = onClock ? teamNames[onClock.teamId] ?? null : null;
 
-  // Somebody else picked. Only the count changes locally; the roster and
-  // the sheet are refetched just for the drafter whose turn it now is,
-  // since they are the only one about to act on them.
-  usePhaseChannel(phaseId, () => {
-    setLivePicks((n) => n + 1);
-    router.refresh();
-  });
+  // Anything happening in this phase - a pick, an undo - is refetched
+  // rather than guessed at. Only the drafter's own pick is optimistic,
+  // and only visually: the row vanishes at once and is put back if the
+  // server refuses it.
+  usePhaseChannel(phaseId, () => router.refresh());
 
   const { teamName: shortName, manager } = splitTeamName(teamName);
 
@@ -139,7 +136,6 @@ export default function DrafterView({
         // waiting for the page to come back before admitting it is what
         // made this feel broken.
         setGone((g) => new Set(g).add(player.player_id));
-        setLivePicks((n) => n + 1);
         setSelected(null);
         setPeeling(null);
         router.refresh();
@@ -150,7 +146,6 @@ export default function DrafterView({
           next.delete(player.player_id);
           return next;
         });
-        setLivePicks((n) => Math.max(0, n - 1));
         setPeeling(null);
         setError(e instanceof Error ? e.message : ACTION_FAILED);
       }
@@ -203,7 +198,7 @@ export default function DrafterView({
             </p>
           </div>
           <span className="shrink-0 font-mono text-xs tabular-nums text-zinc-400">
-            {livePicks}/{totalPicks}
+            {picksMade}/{totalPicks}
           </span>
         </div>
 

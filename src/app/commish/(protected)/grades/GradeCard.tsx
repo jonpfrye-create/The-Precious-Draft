@@ -20,7 +20,7 @@ export interface RosterLine {
 }
 
 /** Round and pick, written the way ADP is - 1.02 is round one, pick two. */
-function pickLabel(line: RosterLine): string | null {
+function rosterPickLabel(line: RosterLine): string | null {
   if (line.round === null || line.pickInRound === null) return null;
   return `${line.round}.${String(line.pickInRound).padStart(2, "0")}`;
 }
@@ -122,7 +122,7 @@ export default function GradeCard({
 
       <ol className="flex flex-col gap-0.5 text-sm">
         {roster.map((line, index) => {
-          const label = pickLabel(line);
+          const label = rosterPickLabel(line);
           // Positive means taken ahead of the market.
           const vsAdp =
             line.adp !== null && line.overall !== null

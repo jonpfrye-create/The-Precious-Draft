@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { splitTeamName } from "@/lib/teams/branding";
+import { pickLabel } from "@/lib/draft/pick-label";
 import { usePhaseChannel } from "@/lib/realtime/usePhaseChannel";
 
 export interface BoardTeam {
@@ -126,8 +127,7 @@ export default function MobileBoard({
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded font-mono text-[10px] font-bold tabular-nums"
                   style={{ background: team?.hex, color: team?.onHex }}
                 >
-                  {pick.round}.
-                  {String(pick.pickNumber % 100).padStart(2, "0")}
+                  {pickLabel(pick.pickNumber, pick.round, teams.length)}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span
