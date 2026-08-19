@@ -191,6 +191,41 @@ the one Vercel offers after an environment variable change.
 says to refresh — the advice that actually fixes this, and harmless when
 the cause really is the network.
 
+## The landing page
+
+`/` is the poster the league gets sent: an 8-bit "One Precious After
+Another" one-sheet with a countdown that turns into the way in at 5:00 PM
+Pacific on 29 August. Built from the commissioner's own design (variant
+2A of three). Assets are `public/james-8bit.png` and
+`public/mascot-8bit.png`; layout lives in the `.opa-*` block in
+`globals.css`.
+
+Four things here are load-bearing:
+
+- **The flip happens in the browser**, from a fixed instant in
+  `src/lib/draft/draft-clock.ts`. It has to, because of the no-deploy
+  rule below — a page that needed shipping to change state could not
+  change state that day.
+- **`export const dynamic = "force-dynamic"` must stay.** The countdown's
+  first reading is taken on the server and handed to the browser as the
+  authority on the time. Let the page go static and that reading freezes
+  at build time, so on the night the poster insists there are ten days
+  left. Nothing else would look wrong.
+- **The counter is scenery, not a lock.** `/join` is open throughout and
+  always was; the draft is gated by the league code. `?open=1` opens the
+  door early with no deploy, `?code=` pre-fills the league code, and
+  `?secret=` still carries the commissioner to his own entrance — all
+  three shape-checked before they reach an href.
+- **`image-rendering: pixelated` on both images.** The pictures are
+  *made of* the dither; smooth downscaling averages the dots together and
+  turns the commissioner into a faint brown wash.
+
+Sizes are in `cqw` so the composition scales as one picture, and it is
+re-hung as a portrait under 720px — Press Start 2P advances a full em per
+character, so the longest word ("PRECIOUS", eight characters) sets the
+ceiling on the title size. Anything wider doesn't wrap, it drags the
+whole page wider than the phone.
+
 ## Locked-in decisions (don't relitigate without asking)
 
 - **Commissioner access is a separate secret/link** from the plain league
