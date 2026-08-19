@@ -24,6 +24,14 @@ import { searchDeepPool } from "./actions";
  * row below is a whole season.
  */
 
+/**
+ * The phone's list gets an "all" tab, which the board deliberately does
+ * not: the board is meant to read like a sheet of stickers organised by
+ * position, whereas this is a list you scroll with a thumb, and opening
+ * it filtered to quarterbacks helps nobody.
+ */
+const ALL = "All";
+
 export interface RosterLine {
   slotName: string;
   playerName: string | null;
@@ -68,7 +76,7 @@ export default function DrafterView({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [position, setPosition] = useState<string>(POSITIONS[0]);
+  const [position, setPosition] = useState<string>(ALL);
   const [selected, setSelected] = useState<SheetPlayer | null>(null);
   const [peeling, setPeeling] = useState<string | null>(null);
   // Everything below exists to make a pick feel finished the moment it is
@@ -83,8 +91,12 @@ export default function DrafterView({
 
   // Positions this roster can still legally take. A player who cannot fit
   // is shown greyed rather than hidden, so the reason is visible.
+  //
+  // POSITIONS is the six real positions with no "all" entry at the front -
+  // slicing one off here silently dropped QB, so every quarterback in the
+  // draft was greyed out as unrosterable.
   const canTake = useMemo(
-    () => new Set(draftablePositions(draftedPositions, slots, POSITIONS.slice(1))),
+    () => new Set(draftablePositions(draftedPositions, slots, POSITIONS)),
     [draftedPositions, slots]
   );
 
@@ -92,7 +104,7 @@ export default function DrafterView({
     const query = search.trim().toLowerCase();
     return sheetPlayers
       .filter((p) => !p.taken && !gone.has(p.player_id))
-      .filter((p) => (position === POSITIONS[0] ? true : p.position === position))
+      .filter((p) => position === ALL || p.position === position)
       .filter((p) => !query || p.full_name.toLowerCase().includes(query))
       .slice(0, 60);
   }, [sheetPlayers, position, search, gone]);
@@ -250,7 +262,7 @@ export default function DrafterView({
 
       {/* The sheet */}
       <div className="mb-2 flex gap-1 overflow-x-auto pb-1">
-        {POSITIONS.map((p) => (
+        {[ALL, ...POSITIONS].map((p) => (
           <button
             key={p}
             type="button"
