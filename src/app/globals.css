@@ -712,22 +712,26 @@ body {
     display: none;
   }
 
+  /* Bigger than he was, and reaching most of the way down to the road.
+     On the wide poster he fills 87% of the height and the mascot stands
+     in front of him; when he was a 74cqw head floating above a mascot
+     that started below him, the two read as separate pictures that
+     happened to share a frame. Contain fits by height, so this renders
+     92cqw tall and 86cqw wide, spanning 7-93cqw across. */
   .opa-james {
-    left: 6%;
+    left: 0;
     top: 0;
-    width: 96cqw;
-    height: 74cqw;
+    width: 100cqw;
+    height: 92cqw;
   }
 
-  /* Pushed out to the right-hand edge so he stands clear of the title
-     rather than through the middle of it. On the wide poster there is
-     room for them to overlap; here there is not. */
-  /* Feet land at 120cqw, which is exactly the top of the road, with the
-     billing starting below that. */
+  /* Standing in front of him, the way he does on the wide poster: feet
+     on the road at 120cqw, head up at 62cqw with thirty cqw of him over
+     James's shoulder. Clear of the title, which ends at 65cqw. */
   .opa-mascot {
-    left: 76%;
-    top: 82cqw;
-    height: 38cqw;
+    left: 68%;
+    top: 62cqw;
+    height: 58cqw;
     filter: drop-shadow(1.2cqw 1.2cqw 0 rgba(44, 16, 8, 0.4));
   }
 
@@ -737,28 +741,31 @@ body {
     font-size: 1.75cqw;
   }
 
-  /* 70cqw, not the full width, because the mascot stands at 74% and the
-     billing line underneath the title is long enough to run straight
-     into his shins otherwise. Narrowing the block wraps that line early
-     instead, which is what the space actually allows. */
+  /* 62cqw, not the full width, because the mascot now stands at 68% and
+     everything in this block - the title, and the billing line under it -
+     has to stop before his shoulder. Narrowing the block wraps that line
+     early instead, which is what the space actually allows. */
   .opa-billboard {
     left: 4cqw;
     top: 58cqw;
-    width: 70cqw;
+    width: 62cqw;
   }
 
+  /* 25 characters at a full em each, so this line is the widest thing in
+     the block after the title: 2.15cqw keeps it to 54cqw and clear of
+     the mascot's helmet at 68cqw. */
   .opa-presents {
-    font-size: 2.6cqw;
+    font-size: 2.15cqw;
     margin-bottom: 3cqw;
     text-shadow: 0.4cqw 0.4cqw 0 rgba(26, 8, 4, 0.85);
   }
 
   /* Press Start 2P advances a full em per character, so the longest word
-     sets the ceiling: "PRECIOUS" is eight characters, and 8 x 8cqw = 64cqw
-     inside an 88cqw block. Going bigger doesn't wrap the word, it pushes
-     it out of the poster and widens the whole page. */
+     sets the ceiling: "PRECIOUS" is eight characters, and 8 x 7.6cqw =
+     60.8cqw inside a 62cqw block. Going bigger doesn't wrap the word, it
+     pushes it into the mascot and then out of the poster. */
   .opa-title {
-    font-size: 8cqw;
+    font-size: 7.6cqw;
     gap: 2.4cqw;
     text-shadow: 0.9cqw 0.9cqw 0 #7a2c0c;
     /* On the wide poster the title sits to the left of the sun. Here it
