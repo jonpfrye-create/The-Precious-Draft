@@ -75,6 +75,11 @@ export async function startLeagueSession(code: string): Promise<void> {
   store.set(LEAGUE_COOKIE_NAME, code, drafterCookieOptions());
 }
 
+export async function endLeagueSession(): Promise<void> {
+  const store = await cookies();
+  store.delete(LEAGUE_COOKIE_NAME);
+}
+
 export async function getLeagueCodeFromSession(): Promise<string | null> {
   const store = await cookies();
   return store.get(LEAGUE_COOKIE_NAME)?.value ?? null;

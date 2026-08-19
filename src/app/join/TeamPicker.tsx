@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { splitTeamName } from "@/lib/teams/branding";
 import { ACTION_FAILED } from "@/lib/errors";
-import { claimTeamAction } from "./actions";
+import { claimTeamAction, forgetLeague } from "./actions";
 
 export interface JoinableTeam {
   id: string;
@@ -13,11 +14,16 @@ export interface JoinableTeam {
 
 export default function TeamPicker({
   leagueName,
+  leagueCode,
+  phaseLabel,
   teams,
 }: {
   leagueName: string;
+  leagueCode: string;
+  phaseLabel: string | null;
   teams: JoinableTeam[];
 }) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [claiming, setClaiming] = useState<string | null>(null);
@@ -26,9 +32,28 @@ export default function TeamPicker({
     <main className="mx-auto flex min-h-screen w-full max-w-sm flex-col gap-5 px-5 py-10">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold">Which one is yours?</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        {/* Which league, said plainly. Two leagues can hold teams with
+            the same names, and a browser remembers the last code it was
+            given - so without this you can claim the right name in the
+            wrong draft and only find out afterwards. */}
+        <p className="text-sm font-medium">
           {leagueName}
+          {phaseLabel && (
+            <span className="text-zinc-500"> · {phaseLabel} draft</span>
+          )}
         </p>
+        <button
+          type="button"
+          onClick={() =>
+            startTransition(async () => {
+              await forgetLeague();
+              router.refresh();
+            })
+          }
+          className="self-start text-xs text-blue-600 underline dark:text-blue-400"
+        >
+          Not this league? Use a different code ({leagueCode})
+        </button>
       </div>
 
       <ul className="flex flex-col gap-2">

@@ -1,6 +1,10 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { getDrafterTeam, endDrafterSession } from "@/lib/auth/drafter";
+import {
+  getDrafterTeam,
+  endDrafterSession,
+  endLeagueSession,
+} from "@/lib/auth/drafter";
 import { splitTeamName } from "@/lib/teams/branding";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +26,11 @@ export default async function LeavePage() {
   async function forget() {
     "use server";
     await endDrafterSession();
+    // The league is forgotten too. Keeping it means the next visit to
+    // /join goes straight back to the same team list without ever asking
+    // for a code - which is how somebody signed out of the wrong league
+    // and landed right back in it.
+    await endLeagueSession();
     redirect("/join");
   }
 

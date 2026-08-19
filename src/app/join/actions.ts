@@ -5,6 +5,7 @@ import { normalizeCode, isValidLeagueCodeShape } from "@/lib/auth/codes";
 import { findLeagueIdByLeagueCode } from "@/lib/auth/secrets";
 import { claimTeam } from "@/lib/auth/claims";
 import {
+  endLeagueSession,
   getLeagueCodeFromSession,
   startDrafterSession,
   startLeagueSession,
@@ -38,6 +39,11 @@ export async function enterLeagueCode(raw: string): Promise<JoinResult> {
 
   await startLeagueSession(code);
   return { ok: true };
+}
+
+/** Forgets the remembered league so a different code can be entered. */
+export async function forgetLeague(): Promise<void> {
+  await endLeagueSession();
 }
 
 export async function claimTeamAction(teamId: string): Promise<JoinResult> {
