@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireDrafterTeam } from "@/lib/auth/drafter";
-import { generateSnakeOrder, currentPick } from "@/lib/draft/snake-order";
+import { generateSnakeOrder } from "@/lib/draft/snake-order";
 import { assignRoster } from "@/lib/draft/roster-fit";
 import {
   getCurrentPhase,
@@ -58,11 +58,6 @@ export default async function DraftPage() {
     teams.map((t) => t.id),
     phase.rounds
   );
-  const onClock = currentPick(snakeOrder, picks.length);
-  const onClockTeam = onClock
-    ? teams.find((t) => t.id === onClock.teamId) ?? null
-    : null;
-
   const myPicks = picks.filter((p) => p.team_id === me.teamId);
   const myPlayers = await getPlayersByIds(myPicks.map((p) => p.player_id));
   const byId = new Map(myPlayers.map((p) => [p.player_id, p]));
@@ -98,11 +93,12 @@ export default async function DraftPage() {
         phaseType={phase.type}
         phaseId={phase.id}
         inPhase={inPhase}
-        isMyTurn={onClock?.teamId === me.teamId}
-        onClockTeamName={onClockTeam?.name ?? null}
-        round={onClock?.round ?? null}
-        overallPick={onClock?.overallPick ?? null}
         totalPicks={snakeOrder.length}
+        myTeamId={me.teamId}
+        // Team ids in draft order, so the clock can be recomputed in the
+        // browser when a pick lands rather than refetched.
+        teamIds={teams.map((t) => t.id)}
+        teamNames={Object.fromEntries(teams.map((t) => [t.id, t.name]))}
         picksMade={picks.length}
         roster={roster}
         slots={slotSpecs}

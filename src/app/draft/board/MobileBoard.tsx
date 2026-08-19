@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { splitTeamName } from "@/lib/teams/branding";
+import { usePhaseChannel } from "@/lib/realtime/usePhaseChannel";
 
 export interface BoardTeam {
   id: string;
@@ -24,6 +26,7 @@ export interface BoardPick {
 }
 
 export default function MobileBoard({
+  phaseId,
   phaseType,
   rounds,
   myTeamId,
@@ -33,6 +36,7 @@ export default function MobileBoard({
   teams,
   picks,
 }: {
+  phaseId: string;
   phaseType: string;
   rounds: number;
   myTeamId: string;
@@ -46,6 +50,11 @@ export default function MobileBoard({
   // leads because the question a phone gets opened to answer is what just
   // happened.
   const [filter, setFilter] = useState<string>("all");
+
+  // A new pick needs a player name and a team colour that this component
+  // has no way to derive, so it refetches - cheap here, at 27 KB.
+  const router = useRouter();
+  usePhaseChannel(phaseId, () => router.refresh());
 
   const shown =
     filter === "all" ? picks : picks.filter((p) => p.teamId === filter);

@@ -9,6 +9,8 @@ import { ACTION_FAILED } from "@/lib/errors";
 import type { SheetPlayer } from "@/lib/draft/queries";
 import { makePick } from "@/app/commish/(protected)/board/actions";
 import { searchDeepPool } from "./actions";
+import { usePhaseChannel } from "@/lib/realtime/usePhaseChannel";
+import { generateSnakeOrder, currentPick } from "@/lib/draft/snake-order";
 
 /**
  * The phone half of a pick.
@@ -45,12 +47,11 @@ export default function DrafterView({
   phaseType,
   phaseId,
   inPhase,
-  isMyTurn,
-  onClockTeamName,
-  round,
-  overallPick,
   totalPicks,
   picksMade,
+  teamIds,
+  myTeamId,
+  teamNames,
   roster,
   slots,
   draftedPositions,
@@ -61,12 +62,12 @@ export default function DrafterView({
   phaseType: string;
   phaseId: string;
   inPhase: boolean;
-  isMyTurn: boolean;
-  onClockTeamName: string | null;
-  round: number | null;
-  overallPick: number | null;
   totalPicks: number;
   picksMade: number;
+  /** Team ids in draft-position order, for recomputing the clock here. */
+  teamIds: string[];
+  myTeamId: string;
+  teamNames: Record<string, string>;
   roster: RosterLine[];
   slots: SlotSpec[];
   draftedPositions: string[];
@@ -79,13 +80,32 @@ export default function DrafterView({
   const [position, setPosition] = useState<string>(ALL);
   const [selected, setSelected] = useState<SheetPlayer | null>(null);
   const [peeling, setPeeling] = useState<string | null>(null);
-  // Everything below exists to make a pick feel finished the moment it is
-  // made. The server call is quick; it was the refetch behind it that made
-  // it look as though nothing had happened, or that it had failed.
-  const [justDrafted, setJustDrafted] = useState<SheetPlayer | null>(null);
+  // The row vanishing is the confirmation. An explicit "drafted!" note
+  // read as an apology for the delay that used to be here.
   const [gone, setGone] = useState<Set<string>>(new Set());
   const [deep, setDeep] = useState<SheetPlayer[]>([]);
   const [searching, setSearching] = useState(false);
+  const [livePicks, setLivePicks] = useState(picksMade);
+
+  // The clock is recomputed here rather than refetched. The snake order is
+  // a pure function of the team ids and the round count, both of which the
+  // page already sent, so knowing how many picks have been made is enough
+  // to know whose turn it is.
+  const order = useMemo(
+    () => generateSnakeOrder(teamIds, Math.ceil(totalPicks / teamIds.length)),
+    [teamIds, totalPicks]
+  );
+  const onClock = currentPick(order, livePicks);
+  const isMyTurn = onClock?.teamId === myTeamId;
+  const currentTeamName = onClock ? teamNames[onClock.teamId] ?? null : null;
+
+  // Somebody else picked. Only the count changes locally; the roster and
+  // the sheet are refetched just for the drafter whose turn it now is,
+  // since they are the only one about to act on them.
+  usePhaseChannel(phaseId, () => {
+    setLivePicks((n) => n + 1);
+    router.refresh();
+  });
 
   const { teamName: shortName, manager } = splitTeamName(teamName);
 
@@ -119,7 +139,7 @@ export default function DrafterView({
         // waiting for the page to come back before admitting it is what
         // made this feel broken.
         setGone((g) => new Set(g).add(player.player_id));
-        setJustDrafted(player);
+        setLivePicks((n) => n + 1);
         setSelected(null);
         setPeeling(null);
         router.refresh();
@@ -130,7 +150,7 @@ export default function DrafterView({
           next.delete(player.player_id);
           return next;
         });
-        setJustDrafted(null);
+        setLivePicks((n) => Math.max(0, n - 1));
         setPeeling(null);
         setError(e instanceof Error ? e.message : ACTION_FAILED);
       }
@@ -183,7 +203,7 @@ export default function DrafterView({
             </p>
           </div>
           <span className="shrink-0 font-mono text-xs tabular-nums text-zinc-400">
-            {picksMade}/{totalPicks}
+            {livePicks}/{totalPicks}
           </span>
         </div>
 
@@ -197,42 +217,26 @@ export default function DrafterView({
           {isMyTurn ? (
             <>
               <p className="text-lg font-bold">You&apos;re up</p>
-              {round !== null && (
+              {onClock && (
                 <p className="text-xs opacity-90">
-                  Round {round} · pick {overallPick} overall
+                  Round {onClock?.round} · pick {onClock?.overallPick} overall
                 </p>
               )}
             </>
           ) : (
             <>
               <p className="text-sm font-medium">
-                {onClockTeamName
-                  ? `${splitTeamName(onClockTeamName).teamName} is on the clock`
+                {currentTeamName
+                  ? `${splitTeamName(currentTeamName).teamName} is on the clock`
                   : "Draft complete"}
               </p>
               <p className="text-xs text-zinc-500">
-                Pull down to refresh, or wait — this updates when you do.
+                Updates on its own — no need to refresh.
               </p>
             </>
           )}
         </div>
       </div>
-
-      {justDrafted && (
-        <div className="mb-3 flex items-center justify-between gap-3 rounded-lg bg-green-50 px-4 py-3 dark:bg-green-950/50">
-          <span className="text-sm text-green-900 dark:text-green-200">
-            <span className="font-semibold">{justDrafted.full_name}</span> is
-            yours — watch the board.
-          </span>
-          <button
-            type="button"
-            onClick={() => setJustDrafted(null)}
-            className="shrink-0 text-xs uppercase tracking-wider text-green-700 dark:text-green-400"
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
 
       {/* My roster so far */}
       <section className="mb-4">

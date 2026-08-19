@@ -60,6 +60,7 @@ export default async function DrafterBoardPage() {
     <main className="mx-auto w-full max-w-md px-4 py-4">
       <Tabs />
       <MobileBoard
+        phaseId={phase.id}
         phaseType={phase.type}
         rounds={phase.rounds}
         myTeamId={me.teamId}

@@ -14,6 +14,7 @@ import type {
 } from "@/lib/draft/queries";
 import { generateSnakeOrder, currentPick } from "@/lib/draft/snake-order";
 import { positionColor, POSITIONS } from "@/lib/positions";
+import { usePhaseChannel } from "@/lib/realtime/usePhaseChannel";
 import { draftablePositions, forcedPositions } from "@/lib/draft/roster-fit";
 import { placementFromClick, placementStyle } from "@/lib/stickers";
 import { makePick, undoLastPick } from "./actions";
@@ -78,6 +79,12 @@ export default function DraftBoard({
   // completed draft that a later phase has already excluded players from.
   const viewingLive = allPhases.find((p) => p.id === phase.id)?.isLive ?? true;
   const livePhase = allPhases.find((p) => p.isLive);
+
+  // Picks now arrive from twelve phones as well as from this keyboard, so
+  // the board has to hear about them. Refetching is right here: a pick made
+  // elsewhere brings a player, a team colour and a sticker placement that
+  // this screen has no way to invent.
+  usePhaseChannel(viewingLive ? phase.id : null, () => router.refresh());
 
   const snakeOrder = useMemo(
     () => generateSnakeOrder(teams.map((t) => t.id), phase.rounds),
