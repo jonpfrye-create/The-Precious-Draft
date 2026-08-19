@@ -88,19 +88,40 @@ export default function Countdown({
         </div>
       ) : (
         <div className="ml-auto flex flex-col items-end gap-4">
+          {/* The door, shut.
+
+              The same button, in the same place, at the same size as the
+              one that appears at five o'clock - only dead, with the clock
+              counting down on its face. The point is that nobody should
+              have to work out what this page is for: the way in is
+              visibly right there, visibly not open yet, and the thing
+              standing between them and it is the number that is moving.
+
+              Not a <button disabled>, which is a control that exists and
+              refuses. There is nothing to press here yet. */}
           <div
-            className="flex gap-2 sm:gap-3"
-            // Read as one unit when it changes, rather than four separate
-            // numbers shouting over each other every second.
-            role="timer"
-            aria-live="off"
-            aria-label={`${clock.days} days, ${clock.hours} hours, ${clock.minutes} minutes and ${clock.seconds} seconds until the draft`}
+            aria-disabled="true"
+            className="flex cursor-not-allowed flex-col items-center gap-4 border-4 border-[#3b2f26] bg-[#191410] px-5 py-5 shadow-[9px_9px_0_#241c16] sm:px-9 sm:py-6"
           >
-            <Cell value={clock.days} label="Days" />
-            <Cell value={clock.hours} label="Hrs" />
-            <Cell value={clock.minutes} label="Min" />
-            <Cell value={clock.seconds} label="Sec" accent />
+            <div
+              className="flex gap-2 sm:gap-3"
+              // Read as one unit when it changes, rather than four
+              // separate numbers shouting over each other every second.
+              role="timer"
+              aria-live="off"
+              aria-label={`${clock.days} days, ${clock.hours} hours, ${clock.minutes} minutes and ${clock.seconds} seconds until the draft room opens`}
+            >
+              <Cell value={clock.days} label="Days" />
+              <Cell value={clock.hours} label="Hrs" />
+              <Cell value={clock.minutes} label="Min" />
+              <Cell value={clock.seconds} label="Sec" accent />
+            </div>
+
+            <span className="font-arcade text-center text-[11px] leading-relaxed text-[#6b5340] sm:text-[18px]">
+              ENTER THE DRAFT ROOM
+            </span>
           </div>
+
           {/* Capped so it wraps onto two lines on a phone. At a full em
               per character this tagline is forty-eight ems long, which is
               wider than any phone made. */}
