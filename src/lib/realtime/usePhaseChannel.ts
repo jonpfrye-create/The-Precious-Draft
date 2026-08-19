@@ -17,9 +17,12 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
  * unavailable. Callers that can update their own state do so; only the
  * ones that genuinely need new server data refresh.
  *
- * Requires supabase/008-realtime.sql. Without it the subscription still
- * succeeds and simply never fires - which is exactly how this looked
- * before anyone noticed the table had never been published.
+ * Requires supabase/008-realtime.sql, which publishes the table, and
+ * 009-undo-realtime.sql, which makes deletes carry enough of the row for
+ * the filter below to match them. Without either, the subscription still
+ * succeeds and simply goes quiet - which is indistinguishable from a
+ * draft where nobody is picking, and is how both omissions went unnoticed
+ * until a probe insert proved it.
  */
 export function usePhaseChannel(
   phaseId: string | null,
