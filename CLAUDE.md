@@ -213,12 +213,24 @@ Four things here are load-bearing:
   left. Nothing else would look wrong.
 - **The counter is scenery, not a lock.** `/join` is open throughout and
   always was; the draft is gated by the league code. `?open=1` opens the
-  door early with no deploy, `?code=` pre-fills the league code, and
-  `?secret=` still carries the commissioner to his own entrance — all
-  three shape-checked before they reach an href.
+  door early with no deploy and `?code=` pre-fills the league code, the
+  latter shape-checked before it reaches an href.
+- **There is no commissioner link on the poster** — the league asked for
+  it gone. `/commish` and `/commish/enter?secret=…` still work by URL and
+  are how the commissioner gets in; nothing on the front page points at
+  them.
 - **`image-rendering: pixelated` on both images.** The pictures are
   *made of* the dither; smooth downscaling averages the dots together and
   turns the commissioner into a faint brown wash.
+
+**The Hardware section is the league's record book.** All three trophies
+open to their own podium table — `src/lib/league/history.ts`, seventeen
+years of the Precious (2009–), five of Leftovers (2021–), three of
+Microwave (2023–), hand-entered from the commissioner's records. The
+poster's "Season XVIII" is *derived* from that table rather than typed
+beside it, so the two cannot drift; `history.test.ts` pins the years to
+an unbroken run and fails on a gap, a duplicate finisher or a stray
+straight apostrophe.
 
 Sizes are in `cqw` so the composition scales as one picture, and it is
 re-hung as a portrait under 720px — Press Start 2P advances a full em per

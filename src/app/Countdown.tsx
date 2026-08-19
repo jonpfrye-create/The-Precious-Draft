@@ -67,10 +67,10 @@ export default function Countdown({
             entire page wider than the phone it is being read on. */}
         <span className="font-arcade text-[11px] leading-relaxed text-[#e8a33d] sm:text-[17px]">
           <span className="whitespace-nowrap">SATURDAY · AUGUST 29</span>{" "}
-          <span className="whitespace-nowrap">· 5:00 PM</span>
+          <span className="whitespace-nowrap">· 5:00 PM PDT</span>
         </span>
         <span className="font-plex text-[11px] uppercase tracking-[0.2em] text-[#8a7c68] sm:text-xs">
-          Snake draft · 12 teams · Pacific
+          Snake draft · 12 teams
         </span>
       </div>
 

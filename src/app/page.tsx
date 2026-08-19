@@ -1,11 +1,8 @@
-import Link from "next/link";
 import Countdown from "./Countdown";
+import Hardware from "./Hardware";
 import { draftClock } from "@/lib/draft/draft-clock";
-import {
-  isValidCommissionerSecretShape,
-  isValidLeagueCodeShape,
-  normalizeCode,
-} from "@/lib/auth/codes";
+import { currentSeasonNumber, toRoman } from "@/lib/league/history";
+import { isValidLeagueCodeShape, normalizeCode } from "@/lib/auth/codes";
 
 /**
  * The front door: an 8-bit one-sheet with a countdown that turns into the
@@ -52,49 +49,21 @@ const CAST = [
   "Deonte",
 ];
 
-const HARDWARE = [
-  {
-    name: "THE PRECIOUS",
-    border: "#e8a33d",
-    tint: "rgba(232,163,61,0.06)",
-    line: "First place. Handed over in silence, reclaimed without ceremony.",
-  },
-  {
-    name: "LEFTOVERS",
-    border: "#6b5340",
-    tint: "transparent",
-    line: "Everything between glory and disgrace. Nobody has asked to see it.",
-  },
-  {
-    name: "MICROWAVE",
-    border: "#c1391f",
-    tint: "rgba(193,57,31,0.07)",
-    line: "Last place. It heats things. That is the whole of the punishment.",
-  },
-];
-
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ secret?: string; code?: string; open?: string }>;
+  searchParams: Promise<{ code?: string; open?: string }>;
 }) {
   const params = await searchParams;
 
-  // Both codes are passed straight through to the doors that know what to
-  // do with them, and both are shape-checked before they go anywhere near
-  // an href so a junk query param is dropped rather than reflected back
-  // into the page.
+  // Shape-checked before it goes anywhere near an href, so a junk query
+  // param is dropped rather than reflected back into the page.
   //
   // `?code=` means the commissioner can post one link to the league chat
   // and nobody has to type six characters correctly on a phone. The bare
   // domain stays safe to paste anywhere, because without the code it
   // leads to the code form and no further.
-  const secret = normalizeCode(params.secret ?? "");
   const code = normalizeCode(params.code ?? "");
-
-  const commissionerHref = isValidCommissionerSecretShape(secret)
-    ? `/commish/enter?secret=${secret}`
-    : "/commish";
   const enterHref = isValidLeagueCodeShape(code)
     ? `/join?code=${code}`
     : "/join";
@@ -154,9 +123,23 @@ export default async function Home({
               <span>ANOTHER</span>
             </h1>
             <p className="opa-season font-plex">
-              Season XVIII · Twelve teams · Snake draft
+              Season {toRoman(currentSeasonNumber())} · Twelve teams · Snake
+              draft
             </p>
           </div>
+
+          {/* The billing block, set the way real ones are: one unbroken
+              condensed run, too small to read comfortably and there to be
+              read anyway. It sits on the road, under the mascot's feet,
+              where a one-sheet puts it. */}
+          <p className="opa-billing font-plex">
+            The Precious Draft presents &ldquo;One Precious After
+            Another&rdquo; starring {CAST.join(" · ")} · casting by Sleeper ·
+            average draft position by Fantasy Football Calculator · grades by
+            Clams AI · snake order drawn live · no pick timer · three drafts,
+            one shrinking pool · in loving memory of Clicky Draft
+            2020&ndash;2025
+          </p>
 
           <div aria-hidden className="opa-scan" />
         </div>
@@ -168,50 +151,8 @@ export default async function Home({
           forceOpen={forceOpen}
         />
 
-        <div className="flex flex-col gap-10 bg-[#0f0c0a] px-6 py-12 sm:px-14 sm:py-14">
-          <section className="flex flex-col gap-6">
-            <h2 className="font-arcade text-[11px] text-[#e8a33d] sm:text-[13px]">
-              THE HARDWARE
-            </h2>
-            <div className="grid gap-4 sm:grid-cols-3 sm:gap-5">
-              {HARDWARE.map((item) => (
-                <div
-                  key={item.name}
-                  className="flex flex-col items-center gap-3 border-[3px] px-5 py-7 text-center"
-                  style={{ borderColor: item.border, background: item.tint }}
-                >
-                  <span className="font-arcade text-[12px] sm:text-[14px]">
-                    {item.name}
-                  </span>
-                  <span className="font-plex text-[11px] leading-[1.85] text-[#a3937d] sm:text-xs">
-                    {item.line}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* The billing block, set the way real ones are: one unbroken
-              condensed run, too small to read comfortably and there to be
-              read anyway. */}
-          <p className="font-plex max-w-[820px] self-center text-center text-[7px] leading-[2] tracking-[0.14em] text-[#7d6f5e] uppercase sm:text-[9px]">
-            The Precious Draft presents &ldquo;One Precious After
-            Another&rdquo; starring {CAST.join(" · ")} · casting by Sleeper ·
-            average draft position by Fantasy Football Calculator · grades by
-            Clams AI · snake order drawn live · no pick timer · three drafts,
-            one shrinking pool · in loving memory of Clicky Draft 2020&ndash;2025
-          </p>
-
-          {/* Not in the poster, and deliberately quiet. The commissioner
-              still has to get in to draw the order and start the phase,
-              and the counter must never be the thing standing between him
-              and his own draft. */}
-          <Link
-            href={commissionerHref}
-            className="font-plex self-center text-[10px] uppercase tracking-[0.3em] text-[#4d4438] underline-offset-4 transition-colors hover:text-[#e8a33d] hover:underline"
-          >
-            Commissioner
-          </Link>
+        <div className="bg-[#0f0c0a] px-6 py-12 sm:px-14 sm:py-14">
+          <Hardware />
         </div>
       </div>
     </main>
