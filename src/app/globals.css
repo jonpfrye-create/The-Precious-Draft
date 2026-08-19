@@ -679,12 +679,13 @@ body {
    postage stamp with unreadable lettering. Below 720px it becomes a
    portrait one-sheet instead: the same pieces, re-hung. */
 @media (max-width: 720px) {
-  /* Taller than 3/4, which is what this was until the billing moved onto
-     the road. The credits wrap to seven lines at this width instead of
-     three, and without the extra height they run back up into the title
-     and through the mascot's feet. */
+  /* 3/4 is what the portrait poster needs to hold all of it: James at
+     full width renders 106.5cqw tall, the road starts where he ends, and
+     the billing wraps to seven lines at this width instead of three.
+     Taller than this and the road swallows the picture; shorter and the
+     credits run back up through the mascot's feet. */
   .opa-stage {
-    aspect-ratio: 2 / 3;
+    aspect-ratio: 3 / 4;
   }
 
   .opa-sun {
@@ -698,10 +699,14 @@ body {
   /* Deeper than the wide poster's road, because the billing has to fit
      between the mascot's feet and the bottom edge and it wraps to five
      lines at this width instead of three. */
+  /* The horizon meets the bottom of James. He renders 106.5cqw tall from
+     the top edge and his dithering fades out at 96.6cqw, so the road
+     starts there and runs the remaining 36.7cqw to the bottom - deep
+     enough to carry the billing under the mascot's feet. */
   .opa-road,
   .opa-verge,
   .opa-dashes {
-    height: 30cqw;
+    height: 36.7cqw;
   }
 
   /* The centre line goes. The billing now occupies the full width of the
@@ -712,26 +717,29 @@ body {
     display: none;
   }
 
-  /* Bigger than he was, and reaching most of the way down to the road.
-     On the wide poster he fills 87% of the height and the mascot stands
-     in front of him; when he was a 74cqw head floating above a mascot
-     that started below him, the two read as separate pictures that
-     happened to share a frame. Contain fits by height, so this renders
-     92cqw tall and 86cqw wide, spanning 7-93cqw across. */
+  /* Full width, aspect kept by `height: auto` rather than by contain -
+     with the box exactly the image's own shape there is nothing left for
+     contain to letterbox, and auto says so directly. Renders 106.5cqw
+     tall; the dithering itself occupies 11-89cqw across and 11-96.6cqw
+     down, the rest of the PNG being transparent padding. */
   .opa-james {
     left: 0;
     top: 0;
     width: 100cqw;
-    height: 92cqw;
+    height: auto;
   }
 
-  /* Standing in front of him, the way he does on the wide poster: feet
-     on the road at 120cqw, head up at 62cqw with thirty cqw of him over
-     James's shoulder. Clear of the title, which ends at 65cqw. */
+  /* Placed against James's *visible figure* rather than against the
+     stage, so the pairing matches the wide poster instead of merely
+     overlapping it. There he stands from 54% to 88% across the dithering
+     and starts 28% of the way down it; those same fractions of the
+     portrait figure give the numbers below. Measured against the whole
+     PNG he looked right and read wrong, because a tenth of that PNG on
+     every side is empty. */
   .opa-mascot {
-    left: 68%;
-    top: 62cqw;
-    height: 58cqw;
+    left: 56%;
+    top: 33cqw;
+    height: 71.8cqw;
     filter: drop-shadow(1.2cqw 1.2cqw 0 rgba(44, 16, 8, 0.4));
   }
 
@@ -741,31 +749,30 @@ body {
     font-size: 1.75cqw;
   }
 
-  /* 62cqw, not the full width, because the mascot now stands at 68% and
-     everything in this block - the title, and the billing line under it -
-     has to stop before his shoulder. Narrowing the block wraps that line
-     early instead, which is what the space actually allows. */
+  /* 50cqw, because the mascot now stands at 53% and everything in this
+     block has to stop before him. Narrowing the block wraps the billing
+     line early instead, which is what the space actually allows. */
   .opa-billboard {
     left: 4cqw;
-    top: 58cqw;
-    width: 62cqw;
+    top: 38cqw;
+    width: 51cqw;
   }
 
-  /* 25 characters at a full em each, so this line is the widest thing in
-     the block after the title: 2.15cqw keeps it to 54cqw and clear of
-     the mascot's helmet at 68cqw. */
+  /* 25 characters at a full em plus 0.06em of tracking - 1.06em each,
+     which is what pushed this onto two lines when it was sized as if the
+     tracking were free. 1.85cqw keeps it to 49cqw inside 51cqw. */
   .opa-presents {
-    font-size: 2.15cqw;
+    font-size: 1.85cqw;
     margin-bottom: 3cqw;
     text-shadow: 0.4cqw 0.4cqw 0 rgba(26, 8, 4, 0.85);
   }
 
   /* Press Start 2P advances a full em per character, so the longest word
-     sets the ceiling: "PRECIOUS" is eight characters, and 8 x 7.6cqw =
-     60.8cqw inside a 62cqw block. Going bigger doesn't wrap the word, it
-     pushes it into the mascot and then out of the poster. */
+     sets the ceiling: "PRECIOUS" is eight characters, and 8 x 5.8cqw =
+     49.9cqw, ending at 53.9cqw with the mascot starting at 56cqw. Going
+     bigger doesn't wrap the word, it pushes it into him. */
   .opa-title {
-    font-size: 7.6cqw;
+    font-size: 6.3cqw;
     gap: 2.4cqw;
     text-shadow: 0.9cqw 0.9cqw 0 #7a2c0c;
     /* On the wide poster the title sits to the left of the sun. Here it
@@ -780,7 +787,18 @@ body {
 
   .opa-season {
     margin-top: 3.2cqw;
-    font-size: 2.4cqw;
+    font-size: 2.1cqw;
+    /* Tighter than the wide poster's 0.18em. At 51cqw this line has room
+       for two lines and not three, and the tracking is the difference. */
+    letter-spacing: 0.1em;
+    /* Light, not the wide poster's dark brown. There this line sits on
+       the pale band above the horizon and reads as printed into it; here
+       it crosses James's dithered shoulder, where dark on dark simply
+       disappeared. The stroke carries it over the sun as well - the same
+       problem the title has, and the same answer. */
+    color: #fbeecd;
+    -webkit-text-stroke: 0.16cqw rgba(26, 8, 4, 0.9);
+    paint-order: stroke fill;
     /* The desktop rule keeps this on one line; at this width it has to be
        allowed to fall onto two rather than run off the edge. */
     white-space: normal;

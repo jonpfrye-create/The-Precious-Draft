@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { HARDWARE, type Competition } from "@/lib/league/history";
 
 /**
@@ -10,10 +10,18 @@ import { HARDWARE, type Competition } from "@/lib/league/history";
  * something is always open and this section should be able to sit shut -
  * the page is a poster first and an archive second. Clicking the open
  * card closes it again.
+ *
+ * Each record sits immediately after its own card in the markup, which
+ * is the only arrangement that reads correctly in both layouts. Stacked
+ * on a phone, a single shared panel after all three cards can only ever
+ * appear under Microwave, whichever card you pressed - so opening the
+ * Precious dropped a table two cards away from the thing you touched.
+ * Three columns wide, `order` pulls the cards back into one row and the
+ * open record spans the full width beneath them, which is where it
+ * belongs there.
  */
 export default function Hardware() {
   const [openKey, setOpenKey] = useState<string | null>(null);
-  const open = HARDWARE.find((c) => c.key === openKey) ?? null;
 
   return (
     <section className="flex flex-col gap-6">
@@ -24,39 +32,43 @@ export default function Hardware() {
       <div className="grid gap-4 sm:grid-cols-3 sm:gap-5">
         {HARDWARE.map((comp) => {
           const isOpen = comp.key === openKey;
+          const panelId = `hardware-record-${comp.key}`;
           return (
-            <button
-              key={comp.key}
-              type="button"
-              aria-expanded={isOpen}
-              aria-controls="hardware-record"
-              onClick={() => setOpenKey(isOpen ? null : comp.key)}
-              className="flex cursor-pointer flex-col items-center gap-3 border-[3px] px-5 py-7 text-center transition-[background-color,transform] hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e8a33d]"
-              style={{
-                borderColor: comp.border,
-                // The open card lifts out of the row rather than just
-                // gaining a border - at a glance you should be able to
-                // see which record book is on the table.
-                background: isOpen ? "rgba(232,163,61,0.14)" : comp.tint,
-              }}
-            >
-              <span className="font-arcade text-[12px] sm:text-[14px]">
-                {comp.name}
-              </span>
-              <span className="font-plex text-[11px] leading-[1.85] text-[#a3937d] sm:text-xs">
-                {comp.blurb}
-              </span>
-              <span className="font-plex mt-1 text-[10px] tracking-[0.24em] text-[#e8a33d] uppercase">
-                {isOpen ? "Close" : `${comp.seasons.length} seasons`}
-                <span aria-hidden> {isOpen ? "▲" : "▼"}</span>
-              </span>
-            </button>
+            <Fragment key={comp.key}>
+              <button
+                type="button"
+                aria-expanded={isOpen}
+                aria-controls={panelId}
+                onClick={() => setOpenKey(isOpen ? null : comp.key)}
+                className="flex cursor-pointer flex-col items-center gap-3 border-[3px] px-5 py-7 text-center transition-[background-color,transform] hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e8a33d] sm:order-1"
+                style={{
+                  borderColor: comp.border,
+                  // The open card lifts out of the row rather than just
+                  // gaining a border - at a glance you should be able to
+                  // see which record book is on the table.
+                  background: isOpen ? "rgba(232,163,61,0.14)" : comp.tint,
+                }}
+              >
+                <span className="font-arcade text-[12px] sm:text-[14px]">
+                  {comp.name}
+                </span>
+                <span className="font-plex text-[11px] leading-[1.85] text-[#a3937d] sm:text-xs">
+                  {comp.blurb}
+                </span>
+                <span className="font-plex mt-1 text-[10px] tracking-[0.24em] text-[#e8a33d] uppercase">
+                  {isOpen ? "Close" : `${comp.seasons.length} seasons`}
+                  <span aria-hidden> {isOpen ? "▲" : "▼"}</span>
+                </span>
+              </button>
+
+              {isOpen ? (
+                <div id={panelId} className="sm:order-2 sm:col-span-3">
+                  <Record comp={comp} />
+                </div>
+              ) : null}
+            </Fragment>
           );
         })}
-      </div>
-
-      <div id="hardware-record">
-        {open ? <Record comp={open} /> : null}
       </div>
     </section>
   );
