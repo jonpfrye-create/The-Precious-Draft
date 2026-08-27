@@ -3,134 +3,64 @@ import { DRAFT_START_MS } from "./draft-clock";
 import {
   BEEP_INTERVAL_MS,
   CHAOS_LEVELS,
+  GEAR_MINUTES_OUT,
   LEVEL_NAMES,
-  TENSION_WINDOW_MS,
-  chaosLevel,
-  tensionAt,
+  chaosLevelAt,
+  pitchForLevel,
 } from "./tension";
 
-const HOUR = 60 * 60 * 1000;
-const DAY = 24 * HOUR;
-const before = (ms: number) => DRAFT_START_MS - ms;
+const MINUTE = 60_000;
+const at = (minutesOut: number) => DRAFT_START_MS - minutesOut * MINUTE;
+const levelAt = (minutesOut: number) => chaosLevelAt(at(minutesOut), DRAFT_START_MS);
 
-describe("tensionAt", () => {
-  it("is perfectly still outside the window", () => {
-    expect(tensionAt(before(TENSION_WINDOW_MS), DRAFT_START_MS)).toBe(0);
-    expect(tensionAt(before(TENSION_WINDOW_MS + DAY), DRAFT_START_MS)).toBe(0);
+describe("chaosLevelAt", () => {
+  it("engages each gear at the minute it is meant to", () => {
+    // The whole schedule, written as the clock times the league will
+    // actually see. 5:00 PM is the draft.
+    expect(levelAt(5 * 24 * 60), "five days out").toBe(0);
+    expect(levelAt(3 * 24 * 60), "three days out").toBe(1);
+    expect(levelAt(60), "4:00 PM").toBe(1);
+    expect(levelAt(31), "4:29 PM").toBe(1);
+    expect(levelAt(30), "4:30 PM").toBe(2);
+    expect(levelAt(11), "4:49 PM").toBe(2);
+    expect(levelAt(10), "4:50 PM").toBe(3);
+    expect(levelAt(3), "4:57 PM").toBe(3);
+    expect(levelAt(2), "4:58 PM").toBe(4);
+    expect(levelAt(0), "5:00 PM").toBe(4);
   });
 
-  it("is at full tilt on the hour, and stays there", () => {
-    expect(tensionAt(DRAFT_START_MS, DRAFT_START_MS)).toBe(1);
-    expect(tensionAt(DRAFT_START_MS + HOUR, DRAFT_START_MS)).toBe(1);
+  it("stays in the top gear once the draft has started", () => {
+    expect(levelAt(-1)).toBe(CHAOS_LEVELS - 1);
+    expect(levelAt(-600)).toBe(CHAOS_LEVELS - 1);
   });
 
-  it("only ever rises as the draft gets closer", () => {
-    let last = -1;
-    for (let d = 10; d >= 0; d -= 0.25) {
-      const t = tensionAt(before(d * DAY), DRAFT_START_MS);
-      expect(t, `${d} days out`).toBeGreaterThanOrEqual(last);
-      last = t;
-    }
-  });
-
-  it("keeps almost all of the movement in the last day", () => {
-    // The whole point of the curve. Three days out it should be barely
-    // perceptible; a linear ramp would already be at 0.7 here.
-    expect(tensionAt(before(3 * DAY), DRAFT_START_MS)).toBeLessThan(0.2);
-    // The day before, clearly something is happening.
-    expect(tensionAt(before(DAY), DRAFT_START_MS)).toBeGreaterThan(0.35);
-    // The last hour is the loudest part by a distance.
-    expect(tensionAt(before(HOUR), DRAFT_START_MS)).toBeGreaterThan(0.95);
-  });
-
-  it("never leaves 0..1", () => {
-    for (const ms of [-DAY, 0, HOUR, DAY, 9 * DAY, 40 * DAY]) {
-      const t = tensionAt(before(ms), DRAFT_START_MS);
-      expect(t).toBeGreaterThanOrEqual(0);
-      expect(t).toBeLessThanOrEqual(1);
-    }
-  });
-});
-
-describe("chaosLevel", () => {
-  it("covers every gear and never goes out of range", () => {
-    const seen = new Set<number>();
-    for (let t = 0; t <= 1.0001; t += 0.01) {
-      const level = chaosLevel(t);
-      expect(level).toBeGreaterThanOrEqual(0);
-      expect(level).toBeLessThan(CHAOS_LEVELS);
-      seen.add(level);
-    }
-    expect(seen.size).toBe(CHAOS_LEVELS);
-  });
-
-  it("is still at rest and critical at the end", () => {
-    expect(chaosLevel(0)).toBe(0);
-    expect(chaosLevel(1)).toBe(CHAOS_LEVELS - 1);
-  });
-
-  it("never drops as tension rises", () => {
+  it("never drops as the draft gets closer", () => {
     let last = 0;
-    for (let t = 0; t <= 1; t += 0.005) {
-      const level = chaosLevel(t);
-      expect(level).toBeGreaterThanOrEqual(last);
+    for (let m = 6 * 24 * 60; m >= -30; m--) {
+      const level = levelAt(m);
+      expect(level, `${m} minutes out`).toBeGreaterThanOrEqual(last);
       last = level;
     }
   });
 
-  it("reaches the last gear before the final hour, not on it", () => {
-    // If the loudest gear only arrived at 5pm exactly, nobody would ever
-    // see it - the door opens at the same moment.
-    expect(chaosLevel(tensionAt(before(HOUR), DRAFT_START_MS))).toBe(
-      CHAOS_LEVELS - 1
-    );
-  });
-});
-
-describe("pacing", () => {
-  // When each gear actually engages, in hours before the draft. These are
-  // the numbers anyone would want to check when changing the curve, and
-  // they are invisible in the curve itself - 0.62 says nothing about
-  // Friday evening until you work it out.
-  const arrivesAt = (level: number): number => {
-    for (let h = 10 * 24; h >= 0; h--) {
-      if (chaosLevel(tensionAt(before(h * HOUR), DRAFT_START_MS)) >= level) {
-        return h;
-      }
-    }
-    return 0;
-  };
-
-  it("starts stirring a few days out, not a week", () => {
-    const h = arrivesAt(1);
-    expect(h).toBeGreaterThan(48);
-    expect(h).toBeLessThan(96);
+  it("reaches every gear, skipping none", () => {
+    const seen = new Set<number>();
+    for (let m = 6 * 24 * 60; m >= 0; m--) seen.add(levelAt(m));
+    expect(seen.size).toBe(CHAOS_LEVELS);
   });
 
-  it("is restless the evening before the evening before", () => {
-    const h = arrivesAt(2);
-    expect(h).toBeGreaterThan(24);
-    expect(h).toBeLessThan(60);
+  it("keeps the loud gears short", () => {
+    // An earlier version ran flat out from ten on Saturday morning -
+    // seven hours, which is exhausting and spends the loudest thing on
+    // the page long before anyone is watching.
+    expect(GEAR_MINUTES_OUT[CHAOS_LEVELS - 1]).toBeLessThanOrEqual(5);
+    expect(GEAR_MINUTES_OUT[2]).toBeLessThanOrEqual(60);
   });
 
-  it("is agitated by the night before", () => {
-    const h = arrivesAt(3);
-    expect(h).toBeGreaterThan(12);
-    expect(h).toBeLessThan(30);
-  });
-
-  it("saves the top gear for the last couple of hours", () => {
-    // It ran for seven hours once. Flat out all Saturday morning is
-    // exhausting and wastes the loudest thing on the page.
-    const h = arrivesAt(4);
-    expect(h).toBeGreaterThanOrEqual(1);
-    expect(h).toBeLessThanOrEqual(5);
-  });
-
-  it("engages every gear in order, none skipped", () => {
-    for (let level = 1; level < CHAOS_LEVELS; level++) {
-      expect(arrivesAt(level), `level ${level}`).toBeLessThan(
-        arrivesAt(level - 1) || Infinity
+  it("engages the gears in order", () => {
+    for (let i = 1; i < GEAR_MINUTES_OUT.length; i++) {
+      expect(GEAR_MINUTES_OUT[i], `gear ${i}`).toBeLessThan(
+        GEAR_MINUTES_OUT[i - 1]
       );
     }
   });
@@ -142,12 +72,32 @@ describe("level tables", () => {
     expect(BEEP_INTERVAL_MS).toHaveLength(CHAOS_LEVELS);
   });
 
-  it("are silent at rest and speed up from there", () => {
+  it("stays silent until the last half hour, then speeds up", () => {
+    // Beeping at somebody for three days is not tension.
     expect(BEEP_INTERVAL_MS[0]).toBe(0);
-    for (let i = 2; i < CHAOS_LEVELS; i++) {
+    expect(BEEP_INTERVAL_MS[1]).toBe(0);
+    for (let i = 3; i < CHAOS_LEVELS; i++) {
       expect(BEEP_INTERVAL_MS[i]).toBeLessThan(BEEP_INTERVAL_MS[i - 1]);
     }
     // Never so fast it stops being tension and becomes an alarm.
-    expect(BEEP_INTERVAL_MS[CHAOS_LEVELS - 1]).toBeGreaterThanOrEqual(1000);
+    expect(BEEP_INTERVAL_MS[CHAOS_LEVELS - 1]).toBeGreaterThanOrEqual(500);
+  });
+
+  it("the first audible gear is the one that starts the run-in", () => {
+    const firstAudible = BEEP_INTERVAL_MS.findIndex((ms) => ms > 0);
+    expect(GEAR_MINUTES_OUT[firstAudible]).toBe(30);
+  });
+});
+
+describe("pitchForLevel", () => {
+  it("spans 0 to 1 across the gears", () => {
+    expect(pitchForLevel(0)).toBe(0);
+    expect(pitchForLevel(CHAOS_LEVELS - 1)).toBe(1);
+  });
+
+  it("rises with the gear", () => {
+    for (let i = 1; i < CHAOS_LEVELS; i++) {
+      expect(pitchForLevel(i)).toBeGreaterThan(pitchForLevel(i - 1));
+    }
   });
 });

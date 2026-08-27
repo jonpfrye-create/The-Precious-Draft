@@ -2,6 +2,7 @@ import Countdown from "./Countdown";
 import Hardware from "./Hardware";
 import { draftClock } from "@/lib/draft/draft-clock";
 import { currentSeasonNumber, toRoman } from "@/lib/league/history";
+import { CHAOS_LEVELS } from "@/lib/draft/tension";
 import { isValidLeagueCodeShape, normalizeCode } from "@/lib/auth/codes";
 
 /**
@@ -52,7 +53,12 @@ const CAST = [
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ code?: string; open?: string; tension?: string }>;
+  searchParams: Promise<{
+    code?: string;
+    open?: string;
+    gear?: string;
+    tension?: string;
+  }>;
 }) {
   const params = await searchParams;
 
@@ -73,15 +79,22 @@ export default async function Home({
   // the day is the difference between a fix and a broken room.
   const forceOpen = params.open === "1";
 
-  // `?tension=0.8` pins the crescendo anywhere on its curve. The build
-  // runs over ten days and peaks in the final hour, so without this the
-  // only way to see the loud end of it would be to wait for Saturday and
-  // hope. Ignored unless it parses to a real 0..1.
-  const requested = Number.parseFloat(params.tension ?? "");
-  const tensionOverride =
-    Number.isFinite(requested) && requested >= 0 && requested <= 1
-      ? requested
-      : null;
+  // `?gear=3` pins the crescendo in any of its gears. The loud ones last
+  // minutes and arrive after 4:30 on the day, so without this the only
+  // way to see them would be to stand in front of the page at 4:58 on
+  // Saturday and hope. `?tension=0..1` still works as it did, mapped onto
+  // the nearest gear, because that link has already been handed out.
+  const gearOverride = (() => {
+    const gear = Number.parseInt(params.gear ?? "", 10);
+    if (Number.isInteger(gear) && gear >= 0 && gear < CHAOS_LEVELS) {
+      return gear;
+    }
+    const tension = Number.parseFloat(params.tension ?? "");
+    if (Number.isFinite(tension) && tension >= 0 && tension <= 1) {
+      return Math.round(tension * (CHAOS_LEVELS - 1));
+    }
+    return null;
+  })();
 
   // Reading the clock during a render is normally a bug, and the rule
   // below is right to say so - a component that re-renders would get a
@@ -166,7 +179,7 @@ export default async function Home({
           serverNow={serverNow}
           enterHref={enterHref}
           forceOpen={forceOpen}
-          tensionOverride={tensionOverride}
+          gearOverride={gearOverride}
         />
 
         <div className="bg-[#0f0c0a] px-6 py-12 sm:px-14 sm:py-14">

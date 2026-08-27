@@ -5,9 +5,10 @@ import { useEffect, useState } from "react";
 import { draftClock, DRAFT_START_MS, type DraftClock } from "@/lib/draft/draft-clock";
 import {
   BEEP_INTERVAL_MS,
+  GEAR_MINUTES_OUT,
   LEVEL_NAMES,
-  chaosLevel,
-  tensionAt,
+  chaosLevelAt,
+  pitchForLevel,
 } from "@/lib/draft/tension";
 import { playBeep } from "@/lib/audio/fanfare";
 
@@ -36,17 +37,17 @@ export default function Countdown({
   serverNow,
   enterHref,
   forceOpen = false,
-  tensionOverride = null,
+  gearOverride = null,
 }: {
   initial: DraftClock;
   serverNow: number;
   enterHref: string;
   /**
-   * Forces the crescendo to a fixed point on the curve, from `?tension=`.
-   * Lets the whole build be looked at now rather than only by waiting
-   * until Saturday, which is not a debugging strategy.
+   * Forces a gear, from `?gear=`. Lets the whole build be looked at now
+   * rather than only by waiting until 4:58 on Saturday, which is not a
+   * debugging strategy.
    */
-  tensionOverride?: number | null;
+  gearOverride?: number | null;
   /**
    * Opens the door regardless of the clock, from `?open=1`.
    *
@@ -57,10 +58,15 @@ export default function Countdown({
   forceOpen?: boolean;
 }) {
   const [clock, setClock] = useState<DraftClock>(initial);
-  const [tension, setTension] = useState(tensionOverride ?? 0);
+  const [liveLevel, setLiveLevel] = useState(0);
   const [sound, setSound] = useState(false);
   const open = forceOpen || clock.open;
-  const level = chaosLevel(tension);
+  const level = gearOverride ?? liveLevel;
+  const pitch = pitchForLevel(level);
+  // Sound has something to say from the gear the run-in starts on. Before
+  // that the toggle stays a footnote; from here it is the loudest control
+  // on the page, because nobody hunts for a grey button at 4:30.
+  const soundMatters = level >= BEEP_INTERVAL_MS.findIndex((ms) => ms > 0);
 
   useEffect(() => {
     // Positive when the device is running behind the server. Includes the
@@ -71,13 +77,13 @@ export default function Countdown({
     const tick = () => {
       const now = Date.now() + skew;
       setClock(draftClock(now));
-      if (tensionOverride === null) setTension(tensionAt(now, DRAFT_START_MS));
+      setLiveLevel(chaosLevelAt(now, DRAFT_START_MS));
     };
 
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [serverNow, tensionOverride]);
+  }, [serverNow]);
 
   // The crescendo is a single class on <html>, so the poster above and
   // the counter below can both react without either needing to know the
@@ -96,9 +102,9 @@ export default function Countdown({
     if (!sound || open) return;
     const every = BEEP_INTERVAL_MS[level];
     if (!every) return;
-    const id = setInterval(() => playBeep(tension), every);
+    const id = setInterval(() => playBeep(pitch), every);
     return () => clearInterval(id);
-  }, [sound, level, tension, open]);
+  }, [sound, level, pitch, open]);
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-8 border-t-4 border-[#2a1f18] bg-[#14100d] px-5 py-8 sm:px-14 sm:py-11">
@@ -121,23 +127,40 @@ export default function Countdown({
             onClick={() => {
               // The click that unlocks audio, and the first beep, in one -
               // so switching it on proves it works instead of leaving you
-              // waiting to find out.
+              // waiting to find out. It is also the gesture every browser
+              // demands before it will play anything at all, which is why
+              // this control cannot simply be removed in favour of sound
+              // that starts on its own.
               setSound((on) => {
-                if (!on) playBeep(tension);
+                if (!on) playBeep(pitch);
                 return !on;
               });
             }}
-            className="font-plex mt-1 self-start border border-[#3b2f26] px-2.5 py-1.5 text-[10px] uppercase tracking-[0.22em] text-[#8a7c68] transition-colors hover:border-[#6b5340] hover:text-[#e8a33d]"
             aria-pressed={sound}
+            className={
+              soundMatters && !sound
+                ? "font-arcade animate-opa-blink mt-2 self-start border-4 border-[#c1391f] bg-[#c1391f] px-4 py-3 text-[10px] text-[#14100d] sm:text-[12px]"
+                : soundMatters
+                  ? "font-arcade mt-2 self-start border-4 border-[#3b2f26] px-4 py-3 text-[10px] text-[#6b5340] sm:text-[12px]"
+                  : "font-plex mt-1 self-start border border-[#3b2f26] px-2.5 py-1.5 text-[10px] uppercase tracking-[0.22em] text-[#8a7c68] transition-colors hover:border-[#6b5340] hover:text-[#e8a33d]"
+            }
           >
-            {sound ? "◧ Sound on" : "◧ Sound off"}
+            {soundMatters
+              ? sound
+                ? "SOUND ON"
+                : "► TURN THE SOUND ON"
+              : sound
+                ? "◧ Sound on"
+                : "◧ Sound off"}
           </button>
         )}
 
-        {tensionOverride !== null && (
+        {gearOverride !== null && (
           <span className="font-plex mt-1 self-start border border-dashed border-[#6b5340] px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-[#c1391f]">
-            Preview · tension {tension.toFixed(2)} · {LEVEL_NAMES[level]} (
-            {level}/4)
+            Preview · {LEVEL_NAMES[level]} ({level}/{LEVEL_NAMES.length - 1})
+            {Number.isFinite(GEAR_MINUTES_OUT[level])
+              ? ` · from ${GEAR_MINUTES_OUT[level]} min out`
+              : " · resting"}
           </span>
         )}
       </div>
