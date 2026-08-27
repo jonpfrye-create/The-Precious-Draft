@@ -321,13 +321,20 @@ function Reveal({ slots, complete }: { slots: Slot[]; complete: boolean }) {
         ))}
       </ol>
 
-      {/* Never leave anyone waiting on a timer they can't skip. */}
-      <Link
-        href="/draft"
-        className="self-center rounded-md border border-zinc-300 px-4 py-2 text-sm hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
-      >
-        {complete ? "Go to the draft now" : "Skip to the draft board"}
-      </Link>
+      {/* Only once the order is out. Mid-reveal this was a button that
+          could not work: /draft bounces anyone back here until the last
+          slot has turned over, so it offered an escape that silently
+          refused - and it sat there through the whole reveal, when people
+          are most likely to press it, rather than during the nine seconds
+          it would actually have done something. */}
+      {complete ? (
+        <Link
+          href="/draft"
+          className="self-center rounded-md border border-zinc-300 px-4 py-2 text-sm hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
+        >
+          Go to the draft now
+        </Link>
+      ) : null}
     </>
   );
 }

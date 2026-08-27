@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { draftClock, type DraftClock } from "@/lib/draft/draft-clock";
+import { draftClock, DRAFT_START_MS, type DraftClock } from "@/lib/draft/draft-clock";
+import {
+  BEEP_INTERVAL_MS,
+  LEVEL_NAMES,
+  chaosLevel,
+  tensionAt,
+} from "@/lib/draft/tension";
+import { playBeep } from "@/lib/audio/fanfare";
 
 /**
  * The band under the poster: a counter that becomes the way in.
@@ -29,10 +36,17 @@ export default function Countdown({
   serverNow,
   enterHref,
   forceOpen = false,
+  tensionOverride = null,
 }: {
   initial: DraftClock;
   serverNow: number;
   enterHref: string;
+  /**
+   * Forces the crescendo to a fixed point on the curve, from `?tension=`.
+   * Lets the whole build be looked at now rather than only by waiting
+   * until Saturday, which is not a debugging strategy.
+   */
+  tensionOverride?: number | null;
   /**
    * Opens the door regardless of the clock, from `?open=1`.
    *
@@ -43,7 +57,10 @@ export default function Countdown({
   forceOpen?: boolean;
 }) {
   const [clock, setClock] = useState<DraftClock>(initial);
+  const [tension, setTension] = useState(tensionOverride ?? 0);
+  const [sound, setSound] = useState(false);
   const open = forceOpen || clock.open;
+  const level = chaosLevel(tension);
 
   useEffect(() => {
     // Positive when the device is running behind the server. Includes the
@@ -51,12 +68,37 @@ export default function Countdown({
     // right way to be wrong, since it opens the door a beat after the
     // server would rather than a beat before.
     const skew = serverNow - Date.now();
-    const tick = () => setClock(draftClock(Date.now() + skew));
+    const tick = () => {
+      const now = Date.now() + skew;
+      setClock(draftClock(now));
+      if (tensionOverride === null) setTension(tensionAt(now, DRAFT_START_MS));
+    };
 
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [serverNow]);
+  }, [serverNow, tensionOverride]);
+
+  // The crescendo is a single class on <html>, so the poster above and
+  // the counter below can both react without either needing to know the
+  // clock. Set here because this is the only component that has it.
+  useEffect(() => {
+    const root = document.documentElement;
+    const applied = `chaos-${level}`;
+    root.classList.add(applied);
+    return () => root.classList.remove(applied);
+  }, [level]);
+
+  // The beeping. Only ever after somebody has switched sound on - which
+  // is both good manners on a page people will leave open for days, and
+  // the gesture browsers require before any audio will play at all.
+  useEffect(() => {
+    if (!sound || open) return;
+    const every = BEEP_INTERVAL_MS[level];
+    if (!every) return;
+    const id = setInterval(() => playBeep(tension), every);
+    return () => clearInterval(id);
+  }, [sound, level, tension, open]);
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-8 border-t-4 border-[#2a1f18] bg-[#14100d] px-5 py-8 sm:px-14 sm:py-11">
@@ -72,6 +114,32 @@ export default function Countdown({
         <span className="font-plex text-[11px] uppercase tracking-[0.2em] text-[#8a7c68] sm:text-xs">
           Snake draft · 12 teams
         </span>
+
+        {!open && (
+          <button
+            type="button"
+            onClick={() => {
+              // The click that unlocks audio, and the first beep, in one -
+              // so switching it on proves it works instead of leaving you
+              // waiting to find out.
+              setSound((on) => {
+                if (!on) playBeep(tension);
+                return !on;
+              });
+            }}
+            className="font-plex mt-1 self-start border border-[#3b2f26] px-2.5 py-1.5 text-[10px] uppercase tracking-[0.22em] text-[#8a7c68] transition-colors hover:border-[#6b5340] hover:text-[#e8a33d]"
+            aria-pressed={sound}
+          >
+            {sound ? "◧ Sound on" : "◧ Sound off"}
+          </button>
+        )}
+
+        {tensionOverride !== null && (
+          <span className="font-plex mt-1 self-start border border-dashed border-[#6b5340] px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-[#c1391f]">
+            Preview · tension {tension.toFixed(2)} · {LEVEL_NAMES[level]} (
+            {level}/4)
+          </span>
+        )}
       </div>
 
       {open ? (
@@ -148,7 +216,7 @@ function Cell({
   return (
     <div
       className={`flex min-w-[62px] flex-col items-center gap-2 border-[3px] bg-[#0f0c0a] px-2 py-3 sm:min-w-[96px] sm:px-2.5 sm:py-3.5 ${
-        accent ? "border-[#c1391f]" : "border-[#6b5340]"
+        accent ? "opa-sec-cell border-[#c1391f]" : "border-[#6b5340]"
       }`}
     >
       <span

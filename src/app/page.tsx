@@ -52,7 +52,7 @@ const CAST = [
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ code?: string; open?: string }>;
+  searchParams: Promise<{ code?: string; open?: string; tension?: string }>;
 }) {
   const params = await searchParams;
 
@@ -72,6 +72,16 @@ export default async function Home({
   // show someone, `?open=1` opens the door without a deploy - which on
   // the day is the difference between a fix and a broken room.
   const forceOpen = params.open === "1";
+
+  // `?tension=0.8` pins the crescendo anywhere on its curve. The build
+  // runs over ten days and peaks in the final hour, so without this the
+  // only way to see the loud end of it would be to wait for Saturday and
+  // hope. Ignored unless it parses to a real 0..1.
+  const requested = Number.parseFloat(params.tension ?? "");
+  const tensionOverride =
+    Number.isFinite(requested) && requested >= 0 && requested <= 1
+      ? requested
+      : null;
 
   // Reading the clock during a render is normally a bug, and the rule
   // below is right to say so - a component that re-renders would get a
@@ -141,6 +151,13 @@ export default async function Home({
             2020&ndash;2025
           </p>
 
+          {/* A dropped frame of daylight, as the poster works itself up.
+              Under the scanlines so it reads as the picture failing
+              rather than something painted over it. */}
+          <div aria-hidden className="opa-flicker-host">
+            <div className="opa-flicker" />
+          </div>
+
           <div aria-hidden className="opa-scan" />
         </div>
 
@@ -149,6 +166,7 @@ export default async function Home({
           serverNow={serverNow}
           enterHref={enterHref}
           forceOpen={forceOpen}
+          tensionOverride={tensionOverride}
         />
 
         <div className="bg-[#0f0c0a] px-6 py-12 sm:px-14 sm:py-14">

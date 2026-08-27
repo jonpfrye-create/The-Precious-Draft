@@ -148,6 +148,32 @@ function semitonesToRatio(semitones: number): number {
  * Eleven identical hits in a row was the problem - this way the room hears
  * the thing tightening as the picks count down.
  */
+/**
+ * A single blip for the countdown, rising in pitch as the draft nears.
+ *
+ * Deliberately tiny next to the stinger - this fires on a timer for hours,
+ * so it has to be something you stop noticing and then notice again when
+ * it speeds up. The module's rule about gestures still holds: the beeping
+ * only ever runs after somebody has switched sound on, which is itself
+ * the gesture that unlocks the context.
+ */
+export function playBeep(tension = 0) {
+  const ctx = getContext();
+  if (!ctx) return;
+  const t = Math.min(Math.max(tension, 0), 1);
+  const now = ctx.currentTime + 0.01;
+
+  // Up a fifth across the whole build, so the last hour sits noticeably
+  // higher than the days before it without ever becoming shrill.
+  tone(ctx, {
+    frequency: 523.25 * semitonesToRatio(t * 7),
+    startAt: now,
+    duration: 0.05 + t * 0.03,
+    peak: 0.03 + t * 0.05,
+    type: "square",
+  });
+}
+
 export function playStinger(tension = 0) {
   const ctx = getContext();
   if (!ctx) return;

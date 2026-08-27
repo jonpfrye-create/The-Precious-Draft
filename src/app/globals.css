@@ -860,3 +860,97 @@ body {
 .font-plex {
   font-family: var(--font-plex-mono), ui-monospace, monospace;
 }
+
+/* The crescendo ------------------------------------------------------
+   The poster works itself up as the draft approaches: still on Tuesday,
+   twitchy the night before, close to a failing arcade cabinet in the
+   last hour. Driven by a single `chaos-N` class on <html>, set from
+   src/lib/draft/tension.ts.
+
+   Five fixed gears rather than numbers interpolated into calc(). At
+   these timescales nobody can tell the difference, and every value here
+   is one you can read, preview and reason about instead of a computed
+   expression that can only be inspected by staring at it. */
+
+/* Gear 1+: the title block twitches more often. The base rule is 11s. */
+:root.chaos-1 .animate-opa-jitter { animation-duration: 8s; }
+:root.chaos-2 .animate-opa-jitter { animation-duration: 5s; }
+:root.chaos-3 .animate-opa-jitter { animation-duration: 2.6s; }
+:root.chaos-4 .animate-opa-jitter { animation-duration: 1.1s; }
+
+/* A dropped frame of daylight across the whole poster. Sits above the
+   art and below the scanlines so it reads as the picture failing rather
+   than as something drawn on top of it. */
+.opa-flicker-host {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.opa-flicker {
+  position: absolute;
+  inset: 0;
+  background: #f6e0b0;
+  mix-blend-mode: overlay;
+  opacity: 0;
+}
+
+@keyframes opa-flick {
+  0%, 91% { opacity: 0; }
+  92% { opacity: 0.55; }
+  93% { opacity: 0; }
+  95% { opacity: 0.28; }
+  96%, 100% { opacity: 0; }
+}
+
+:root.chaos-1 .opa-flicker-host { opacity: 0.3; }
+:root.chaos-2 .opa-flicker-host { opacity: 0.55; }
+:root.chaos-3 .opa-flicker-host { opacity: 0.8; }
+:root.chaos-4 .opa-flicker-host { opacity: 1; }
+
+:root.chaos-1 .opa-flicker { animation: opa-flick 11s steps(1, end) infinite; }
+:root.chaos-2 .opa-flicker { animation: opa-flick 6.5s steps(1, end) infinite; }
+:root.chaos-3 .opa-flicker { animation: opa-flick 3.2s steps(1, end) infinite; }
+:root.chaos-4 .opa-flicker { animation: opa-flick 1.3s steps(1, end) infinite; }
+
+/* Gears 3 and 4: the cabinet itself starts knocking. Small enough that
+   it reads as a loose connection, not as a page that is broken. */
+@keyframes opa-shake {
+  0%, 89% { transform: translate(0, 0); }
+  91% { transform: translate(-1px, 1px); }
+  93% { transform: translate(1px, -1px); }
+  95% { transform: translate(-1px, 0); }
+  97%, 100% { transform: translate(0, 0); }
+}
+
+:root.chaos-3 .opa-stage { animation: opa-shake 3.4s steps(1, end) infinite; }
+:root.chaos-4 .opa-stage { animation: opa-shake 1.5s steps(1, end) infinite; }
+
+/* The seconds cell strobes once it is properly close. */
+@keyframes opa-strobe {
+  0%, 49% { border-color: #c1391f; }
+  50%, 100% { border-color: #f6d38a; }
+}
+
+:root.chaos-3 .opa-sec-cell { animation: opa-strobe 1s steps(1, end) infinite; }
+:root.chaos-4 .opa-sec-cell { animation: opa-strobe 0.4s steps(1, end) infinite; }
+
+/* And the tagline stops being a slow blink. Base rule is 1.5s. */
+:root.chaos-3 .animate-opa-blink { animation-duration: 0.9s; }
+:root.chaos-4 .animate-opa-blink { animation-duration: 0.45s; }
+
+/* Anyone who has asked their system not to animate things gets the
+   poster still, at every gear. The countdown still counts. */
+@media (prefers-reduced-motion: reduce) {
+  :root[class*="chaos-"] .animate-opa-jitter,
+  :root[class*="chaos-"] .animate-opa-blink,
+  :root[class*="chaos-"] .opa-flicker,
+  :root[class*="chaos-"] .opa-stage,
+  :root[class*="chaos-"] .opa-sec-cell {
+    animation: none;
+  }
+
+  .opa-flicker-host { display: none; }
+}
