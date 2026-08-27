@@ -48,7 +48,9 @@ export async function drawDraftOrder(
 
   const decision = evaluateDrawRequest({
     picksMade: picks.length,
-    drawCount: phase.order_draw_count,
+    // The same field the button reads, so the two can never disagree
+    // about whether this is a first draw or a redraw.
+    hasBeenDrawn: phase.order_drawn_at !== null,
   });
   if (!decision.allowed) {
     return { ok: false, error: decision.reason };

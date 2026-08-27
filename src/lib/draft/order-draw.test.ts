@@ -11,32 +11,45 @@ const TEAMS = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l"];
 
 describe("evaluateDrawRequest", () => {
   it("allows the first draw with no confirmation", () => {
-    expect(evaluateDrawRequest({ picksMade: 0, drawCount: 0 })).toEqual({
+    expect(evaluateDrawRequest({ picksMade: 0, hasBeenDrawn: false })).toEqual({
       allowed: true,
       requiresConfirmation: false,
     });
   });
 
-  it("requires confirmation for every redraw", () => {
-    for (const drawCount of [1, 2, 7]) {
-      expect(evaluateDrawRequest({ picksMade: 0, drawCount })).toEqual({
-        allowed: true,
-        requiresConfirmation: true,
-      });
+  it("requires confirmation once an order exists", () => {
+    expect(evaluateDrawRequest({ picksMade: 0, hasBeenDrawn: true })).toEqual({
+      allowed: true,
+      requiresConfirmation: true,
+    });
+  });
+
+  it("asks for confirmation on exactly what the button shows", () => {
+    // The button reads phases.order_drawn_at; this used to read
+    // order_draw_count. When the two disagreed the page offered a plain
+    // "Draw the draft order" while the action behind it demanded the
+    // REDRAW phrase - so the button did nothing, with no box to type the
+    // phrase into. Whatever decides the label must decide the rule.
+    for (const hasBeenDrawn of [true, false]) {
+      const decision = evaluateDrawRequest({ picksMade: 0, hasBeenDrawn });
+      expect(decision.allowed).toBe(true);
+      expect(decision.requiresConfirmation, String(hasBeenDrawn)).toBe(
+        hasBeenDrawn
+      );
     }
   });
 
   it("refuses once a single pick has been made, even on the first draw", () => {
-    const decision = evaluateDrawRequest({ picksMade: 1, drawCount: 0 });
+    const decision = evaluateDrawRequest({ picksMade: 1, hasBeenDrawn: false });
     expect(decision.allowed).toBe(false);
   });
 
-  it("refuses after picks regardless of how many draws happened", () => {
+  it("refuses after picks whether or not an order exists", () => {
     // There is deliberately no confirmation phrase that unlocks this - a
     // redraw mid-draft would orphan picks already made.
-    for (const drawCount of [0, 1, 5]) {
+    for (const hasBeenDrawn of [false, true]) {
       expect(
-        evaluateDrawRequest({ picksMade: 24, drawCount }).allowed
+        evaluateDrawRequest({ picksMade: 24, hasBeenDrawn }).allowed
       ).toBe(false);
     }
   });

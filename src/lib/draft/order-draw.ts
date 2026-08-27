@@ -25,7 +25,18 @@ export type DrawDecision =
  */
 export function evaluateDrawRequest(input: {
   picksMade: number;
-  drawCount: number;
+  /**
+   * Whether an order currently exists - `phases.order_drawn_at` being
+   * set, which is the same signal the button on screen reads.
+   *
+   * Deliberately not `order_draw_count`. That is the honesty counter: it
+   * only ever goes up, and it stays up even if the order it counted is
+   * gone. Judging a redraw by it meant the page offered a plain "Draw
+   * the draft order" button while the action behind it quietly demanded
+   * the REDRAW phrase, so pressing it did nothing anyone could explain.
+   * There is no order to redraw when nothing has been drawn.
+   */
+  hasBeenDrawn: boolean;
 }): DrawDecision {
   if (input.picksMade > 0) {
     return {
@@ -34,7 +45,7 @@ export function evaluateDrawRequest(input: {
         "The draft has already started — the order is locked. Undo every pick first if it genuinely has to change.",
     };
   }
-  return { allowed: true, requiresConfirmation: input.drawCount > 0 };
+  return { allowed: true, requiresConfirmation: input.hasBeenDrawn };
 }
 
 /**
