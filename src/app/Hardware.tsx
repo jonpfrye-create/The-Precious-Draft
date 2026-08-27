@@ -40,7 +40,7 @@ export default function Hardware() {
                 aria-expanded={isOpen}
                 aria-controls={panelId}
                 onClick={() => setOpenKey(isOpen ? null : comp.key)}
-                className="flex cursor-pointer flex-col items-center gap-3 border-[3px] px-5 py-7 text-center transition-[background-color,transform] hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e8a33d] sm:order-1"
+                className="flex cursor-pointer flex-col items-center gap-3 border-[3px] px-5 py-6 text-center transition-[background-color,transform] hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e8a33d] sm:order-1"
                 style={{
                   borderColor: comp.border,
                   // The open card lifts out of the row rather than just
@@ -52,10 +52,7 @@ export default function Hardware() {
                 <span className="font-arcade text-[12px] sm:text-[14px]">
                   {comp.name}
                 </span>
-                <span className="font-plex text-[11px] leading-[1.85] text-[#a3937d] sm:text-xs">
-                  {comp.blurb}
-                </span>
-                <span className="font-plex mt-1 text-[10px] tracking-[0.24em] text-[#e8a33d] uppercase">
+                <span className="font-plex text-[10px] tracking-[0.24em] text-[#e8a33d] uppercase">
                   {isOpen ? "Close" : `${comp.seasons.length} seasons`}
                   <span aria-hidden> {isOpen ? "▲" : "▼"}</span>
                 </span>

@@ -21,8 +21,6 @@ export type Podium = {
 export type Competition = {
   key: string;
   name: string;
-  /** What winning it, or not, actually means. */
-  blurb: string;
   border: string;
   tint: string;
   /** Newest first - the way anybody reading it wants to see it. */
@@ -67,7 +65,6 @@ export const HARDWARE: Competition[] = [
   {
     key: "precious",
     name: "THE PRECIOUS",
-    blurb: "First place. Handed over in silence, reclaimed without ceremony.",
     border: "#e8a33d",
     tint: "rgba(232,163,61,0.06)",
     seasons: PRECIOUS,
@@ -75,7 +72,6 @@ export const HARDWARE: Competition[] = [
   {
     key: "leftovers",
     name: "LEFTOVERS",
-    blurb: "Everything between glory and disgrace. Nobody has asked to see it.",
     border: "#6b5340",
     tint: "transparent",
     seasons: LEFTOVERS,
@@ -83,7 +79,6 @@ export const HARDWARE: Competition[] = [
   {
     key: "microwave",
     name: "MICROWAVE",
-    blurb: "Last place. It heats things. That is the whole of the punishment.",
     border: "#c1391f",
     tint: "rgba(193,57,31,0.07)",
     seasons: MICROWAVE,
