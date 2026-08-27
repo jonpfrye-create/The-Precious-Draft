@@ -60,5 +60,8 @@ export async function claimTeamAction(teamId: string): Promise<JoinResult> {
   if (!result.ok) return { ok: false, error: result.error };
 
   await startDrafterSession(result.token);
-  redirect("/draft");
+  // The lobby, not the draft. A phase that hasn't started sends people
+  // straight back here anyway, and landing on the waiting room is how
+  // somebody who has just claimed a team finds out who else has.
+  redirect("/lobby");
 }

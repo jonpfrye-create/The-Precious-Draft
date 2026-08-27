@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requireDrafterTeam } from "@/lib/auth/drafter";
 import { generateSnakeOrder } from "@/lib/draft/snake-order";
 import { assignRoster } from "@/lib/draft/roster-fit";
+import { belongsInLobby } from "@/lib/draft/lobby";
 import {
   getCurrentPhase,
   getPhasesForLeague,
@@ -49,6 +51,33 @@ export default async function DraftPage() {
     getPicks(phase.id),
     getDrafterSheetForPhase(phase),
   ]);
+
+  // A draft whose order hasn't finished being revealed belongs to the
+  // lobby, not here.
+  //
+  // This is a leak, not a tidiness problem. Every query on this page runs
+  // through the service-role key, which bypasses RLS - so the reveal
+  // gating in supabase/003-order-reveal.sql, which stops anyone pulling
+  // an unrevealed draft position out of the public API, does nothing
+  // whatsoever for this page. Rendering it early puts the whole order
+  // into twelve browsers before a single slot has been turned over.
+  //
+  // 003 predates drafter pages existing at all; there was no way in then.
+  // The same function decides this on both sides, so the two pages cannot
+  // disagree about who belongs where.
+  if (
+    belongsInLobby(
+      {
+        status: phase.status,
+        orderDrawnAt: phase.order_drawn_at,
+        revealedCount: phase.order_revealed_count,
+      },
+      teams.length,
+      picks.length
+    )
+  ) {
+    redirect("/lobby");
+  }
 
   // A team that isn't in this phase - sat out Leftovers, say - gets told
   // so rather than a draft screen they can do nothing with.

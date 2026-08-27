@@ -16,7 +16,7 @@ import {
 } from "@/lib/teams/branding";
 import { pickNumbersForPosition } from "@/lib/draft/snake-order";
 import { playFanfare, playStinger, playSuspense } from "@/lib/audio/fanfare";
-import Confetti from "./Confetti";
+import Confetti from "@/components/Confetti";
 import { drawDraftOrder, revealNextPosition } from "./actions";
 import { ACTION_FAILED } from "@/lib/errors";
 

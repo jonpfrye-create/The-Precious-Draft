@@ -128,6 +128,54 @@ the board shows a warning in that state. Applied via
 Draft order is per-phase, so Leftovers and Microwave each get their own
 draw through the same page.
 
+## Draft night: the lobby
+
+`/lobby` is where everyone waits between the door opening at 5:00 PM and
+the first pick. One page, three states: who has turned up, then the order
+turning over a slot at a time, then the draft. Logic in
+`src/lib/draft/lobby.ts`.
+
+**The gate is the reveal, not the phase's status.** `/commish/setup`
+creates the Main phase `active` the moment setup finishes, so status says
+nothing about whether the league is ready — gating on it marches everyone
+straight past the waiting room and onto a board showing the placeholder
+order. What separates "before" from "during" is whether the order has been
+drawn and fully revealed. **Finishing the reveal is what starts the
+draft**; there is no separate button to remember on the night.
+
+`belongsInLobby()` decides this for `/draft` and `lobbyState()` for
+`/lobby`, from the same function, because if the two ever disagree the
+result is a redirect loop on twelve phones. There is a test asserting they
+never both bounce. The one state they read differently is a *finished*
+reveal: the lobby keeps showing it while the confetti lands, `/draft` must
+admit anyone who arrives.
+
+**Why `/draft` needs the gate at all:** every query there runs through the
+service-role key, which bypasses RLS — so the reveal gating in
+`003-order-reveal.sql` does nothing for it. Rendering `/draft` early puts
+the whole order into twelve browsers. `003` predates drafter pages
+existing; there was no way in then. The lobby strips unrevealed positions
+by hand for the same reason.
+
+Two more things that are load-bearing:
+
+- **Arrivals are polled, the reveal is pushed.** `team_claims` is
+  RLS-enabled with zero policies (the claim token lives in it, and a token
+  *is* a team's identity), so the browser cannot read who has joined and
+  realtime cannot carry it — hence a 4s poll. The reveal rides
+  `phases.order_revealed_count` over realtime, which `008` already
+  publishes. A slower 10s poll keeps running underneath: a probe caught
+  the first subscription of a cold session missing its event, and a phone
+  that missed the *last* reveal would otherwise sit on a stale order
+  forever.
+- **A drafter can hand back their own team** from the lobby
+  (`lobby/actions.ts`) — the five-past-five wrong-team problem — but only
+  while zero picks exist, and only their own team taken from their own
+  cookie, never an id sent up from the page. After the first pick it is
+  the commissioner's call at `/commish/claims`. `/draft/leave` is a
+  different thing and stays as it is: it signs a handset out without
+  giving up the team.
+
 ## Clams AI
 
 The AI grader. It imitates the commissioner's own grading voice, and the
