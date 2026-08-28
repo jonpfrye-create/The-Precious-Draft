@@ -148,6 +148,13 @@ export default function Climb({
   const [tick, setTick] = useState(0);
   const [size, setSize] = useState({ w: 320, h: VIEW_H });
 
+  // Held phones are portrait, and this is a landscape picture. Rather
+  // than shrink the mountain to fit a tall thin box, ask for the phone
+  // to be turned - it is one gesture and it roughly doubles the size of
+  // everything on screen.
+  const [portrait, setPortrait] = useState(false);
+  const [ignoredTurn, setIgnoredTurn] = useState(false);
+
   const wrap = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const image = useRef<ImageData | null>(null);
@@ -284,6 +291,17 @@ export default function Climb({
   }, []);
 
   useEffect(() => {
+    // Width as well as orientation: a tablet in portrait has plenty of
+    // room and does not need telling, and a desktop window that happens
+    // to be tall is not a phone.
+    const mq = window.matchMedia("(orientation: portrait) and (max-width: 820px)");
+    const sync = () => setPortrait(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  useEffect(() => {
     const el = wrap.current;
     if (!el) return;
     const measure = () => {
@@ -346,6 +364,30 @@ export default function Climb({
           style={{ imageRendering: "pixelated" }}
           aria-hidden
         />
+
+        {portrait && !ignoredTurn ? (
+          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-4 bg-[#0b1020]/94 px-6 text-center">
+            <div
+              aria-hidden
+              className="h-9 w-14 animate-opa-blink border-4 border-[#e8a33d]"
+            />
+            <p className="font-arcade text-[10px] leading-relaxed text-[#e8a33d] sm:text-[12px]">
+              TURN YOUR PHONE SIDEWAYS
+            </p>
+            <p className="font-plex max-w-[16rem] text-xs text-zinc-400">
+              The mountain is about twice the size in landscape. You
+              won&apos;t miss anything — nothing happens until the
+              commissioner presses.
+            </p>
+            <button
+              type="button"
+              onClick={() => setIgnoredTurn(true)}
+              className="font-plex text-xs text-zinc-500 underline underline-offset-4 hover:text-zinc-300"
+            >
+              Watch it this way
+            </button>
+          </div>
+        ) : null}
 
         {card && cardTeam ? (
           <>

@@ -142,18 +142,35 @@ const ALTITUDE_JITTER_SHARE = 0.4;
 const LANE_JITTER = 0.03;
 
 /**
- * How much further apart the ones still climbing are strung out.
- *
- * Applied only to climbers, never to the fallen - the fallen have to
- * stay in the order they went down, and that invariant is what the tight
- * jitter above protects.
+ * The shape of the climbing party.
  *
  * The mascots are 24 pixels across and the mountain is not wide enough
- * for twelve of them abreast, so shoulder to shoulder they were a heap
- * with three faces showing. Strung up and down the slope they overlap
- * the way a climbing party does, and every one of them is visible.
+ * for twelve of them abreast - and it gets narrower with every step, so
+ * any arrangement that spreads them sideways collapses into a heap by
+ * halfway up. Scattering them at random did not help either: random
+ * points clump, which is the whole reason a random arrangement looks
+ * wrong when a deliberate one looks natural.
+ *
+ * So they are placed on a staggered grid instead - four abreast, in
+ * ranks trailing back down the slope, alternate ranks offset by half a
+ * space so nobody is directly behind anybody. That is roughly how a rope
+ * team actually walks, and it guarantees the gap rather than hoping for
+ * it.
+ *
+ * Four abreast rather than three because three put twelve mascots in
+ * four ranks, and the back two hung off the bottom of the frame at the
+ * trailhead - the opening shot is meant to be the whole league setting
+ * out, not half of it.
+ *
+ * Applied only to the ones still climbing. The fallen keep their tight
+ * jitter, because their order up the mountain is the order they went
+ * down in and there is a test that says so.
  */
-const CLIMBING_SPREAD = 3;
+const FORMATION_COLUMNS = 4;
+/** Altitude between one rank and the next. */
+const FORMATION_RANK_GAP = 0.05;
+/** Lane units between neighbours in a rank. */
+const FORMATION_COLUMN_GAP = 0.3;
 
 /** Which felling turns over a given draft position. */
 export function stepForPosition(fieldSize: number, position: number): number {
@@ -230,17 +247,39 @@ export function climbScene(
 
   const jitter = ALTITUDE_JITTER_SHARE / Math.max(1, fieldSize);
 
+  // Standing order in the party, fixed for the whole climb, so the
+  // formation never re-sorts itself. When somebody goes down the ones
+  // behind close up by one place - which reads as the group closing
+  // ranks, and happens underneath the announcement card anyway.
+  const marching = teams
+    .filter((t) => !revealed.has(t.teamId))
+    .sort(
+      (a, b) =>
+        hashString(`${seed}:form:${a.teamId}`) -
+        hashString(`${seed}:form:${b.teamId}`)
+    )
+    .map((t) => t.teamId);
+  const rankOf = new Map(marching.map((id, i) => [id, i]));
+
   const climbers: Climber[] = teams.map((team) => {
     const position = revealed.get(team.teamId) ?? null;
-    const lane = laneOf.get(team.teamId) ?? 0.5;
     const wobble = rangeFromSeed(`${seed}:alt:${team.teamId}`, -jitter, jitter);
 
     if (position === null) {
+      const order = rankOf.get(team.teamId) ?? 0;
+      const column = order % FORMATION_COLUMNS;
+      const rank = Math.floor(order / FORMATION_COLUMNS);
+      // Half a space of stagger on alternate ranks, so a mascot is never
+      // hidden directly behind the one in front of it.
+      const stagger = rank % 2 === 0 ? 0 : FORMATION_COLUMN_GAP / 2;
+      const across =
+        (column - (FORMATION_COLUMNS - 1) / 2) * FORMATION_COLUMN_GAP + stagger;
+
       return {
         teamId: team.teamId,
         status: "climbing" as const,
-        altitude: Math.max(0, packAltitude + wobble * CLIMBING_SPREAD),
-        lane,
+        altitude: Math.max(0, packAltitude - rank * FORMATION_RANK_GAP),
+        lane: Math.min(1, Math.max(0, 0.5 + across)),
         position: null,
         step: null,
         hazard: null,
@@ -249,12 +288,15 @@ export function climbScene(
 
     const step = stepForPosition(fieldSize, position);
     const summited = position === 1;
+    const lane = laneOf.get(team.teamId) ?? 0.5;
 
     return {
       teamId: team.teamId,
       status: summited ? ("summited" as const) : ("felled" as const),
       // The summiteer stands on the top, dead centre, not off in a lane.
-      altitude: summited ? 1 : Math.max(0, altitudeForStep(fieldSize, step) + wobble),
+      altitude: summited
+        ? 1
+        : Math.max(0, altitudeForStep(fieldSize, step) + wobble),
       lane: summited ? 0.5 : lane,
       position,
       step,

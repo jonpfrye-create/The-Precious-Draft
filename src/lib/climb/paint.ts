@@ -141,9 +141,11 @@ export function camera(h: number, packAltitude: number): Camera {
   const summitY = h * 0.35;
   const focus = worldYOf(packAltitude, baseY, summitY);
   return {
-    // The pack sits low in frame, so most of the screen is the mountain
-    // still to come rather than the mountain already climbed.
-    top: Math.min(Math.max(focus - h * 0.62, 0), worldH - h),
+    // The pack sits below the middle, so most of the screen is the
+    // mountain still to come rather than the mountain already climbed -
+    // but high enough that the rear ranks of the party are in frame
+    // behind it, which at 0.62 they were not.
+    top: Math.min(Math.max(focus - h * 0.46, 0), worldH - h),
     worldH,
     baseY,
     summitY,
