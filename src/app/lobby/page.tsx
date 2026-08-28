@@ -31,7 +31,23 @@ export const dynamic = "force-dynamic";
  * gate has to be reapplied by hand on the way out. The same oversight is
  * what was quietly handing the whole order to /draft.
  */
-export default async function LobbyPage() {
+export default async function LobbyPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string }>;
+}) {
+  // ?view=list and ?view=climb pick the reveal, and stick on that device.
+  //
+  // The toggle under the board has always been there, but reaching for
+  // it takes a tap on every device in the league - fine for a room, no
+  // use at all for the drafters who are three hundred miles away. This
+  // is one link the commissioner can paste into the group chat, which
+  // matters because on 29 August a deploy is not an option and this is
+  // the only lever left.
+  const requested = (await searchParams).view;
+  const forcedView =
+    requested === "list" ? "list" : requested === "climb" ? "climb" : null;
+
   const me = await requireDrafterTeam();
 
   const phases = await getPhasesForLeague(me.leagueId);
@@ -125,6 +141,7 @@ export default async function LobbyPage() {
       climbTeams={climbTeams}
       fellings={fellings}
       climbSeed={phase?.id ?? me.leagueId}
+      forcedView={forcedView}
       phaseType={phase?.type ?? null}
       // Releasing your own team stops being safe the moment a pick
       // exists, and by then it is the commissioner's call anyway.

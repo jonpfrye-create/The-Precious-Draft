@@ -65,6 +65,7 @@ export default function LobbyView({
   climbTeams,
   fellings,
   climbSeed,
+  forcedView,
   phaseType,
   canRelease,
 }: {
@@ -81,6 +82,7 @@ export default function LobbyView({
   climbTeams: ClimbTeam[];
   fellings: Felling[];
   climbSeed: string;
+  forcedView: "climb" | "list" | null;
   phaseType: string | null;
   canRelease: boolean;
 }) {
@@ -137,6 +139,7 @@ export default function LobbyView({
           fellings={fellings}
           climbSeed={climbSeed}
           myTeamId={myTeamId}
+          forcedView={forcedView}
         />
       )}
     </main>
@@ -262,6 +265,7 @@ function Reveal({
   fellings,
   climbSeed,
   myTeamId,
+  forcedView,
 }: {
   slots: Slot[];
   complete: boolean;
@@ -269,6 +273,7 @@ function Reveal({
   fellings: Felling[];
   climbSeed: string;
   myTeamId: string;
+  forcedView: "climb" | "list" | null;
 }) {
   const router = useRouter();
   const revealed = slots.filter((s) => s.name !== null).length;
@@ -281,11 +286,17 @@ function Reveal({
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem(VIEW_KEY);
+    // A ?view= in the URL wins, and is remembered - so the link only has
+    // to be followed once. A refresh, or the trip out to /draft and back
+    // for the next phase, keeps whatever it chose.
+    const chosen =
+      forcedView ??
+      (window.localStorage.getItem(VIEW_KEY) === "list" ? "list" : "climb");
+    window.localStorage.setItem(VIEW_KEY, chosen);
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setView(saved === "list" ? "list" : "climb");
+    setView(chosen);
     setReady(true);
-  }, []);
+  }, [forcedView]);
 
   const choose = (next: "climb" | "list") => {
     setView(next);
