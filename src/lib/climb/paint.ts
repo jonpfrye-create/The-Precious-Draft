@@ -1,5 +1,6 @@
 import { unitFromSeed } from "@/lib/random/seeded";
 import type { ClimbScene, Climber } from "./climb";
+import { eachTextPixel, textWidth } from "./font";
 import { HAZARD_ART, hazardColour } from "./hazard-art";
 import {
   colourFor,
@@ -237,6 +238,76 @@ function stampHazard(p: Painter, id: string, left: number, top: number) {
   });
 }
 
+/**
+ * Text with a dark halo around it.
+ *
+ * The halo is not decoration. A label on this mountain crosses white
+ * snow, brown rock and night sky - often within the same three letters -
+ * and any single ink colour disappears against one of them.
+ */
+function drawText(
+  p: Painter,
+  text: string,
+  left: number,
+  top: number,
+  ink: RGB,
+  halo: RGB = OUTLINE
+) {
+  eachTextPixel(text, (x, y) => {
+    for (let dy = -1; dy <= 1; dy++)
+      for (let dx = -1; dx <= 1; dx++)
+        p.px(left + x + dx, top + y + dy, halo);
+  });
+  eachTextPixel(text, (x, y) => p.px(left + x, top + y, ink));
+}
+
+function drawTextCentred(
+  p: Painter,
+  text: string,
+  cx: number,
+  top: number,
+  ink: RGB,
+  halo?: RGB
+) {
+  drawText(p, text, Math.round(cx - textWidth(text) / 2), top, ink, halo);
+}
+
+/**
+ * The mark that lands on whoever just went down.
+ *
+ * The card that follows says what happened, but the card arrives after
+ * the fact and away from the mountain - without something appearing on
+ * the mascot itself, a felling was a pick number materialising out of
+ * nowhere while the pack carried on walking.
+ */
+const SKULL = [
+  ".#####.",
+  "#######",
+  "##.#.##",
+  "#######",
+  ".#####.",
+  ".#.#.#.",
+  ".#####.",
+];
+
+function stampSkull(p: Painter, cx: number, top: number) {
+  const bone = rgb("#f4f6f8");
+  SKULL.forEach((row, y) => {
+    for (let x = 0; x < row.length; x++) {
+      if (row[x] !== "#") continue;
+      const px = Math.round(cx - row.length / 2) + x;
+      // Outlined, so it reads on snow as well as on rock.
+      for (let dy = -1; dy <= 1; dy++)
+        for (let dx = -1; dx <= 1; dx++) p.px(px + dx, top + y + dy, OUTLINE);
+    }
+  });
+  SKULL.forEach((row, y) => {
+    for (let x = 0; x < row.length; x++) {
+      if (row[x] === "#") p.px(Math.round(cx - row.length / 2) + x, top + y, bone);
+    }
+  });
+}
+
 // --------------------------------------------------------- busted face
 
 /**
@@ -309,6 +380,81 @@ function paintSky(p: Painter, cam: Camera, seed: string) {
 
 // ----------------------------------------------------------- mountain
 
+/**
+ * Ridges standing behind the mountain being climbed.
+ *
+ * Without them the main face was a shape on a flat sky and did not read
+ * as a mountain at all - there was nothing to say it was a long way up
+ * rather than a brown triangle. These sit further away, in a colder
+ * colour, and do not scroll at quite the same rate as the foreground.
+ */
+function paintRidges(p: Painter, cam: Camera) {
+  const far = mix(SKY_LOW, SNOW_SHADE, 0.3);
+  const near = mix(SKY_LOW, SNOW_SHADE, 0.46);
+
+  const peaks = [
+    { x: 0.14, top: 0.44, w: 0.3, c: far, drift: 0.18 },
+    { x: 0.86, top: 0.38, w: 0.34, c: far, drift: 0.18 },
+    { x: 0.34, top: 0.6, w: 0.26, c: near, drift: 0.3 },
+    { x: 0.7, top: 0.66, w: 0.24, c: near, drift: 0.3 },
+  ];
+
+  // Anchored to the screen with a slow drift, not to the world.
+  //
+  // Pinned to world coordinates - which was the obvious thing to do -
+  // they sat a couple of screens below the viewport for the entire climb
+  // and never drew a single pixel. What is wanted is a horizon: hidden
+  // behind the face near the bottom, rising into view as the camera
+  // climbs and there is further to see.
+  const progress = 1 - cam.top / Math.max(1, cam.worldH - p.h);
+
+  for (const peak of peaks) {
+    const baseY = p.h * (1.08 - peak.drift * progress);
+    const apexY = baseY - p.h * peak.top;
+    const apexX = p.w * peak.x;
+    const halfBase = p.w * peak.w;
+
+    for (let y = Math.max(0, Math.round(apexY)); y < Math.min(p.h, baseY); y++) {
+      const down = (y - apexY) / Math.max(1, baseY - apexY);
+      const half = halfBase * down;
+      for (let x = Math.round(apexX - half); x <= Math.round(apexX + half); x++) {
+        if (x < 0 || x >= p.w) continue;
+        // A dusting of snow on the far tops, so they read as mountains
+        // rather than as blue hills.
+        const capped = down < 0.22 && dither(x, y) < 0.55;
+        p.px(x, y, capped ? mix(peak.c, SNOW, 0.5) : peak.c);
+      }
+    }
+  }
+}
+
+/**
+ * A switchback path zigzagging up the face.
+ *
+ * The single clearest signal that this is a climb. Twelve mascots
+ * standing on a slope look like twelve mascots standing on a slope; put
+ * a trail under them and they are walking up it.
+ */
+function paintTrail(p: Painter, cam: Camera) {
+  const cx = p.w / 2;
+  const ink = mix(ROCK_SHADE, OUTLINE, 0.35);
+
+  for (let y = 0; y < p.h; y++) {
+    const wy = cam.top + y;
+    const a = altitudeAt(cam, wy);
+    if (a < 0 || a > 1) continue;
+    const half = halfWidth(p.w, a);
+    // Fewer, wider sweeps low down where the mountain is broad; tighter
+    // as it narrows, so the switchbacks stay in proportion.
+    const sweep = Math.sin(a * Math.PI * 7) * (half - 6) * 0.72;
+    const tx = Math.round(cx + sweep);
+    // Dashed, so it reads as a path rather than as a drawn line.
+    if ((wy >> 1) % 3 === 0) continue;
+    p.px(tx, y, ink);
+    p.px(tx + 1, y, ink);
+  }
+}
+
 function paintMountain(p: Painter, cam: Camera) {
   const cx = p.w / 2;
 
@@ -376,6 +522,8 @@ export interface PaintTeam {
   mascot: Mascot;
   /** The team's colour, worn on the jersey. */
   jersey: string;
+  /** Three letters, carried up the mountain under the mascot. */
+  label: string;
 }
 
 export interface PaintOptions {
@@ -388,6 +536,14 @@ export interface PaintOptions {
   packAltitude?: number;
   /** Gets a marker over its head, so you can find yourself in the pack. */
   highlightTeamId?: string | null;
+  /**
+   * Whitens the whole frame, 0 to 1 - the lightning that goes with a
+   * felling. Dithered rather than blended, because this is an eight-bit
+   * screen and a smooth white wash over it looks like a bug.
+   */
+  flash?: number;
+  /** Wears a skull: the mascot that has just this moment gone down. */
+  strikeTeamId?: string | null;
 }
 
 export function paintClimb(p: Painter, opts: PaintOptions) {
@@ -396,7 +552,9 @@ export function paintClimb(p: Painter, opts: PaintOptions) {
   const cam = camera(p.h, packAltitude);
 
   paintSky(p, cam, seed);
+  paintRidges(p, cam);
   paintMountain(p, cam);
+  paintTrail(p, cam);
   paintSummitFlag(p, cam);
 
   // Lower down the mountain first, so a climber higher up overlaps the
@@ -423,6 +581,17 @@ export function paintClimb(p: Painter, opts: PaintOptions) {
       const bob = Math.round(Math.sin((tick + c.lane * 9) * 0.6)) === 1 ? 1 : 0;
       const top = Math.round(at.y) - SPRITE_H + bob;
       stampMascot(p, spriteRows(team.mascot, frame), left, top, team.mascot, team.jersey);
+
+      // The name goes under the feet. Twelve mascots at sixteen pixels
+      // across cannot be told apart by jersey colour from a sofa, and
+      // "which one is mine" was the first thing anyone asked.
+      //
+      // Three rows, by lane. On one row the twelve labels overlapped
+      // into an unreadable ribbon along the bottom of the mountain,
+      // which is worse than no labels at all; two rows still collided
+      // where the lane jitter put neighbours close together.
+      const tier = [2, 8, 14][Math.round(c.lane * 11) % 3];
+      drawTextCentred(p, team.label, at.x, Math.round(at.y) + tier, rgb(team.jersey));
 
       // Twelve mascots on a mountain and one of them is yours. Without a
       // marker the honest answer to "which one am I" is the jersey
@@ -465,5 +634,27 @@ export function paintClimb(p: Painter, opts: PaintOptions) {
       stampMascot(p, lying, bodyLeft, bodyTop, team.mascot, team.jersey);
       if (c.hazard) stampHazard(p, c.hazard.id, hazardLeft, hazardTop - 2);
     }
+
+    // The one that has just gone down wears a skull, floating and
+    // bobbing, until the card takes over.
+    if (opts.strikeTeamId === c.teamId) {
+      stampSkull(p, at.x, bodyTop - 12 - (tick % 2) * 2);
+    }
   });
+
+  // The lightning, over everything.
+  const flash = opts.flash ?? 0;
+  if (flash > 0) {
+    const white = rgb("#ffffff");
+    for (let y = 0; y < p.h; y++)
+      for (let x = 0; x < p.w; x++)
+        if (dither(x, y) < flash) p.px(x, y, white);
+  }
+
+  // The mountain's name, on the mountain.
+  //
+  // It was an HTML heading above the canvas, which explained the
+  // reference before anyone had seen the thing it refers to. Inside the
+  // picture it is a sign at the trailhead instead of a caption.
+  drawTextCentred(p, "BIJAN GIBBS MOUNTAIN", p.w / 2, 4, rgb("#e8a33d"));
 }

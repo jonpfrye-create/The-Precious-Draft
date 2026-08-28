@@ -11,6 +11,7 @@ import {
   type ClimbTeam,
   type Felling,
 } from "@/lib/climb/climb";
+import { shortLabel } from "@/lib/climb/font";
 import { assignMascots, eyeClusters } from "@/lib/climb/mascots";
 import {
   paintBustedFace,
@@ -33,8 +34,17 @@ import { splitTeamName } from "@/lib/teams/branding";
  * view has always run on. Nothing here writes anything.
  */
 
-/** How long the pack takes to climb between two fellings. */
-const WALK_MS = 2200;
+/**
+ * How long the pack takes to climb between two fellings.
+ *
+ * Long enough to actually watch them walk. At 2.2s the first press went
+ * more or less straight to a death, which threw away the only part of
+ * this that is a climb.
+ */
+const WALK_MS = 4000;
+
+/** The lightning, and the beat of skull afterwards. */
+const STRIKE_MS = 1400;
 
 /** How long the announcement card holds. */
 const CARD_MS = 4200;
@@ -44,10 +54,14 @@ const TICK_MS = 190;
 
 /**
  * The canvas is drawn at this many pixels tall whatever its size on
- * screen, and scaled up. Small enough to look eight-bit, big enough for
- * a mascot to have a face.
+ * screen, and scaled up.
+ *
+ * Fewer pixels means bigger ones. At 200 the mascots were technically on
+ * screen and practically unreadable across a room - everything here is
+ * meant to be seen from a sofa, so the whole scene gets about half as
+ * many pixels and each one is twice the size.
  */
-const VIEW_H = 200;
+const VIEW_H = 128;
 
 function imagePainter(image: ImageData): Painter {
   const d = image.data;
@@ -82,6 +96,19 @@ function fellingsUpTo(fellings: Felling[], k: number): Felling[] {
 const easeInOut = (t: number) =>
   t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 
+/**
+ * Two hard strokes and a fade, rather than one smooth ramp - lightning
+ * does not dim politely, and the second stroke is what makes a person
+ * look up.
+ */
+function flashAt(t: number): number {
+  if (t < 0.1) return 0.95;
+  if (t < 0.18) return 0.12;
+  if (t < 0.27) return 0.8;
+  if (t < 0.6) return 0.3 * (1 - (t - 0.27) / 0.33);
+  return 0;
+}
+
 export default function Climb({
   teams,
   fellings,
@@ -108,6 +135,9 @@ export default function Climb({
   // Non-null only while the pack is walking between two fellings.
   const [walkAltitude, setWalkAltitude] = useState<number | null>(null);
   const [card, setCard] = useState<Climber | null>(null);
+  // The mascot currently being struck, and how white the frame is.
+  const [strike, setStrike] = useState<string | null>(null);
+  const [flash, setFlash] = useState(0);
   // Bumped when a card finishes, purely to wake the sequencer for the
   // next felling when several arrived while one was being played out.
   const [beat, setBeat] = useState(0);
@@ -127,7 +157,11 @@ export default function Climb({
       new Map(
         teams.map((t) => [
           t.teamId,
-          { mascot: mascots.get(t.teamId)!, jersey: t.hex },
+          {
+            mascot: mascots.get(t.teamId)!,
+            jersey: t.hex,
+            label: shortLabel(splitTeamName(t.name).teamName),
+          },
         ])
       ),
     [teams, mascots]
@@ -175,24 +209,54 @@ export default function Climb({
     // down and the card comes in. Announcing on arrival of the data
     // instead would put the pick number on screen while the mascot it
     // belongs to was still halfway up the mountain.
-    const arrive = () => {
-      setWalkAltitude(null);
-      setShown(next);
-
-      const latest = climbScene(teams, fellingsUpTo(fellings, next), seed).latest;
-      if (latest) {
-        setCard(latest);
-        if (latest.position === 1) playFanfare();
-        else playStinger(Math.min(1, next / Math.max(1, fieldSize)));
-      }
-
+    const hold = (latest: Climber) => {
+      setCard(latest);
       timer.current = setTimeout(() => {
         setCard(null);
+        setStrike(null);
         running.current = false;
         // Wakes this effect again, in case more than one slot was turned
         // over while this one was being played out.
         setBeat((b) => b + 1);
       }, CARD_MS);
+    };
+
+    const arrive = () => {
+      setWalkAltitude(null);
+      setShown(next);
+
+      const latest = climbScene(teams, fellingsUpTo(fellings, next), seed).latest;
+      if (!latest) {
+        running.current = false;
+        return;
+      }
+
+      // Nothing happens to the one that reaches the top, so there is no
+      // lightning and no skull - just the summit and the fanfare.
+      if (latest.position === 1) {
+        playFanfare();
+        hold(latest);
+        return;
+      }
+
+      // The strike itself: lightning over the whole frame, a skull on
+      // the mascot, and the bang at the moment of the flash rather than
+      // when the card turns up a beat and a half later.
+      setStrike(latest.teamId);
+      playStinger(Math.min(1, next / Math.max(1, fieldSize)));
+
+      const struckAt = performance.now();
+      const strikeStep = (now: number) => {
+        const t = Math.min(1, (now - struckAt) / STRIKE_MS);
+        setFlash(flashAt(t));
+        if (t >= 1) {
+          setFlash(0);
+          hold(latest);
+          return;
+        }
+        raf.current = requestAnimationFrame(strikeStep);
+      };
+      raf.current = requestAnimationFrame(strikeStep);
     };
 
     const step = (now: number) => {
@@ -225,7 +289,7 @@ export default function Climb({
       // mountain fills a wide television and a tall phone equally
       // without either letterboxing it or stretching the pixels.
       const w = Math.round(VIEW_H * (box.width / Math.max(1, box.height)));
-      setSize({ w: Math.min(460, Math.max(170, w)), h: VIEW_H });
+      setSize({ w: Math.min(300, Math.max(120, w)), h: VIEW_H });
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -252,9 +316,11 @@ export default function Climb({
       tick,
       packAltitude,
       highlightTeamId: myTeamId,
+      flash,
+      strikeTeamId: strike,
     });
     ctx.putImageData(image.current, 0, 0);
-  }, [scene, paintTeams, seed, tick, packAltitude, myTeamId, size]);
+  }, [scene, paintTeams, seed, tick, packAltitude, myTeamId, size, flash, strike]);
 
   // ---- the card -------------------------------------------------------
 
@@ -332,7 +398,10 @@ function BustedFace({
   jersey: string;
   mascotId: string;
   intact: boolean;
-  paintTeams: Map<string, { mascot: { id: string; head: string[] }; jersey: string }>;
+  paintTeams: Map<
+    string,
+    { mascot: { id: string; head: string[] }; jersey: string; label: string }
+  >;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
 

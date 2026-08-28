@@ -52,7 +52,11 @@ export default function ClimbPreview({
           onClick={() => setRevealed((r) => Math.min(n, r + 1))}
           className="font-arcade border-4 border-[#efe6d2] bg-[#e8a33d] px-5 py-3 text-[10px] text-[#14100d] shadow-[6px_6px_0_#c1391f] transition-[transform,box-shadow] hover:translate-x-1 hover:translate-y-1 hover:shadow-[2px_2px_0_#c1391f] disabled:opacity-40 sm:text-[13px]"
         >
-          {revealed >= n ? "SUMMIT REACHED" : "FELL THE NEXT ONE"}
+          {revealed >= n
+            ? "SUMMIT REACHED"
+            : revealed === 0
+              ? "START CLIMBING"
+              : "KEEP CLIMBING"}
         </button>
         <button
           type="button"

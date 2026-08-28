@@ -52,9 +52,10 @@ export default async function ClimbPreviewPage() {
           {me.leagueName}
           {phase ? ` · ${phase.type}` : ""}
         </p>
-        <h1 className="font-arcade text-[15px] text-[#e8a33d] sm:text-[21px]">
-          BIJAN GIBBS MOUNTAIN
-        </h1>
+        {/* No heading here on purpose. The mountain's name is painted
+            at the top of the canvas instead - printed above it as an
+            HTML title, it explained the reference before anyone had seen
+            the thing it refers to. */}
       </header>
 
       <p className="font-plex border border-dashed border-[#6b5340] px-3 py-2 text-[11px] uppercase tracking-[0.18em] text-[#c1391f]">
