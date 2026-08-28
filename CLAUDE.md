@@ -52,6 +52,12 @@ Commands:
   draft mechanics against; `npm run test-league -- --rm` deletes it.
   **Use this rather than the real league** for anything one-shot (see the
   draft order draw below).
+- `npm run reset-league` — put a disposable league back to five o'clock:
+  one Main phase, order undrawn, no picks, no claims. For running the
+  night through more than once. Refuses any league not named `ZZZ `.
+  Every earlier reset was typed fresh at the terminal and one of them
+  left a phase with a draw count of 1 and no order — a state the app
+  cannot reach on its own, where the draw button silently did nothing.
 - `npm run export-voice` — save every hand-written grade, with the roster
   it was about, to `voice/grade-corpus.json`. Run it after any grading
   session. See "Clams AI" below for why this is not optional.

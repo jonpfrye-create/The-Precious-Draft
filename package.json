@@ -17,7 +17,8 @@
     "verify-cascade": "tsx scripts/verify-cascade.ts",
     "refresh-adp": "tsx scripts/ingest-adp.ts",
     "export-voice": "tsx scripts/export-voice.ts",
-    "practice-drafts": "tsx scripts/practice-drafts.ts"
+    "practice-drafts": "tsx scripts/practice-drafts.ts",
+    "reset-league": "tsx scripts/reset-league.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.117.1",
