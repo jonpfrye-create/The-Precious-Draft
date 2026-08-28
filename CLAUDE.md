@@ -182,6 +182,66 @@ Two more things that are load-bearing:
   different thing and stays as it is: it signs a handset out without
   giving up the team.
 
+## The climb (Bijan Gibbs Mountain)
+
+The draft order reveal, drawn as a reverse SkiFree: twelve mascots set
+off up a mountain and are picked off one at a time by boulders, bears,
+crevasses and — once — a yeti. Each felling is a draft position
+announced, counting backwards. Whoever is left on the summit picks first.
+Named for the two players who go first overall.
+
+**It is a rendering of the reveal, not a new mechanism.** This is the
+whole reason it was safe to build two days out. `nextRevealStep()` has
+always turned over the last position first and position 1 last, with
+`isFinale` on position 1 — so one press of the commissioner's existing
+button is one mascot felled, and the draw, the reveal, the realtime and
+the RLS are all untouched. Nothing in `src/lib/climb/` writes anything.
+
+Four things are load-bearing:
+
+- **`climbScene()` takes the team list and the fellings separately**, and
+  must keep doing so. Handing it the drawn order would put the whole
+  order into twelve browsers before a slot had been turned over — the
+  exact leak found in `/draft` in August. The field is already public
+  (the waiting room lists all twelve names); only the *positions* are
+  secret. There is a test asserting no unrevealed position can be
+  recovered from a scene.
+- **`lobby/page.tsx` sorts the climb field by name.** `getTeamsForPhase`
+  returns rows in draft-position order, so passing the array as it
+  arrived would leak the entire order through the array's *ordering*,
+  with every position dutifully stripped out of it.
+- **There is no cross-device animation to keep in sync.** The scene is a
+  pure function of the revealed count and is paused almost all the time;
+  it advances only when a felling arrives. The mascot race this replaced
+  tried to keep a sixteen-second animation frame-identical across twelve
+  phones from a shared seed, and was hopelessly buggy.
+- **Either view can be swapped for the other per device**, from a link
+  under the reveal, stored in localStorage (`precious:reveal-view`).
+  That is the whole safety net on the night: a deploy is out of the
+  question on 29 August, so the fallback to the old plain list has to be
+  something anyone can reach for mid-reveal. The climb suppresses the
+  list view's stingers so they never double up.
+
+Art is pixel data, not image files, in `mascots.ts` and `hazard-art.ts` —
+a shared body carrying the team's colour on the *jersey*, and twelve
+distinct heads. The team colour must land on the shirt; the race
+hue-rotated one shared sprite and produced a green eagle. `eyeClusters()`
+reads eye positions out of the art so the busted-up face on the
+announcement card can cross them out without a coordinate list that could
+drift.
+
+`paint.ts` draws through a `Painter` interface rather than onto a canvas
+context, so the same code backs onto an ImageData in the browser and onto
+a PNG in a throwaway script. **Use that when changing the art** — three
+of the twelve mascots were wrong in ways no test would ever have caught
+(a horse that read as a smudge, a wolf indistinguishable from the bull,
+legs drawn in the same colour as the sky) and only looking found them.
+
+`/climb` is a rehearsal on a field that is provably not the draft order,
+driven by a button instead of by the commissioner, so the whole sequence
+can be run through as often as you like without burning the real one. It
+never reads `phase_teams`.
+
 ## Clams AI
 
 The AI grader. It imitates the commissioner's own grading voice, and the

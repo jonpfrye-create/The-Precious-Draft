@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Confetti from "@/components/Confetti";
+import Climb from "@/components/Climb";
+import type { ClimbTeam, Felling } from "@/lib/climb/climb";
 import { playFanfare, playStinger } from "@/lib/audio/fanfare";
 import { useLeaguePhases } from "@/lib/realtime/useLeaguePhases";
 import { splitTeamName } from "@/lib/teams/branding";
@@ -56,21 +58,29 @@ export default function LobbyView({
   leagueId,
   leagueName,
   myTeamName,
+  myTeamId,
   state,
   roster,
   slots,
+  climbTeams,
+  fellings,
+  climbSeed,
   phaseType,
   canRelease,
 }: {
   leagueId: string;
   leagueName: string;
   myTeamName: string;
+  myTeamId: string;
   // Never "drafting": the page redirects to /draft before rendering
   // this, so the component only has to describe the two states that
   // actually have a waiting room to show.
   state: Exclude<LobbyState, { kind: "drafting" }>;
   roster: RosterEntry[];
   slots: Slot[];
+  climbTeams: ClimbTeam[];
+  fellings: Felling[];
+  climbSeed: string;
   phaseType: string | null;
   canRelease: boolean;
 }) {
@@ -120,7 +130,14 @@ export default function LobbyView({
           canRelease={canRelease}
         />
       ) : (
-        <Reveal slots={slots} complete={state.complete} />
+        <Reveal
+          slots={slots}
+          complete={state.complete}
+          climbTeams={climbTeams}
+          fellings={fellings}
+          climbSeed={climbSeed}
+          myTeamId={myTeamId}
+        />
       )}
     </main>
   );
@@ -227,9 +244,53 @@ function Arrivals({
   );
 }
 
-function Reveal({ slots, complete }: { slots: Slot[]; complete: boolean }) {
+/**
+ * Which view of the reveal this device is showing.
+ *
+ * Kept per device in localStorage rather than anywhere on the server, so
+ * dropping back to the list is instant, needs no press from the
+ * commissioner, and above all needs no deploy - the one thing that is
+ * forbidden on 29 August. If the climb misbehaves on the television, the
+ * television switches; twelve phones carry on as they were.
+ */
+const VIEW_KEY = "precious:reveal-view";
+
+function Reveal({
+  slots,
+  complete,
+  climbTeams,
+  fellings,
+  climbSeed,
+  myTeamId,
+}: {
+  slots: Slot[];
+  complete: boolean;
+  climbTeams: ClimbTeam[];
+  fellings: Felling[];
+  climbSeed: string;
+  myTeamId: string;
+}) {
   const router = useRouter();
   const revealed = slots.filter((s) => s.name !== null).length;
+
+  // Starts on the list and switches to the climb once mounted, rather
+  // than reading localStorage during render - the server has no idea
+  // what this device chose last time, and rendering the climb first
+  // would be a hydration mismatch on every phone that had switched.
+  const [view, setView] = useState<"climb" | "list">("list");
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem(VIEW_KEY);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setView(saved === "list" ? "list" : "climb");
+    setReady(true);
+  }, []);
+
+  const choose = (next: "climb" | "list") => {
+    setView(next);
+    window.localStorage.setItem(VIEW_KEY, next);
+  };
 
   // Finishing the reveal is what starts the draft - there is no separate
   // button for the commissioner to remember. Every phone moves itself
@@ -251,6 +312,12 @@ function Reveal({ slots, complete }: { slots: Slot[]; complete: boolean }) {
     const isFirstOverall = slots.some((s) => s.position === 1 && s.name);
     previous.current = revealed;
 
+    // The climb plays its own stingers, on its own timing - it holds
+    // each felling back until the pack has finished walking up to it, so
+    // firing from here as well would sound the horn a couple of seconds
+    // before anything happened on screen, twice.
+    if (view === "climb") return;
+
     if (isFirstOverall) {
       playFanfare();
       // Reacting to data that arrived from somebody else's device is the
@@ -265,20 +332,35 @@ function Reveal({ slots, complete }: { slots: Slot[]; complete: boolean }) {
       return () => clearTimeout(id);
     }
     playStinger(Math.min(1, revealed / Math.max(1, slots.length)));
-  }, [revealed, slots]);
+  }, [revealed, slots, view]);
 
   const first = slots.find((s) => s.position === 1);
 
+  const climbing = ready && view === "climb";
+
   return (
     <>
-      {celebrating ? <Confetti accent={first?.hex ?? "#FCD34D"} /> : null}
+      {celebrating && !climbing ? (
+        <Confetti accent={first?.hex ?? "#FCD34D"} />
+      ) : null}
 
       <p className="text-sm text-zinc-500">
         {complete
           ? "That's the order. Taking you to the draft…"
-          : `${revealed} of ${slots.length} revealed. Watch this space.`}
+          : climbing
+            ? "Twelve mascots. One summit. Last one standing picks first."
+            : `${revealed} of ${slots.length} revealed. Watch this space.`}
       </p>
 
+      {climbing ? (
+        <Climb
+          teams={climbTeams}
+          fellings={fellings}
+          seed={climbSeed}
+          myTeamId={myTeamId}
+          fieldSize={climbTeams.length}
+        />
+      ) : (
       <ol className="flex flex-col gap-2">
         {slots.map((s) => (
           <li
@@ -320,6 +402,21 @@ function Reveal({ slots, complete }: { slots: Slot[]; complete: boolean }) {
           </li>
         ))}
       </ol>
+      )}
+
+      {/* Either view can be dropped for the other at any moment, on this
+          device only. On the night this is the whole safety net: a deploy
+          is out of the question on 29 August, so the fallback has to be
+          something anybody can reach for mid-reveal. */}
+      {ready ? (
+        <button
+          type="button"
+          onClick={() => choose(climbing ? "list" : "climb")}
+          className="self-center text-xs text-zinc-500 underline underline-offset-4 hover:text-zinc-300"
+        >
+          {climbing ? "Show the plain list instead" : "Show the climb instead"}
+        </button>
+      ) : null}
 
       {/* Only once the order is out. Mid-reveal this was a button that
           could not work: /draft bounces anyone back here until the last

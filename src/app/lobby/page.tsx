@@ -93,14 +93,38 @@ export default async function LobbyPage() {
     })
     .sort((a, b) => a.position - b.position);
 
+  // The field for the climb.
+  //
+  // Sorted by name, and that sort is load-bearing rather than tidiness:
+  // `getTeamsForPhase` comes back in draft-position order, so shipping
+  // the array as it arrived would hand the browser the entire draft
+  // order through nothing but the order of the array - with every
+  // position dutifully stripped out of it. Alphabetical carries nothing.
+  const climbTeams = [...phaseTeams]
+    .map((t) => ({
+      teamId: t.id,
+      name: t.name,
+      hex: colors.get(t.id)?.hex ?? "#71717a",
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  // Only the slots actually turned over, same gate as the list above.
+  const fellings = phaseTeams
+    .filter((t) => isPositionRevealed(total, revealedCount, t.draft_position))
+    .map((t) => ({ position: t.draft_position, teamId: t.id }));
+
   return (
     <LobbyView
       leagueId={me.leagueId}
       leagueName={me.leagueName}
       myTeamName={me.teamName}
+      myTeamId={me.teamId}
       state={state}
       roster={roster}
       slots={slots}
+      climbTeams={climbTeams}
+      fellings={fellings}
+      climbSeed={phase?.id ?? me.leagueId}
       phaseType={phase?.type ?? null}
       // Releasing your own team stops being safe the moment a pick
       // exists, and by then it is the commissioner's call anyway.
