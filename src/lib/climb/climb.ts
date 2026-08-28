@@ -166,11 +166,26 @@ const LANE_JITTER = 0.03;
  * jitter, because their order up the mountain is the order they went
  * down in and there is a test that says so.
  */
-const FORMATION_COLUMNS = 4;
 /** Altitude between one rank and the next. */
-const FORMATION_RANK_GAP = 0.05;
-/** Lane units between neighbours in a rank. */
-const FORMATION_COLUMN_GAP = 0.3;
+const FORMATION_RANK_GAP = 0.07;
+/** The share of the mountain's width the party spreads across. */
+const FORMATION_SPAN = 0.72;
+
+/**
+ * How many walk abreast at a given height.
+ *
+ * The mountain narrows the whole way up, so a fixed number of columns
+ * cannot work: four abreast fits at the trailhead and is a pile-up by
+ * halfway, which is exactly where it looked worst. The party forms
+ * narrower and deeper as the face closes in - trading width it no longer
+ * has for depth it does.
+ */
+function columnsAt(altitude: number): number {
+  if (altitude < 0.28) return 4;
+  if (altitude < 0.5) return 3;
+  if (altitude < 0.72) return 2;
+  return 1;
+}
 
 /** Which felling turns over a given draft position. */
 export function stepForPosition(fieldSize: number, position: number): number {
@@ -267,19 +282,33 @@ export function climbScene(
 
     if (position === null) {
       const order = rankOf.get(team.teamId) ?? 0;
-      const column = order % FORMATION_COLUMNS;
-      const rank = Math.floor(order / FORMATION_COLUMNS);
+      const columns = columnsAt(packAltitude);
+      const column = order % columns;
+      const rank = Math.floor(order / columns);
+      const ranks = Math.ceil(marching.length / columns);
+
+      // Spread across whatever width the face still has, rather than a
+      // fixed gap in lane units - a fixed gap is a shrinking number of
+      // pixels as the mountain closes in.
+      const spacing = columns > 1 ? FORMATION_SPAN / (columns - 1) : 0;
       // Half a space of stagger on alternate ranks, so a mascot is never
       // hidden directly behind the one in front of it.
-      const stagger = rank % 2 === 0 ? 0 : FORMATION_COLUMN_GAP / 2;
-      const across =
-        (column - (FORMATION_COLUMNS - 1) / 2) * FORMATION_COLUMN_GAP + stagger;
+      const stagger = rank % 2 === 0 ? 0 : spacing / 2;
+      const lane =
+        columns === 1
+          ? 0.5
+          : (1 - FORMATION_SPAN) / 2 + column * spacing + stagger;
 
       return {
         teamId: team.teamId,
         status: "climbing" as const,
-        altitude: Math.max(0, packAltitude - rank * FORMATION_RANK_GAP),
-        lane: Math.min(1, Math.max(0, 0.5 + across)),
+        // Centred on the pack rather than trailing below it, and not
+        // clamped. Clamping at zero collapsed every rank onto the
+        // trailhead at the start of the climb, so ranks landed exactly
+        // on top of each other and only eight of the twelve could be
+        // seen until the first mascot went down.
+        altitude: packAltitude + ((ranks - 1) / 2 - rank) * FORMATION_RANK_GAP,
+        lane: Math.min(0.96, Math.max(0.04, lane)),
         position: null,
         step: null,
         hazard: null,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Climb from "@/components/Climb";
 import { hashString } from "@/lib/random/seeded";
 import type { ClimbTeam, Felling } from "@/lib/climb/climb";
@@ -22,6 +22,19 @@ export default function ClimbPreview({
   const [seedNo, setSeedNo] = useState(0);
   const [revealed, setRevealed] = useState(0);
   const seed = `rehearsal:${seedNo}`;
+
+  // A fresh draw on every visit.
+  //
+  // The counter starts at zero and a page load resets it, so reloading
+  // replayed the identical rehearsal - same winner, same mascots, every
+  // single time. Rolled here rather than in the initial state because
+  // this component still renders on the server, and a random value
+  // picked during render is a different value on each side of the
+  // hydration boundary.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSeedNo(Math.floor(Math.random() * 1_000_000));
+  }, []);
 
   const order = [...teams].sort(
     (a, b) =>

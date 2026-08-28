@@ -145,7 +145,7 @@ export function camera(h: number, packAltitude: number): Camera {
     // mountain still to come rather than the mountain already climbed -
     // but high enough that the rear ranks of the party are in frame
     // behind it, which at 0.62 they were not.
-    top: Math.min(Math.max(focus - h * 0.46, 0), worldH - h),
+    top: Math.min(Math.max(focus - h * 0.40, 0), worldH - h),
     worldH,
     baseY,
     summitY,
