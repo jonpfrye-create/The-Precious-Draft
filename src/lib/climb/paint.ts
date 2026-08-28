@@ -321,32 +321,101 @@ function stampSkull(p: Painter, cx: number, top: number) {
  * The eye positions come from `eyeClusters()`, which reads the `e`
  * pixels out of the art - so redrawing a head moves the Xs with it.
  */
-export function paintBustedFace(
+export const CARD_W = 54;
+export const CARD_H = 22;
+
+/**
+ * How much bigger the face is than the thing that got it.
+ *
+ * At the same scale the two sat side by side like a pair of icons and
+ * neither was the subject. The card is about who went out; the hazard is
+ * the caption.
+ */
+const FACE_SCALE = 2;
+
+/**
+ * The scene on the announcement card: who it happened to, and what did
+ * it.
+ *
+ * This used to be the head alone, sixteen pixels across, floating in the
+ * middle of a card with room for four times as much - so it read as a
+ * small bad drawing rather than as a mascot that something had happened
+ * to. Putting the hazard next to the face fills the space with the thing
+ * the card is actually about, and at this size each source pixel lands
+ * around nine across on screen, which is where the art starts looking
+ * deliberate instead of merely low resolution.
+ */
+export function paintCardScene(
   p: Painter,
   mascot: Mascot,
   jersey: string,
-  eyes: { x: number; y: number }[]
+  eyes: { x: number; y: number }[],
+  hazardId: string | null,
+  tick: number
 ) {
-  stampMascot(p, mascot.head, 0, 0, mascot, jersey);
+  const headH = mascot.head.length * FACE_SCALE;
+  const headTop = CARD_H - headH;
+
+  // Drawn a pixel at a time at double size rather than by scaling the
+  // canvas, so the hazard beside it can stay at its own scale.
+  mascot.head.forEach((row, y) => {
+    for (let x = 0; x < row.length; x++) {
+      const hex = colourFor(row[x], mascot, jersey);
+      if (!hex) continue;
+      const c = rgb(hex);
+      for (let dy = 0; dy < FACE_SCALE; dy++)
+        for (let dx = 0; dx < FACE_SCALE; dx++)
+          p.px(x * FACE_SCALE + dx, headTop + y * FACE_SCALE + dy, c);
+    }
+  });
 
   const bruise = rgb("#8a2a1a");
   for (const eye of eyes) {
-    const cx = Math.round(eye.x);
-    const cy = Math.round(eye.y);
-    for (let d = -1; d <= 1; d++) {
-      p.px(cx + d, cy + d, OUTLINE);
-      p.px(cx + d, cy - d, OUTLINE);
+    // Centred on the middle of the scaled eye, and only a little wider
+    // than the eye itself. Drawn six across from the eye's top-left
+    // corner, the crosses spread over the whole head and read as a net
+    // thrown over the mascot rather than as its eyes being crossed out.
+    const ex = Math.round(eye.x * FACE_SCALE) + Math.floor(FACE_SCALE / 2);
+    const ey =
+      headTop + Math.round(eye.y * FACE_SCALE) + Math.floor(FACE_SCALE / 2);
+    for (let d = -2; d <= 2; d++) {
+      p.px(ex + d, ey + d, OUTLINE);
+      p.px(ex + d, ey - d, OUTLINE);
     }
   }
 
-  // A couple of scuffs, so it reads as damage rather than as a mascot
-  // that happens to have Xs where its eyes were.
-  const w = mascot.head[0]?.length ?? 0;
-  const h = mascot.head.length;
-  for (let i = 0; i < 5; i++) {
-    const x = Math.round(w * 0.2 + noise(i * 13, 3) * w * 0.6);
-    const y = Math.round(h * 0.55 + noise(i * 7, 11) * h * 0.35);
-    if (colourFor(mascot.head[y]?.[x] ?? ".", mascot, jersey)) p.px(x, y, bruise);
+  // Scuffs, so it reads as damage rather than as a mascot that happens
+  // to have crosses where its eyes were.
+  if (eyes.length) {
+    const w = mascot.head[0]?.length ?? 0;
+    const h = mascot.head.length;
+    // Left at single-pixel size. Scaled up with the face they became
+    // red slabs across every chin and read as injuries far worse than a
+    // cartoon needs.
+    for (let i = 0; i < 4; i++) {
+      const x = Math.round(w * 0.2 + noise(i * 13, 3) * w * 0.6);
+      const y = Math.round(h * 0.55 + noise(i * 7, 11) * h * 0.35);
+      if (!colourFor(mascot.head[y]?.[x] ?? ".", mascot, jersey)) continue;
+      p.px(x * FACE_SCALE, headTop + y * FACE_SCALE, bruise);
+    }
+  }
+
+  if (hazardId) {
+    const art = HAZARD_ART[hazardId];
+    if (art) stampHazard(p, hazardId, CARD_W - 15, CARD_H - art.rows.length - 1);
+    return;
+  }
+
+  // Nothing got the summiteer, so they get the flag instead.
+  const fx = CARD_W - 12;
+  fill(p, fx, 4, 1, CARD_H - 5, OUTLINE);
+  for (let i = 0; i < 6; i++) fill(p, fx + 1, 4 + i, 8 - i, 1, FLAG);
+
+  // A couple of sparks, so the winning card is not the only still one.
+  const spark = rgb("#e8c02a");
+  for (let i = 0; i < 4; i++) {
+    const a = tick * 0.6 + i * 1.6;
+    p.px(Math.round(fx - 4 + Math.cos(a) * 4), Math.round(8 + Math.sin(a) * 5), spark);
   }
 }
 

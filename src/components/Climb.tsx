@@ -13,9 +13,13 @@ import {
 } from "@/lib/climb/climb";
 import { shortLabel } from "@/lib/climb/font";
 import { assignMascots, eyeClusters } from "@/lib/climb/mascots";
+import type { PaintTeam } from "@/lib/climb/paint";
 import {
-  paintBustedFace,
+  CARD_H,
+  CARD_W,
+  paintCardScene,
   paintClimb,
+  rgb,
   type Painter,
   type RGB,
 } from "@/lib/climb/paint";
@@ -348,11 +352,11 @@ export default function Climb({
             {summit ? <Confetti accent={teams.find((t) => t.teamId === card.teamId)?.hex ?? "#e8a33d"} /> : null}
             <div className="absolute inset-0 flex items-center justify-center bg-[#0b1020]/72 px-4">
               <div className="flex max-w-sm flex-col items-center gap-3 border-4 border-[#efe6d2] bg-[#14100d] px-5 py-5 shadow-[8px_8px_0_#c1391f]">
-                <BustedFace
+                <CardScene
                   teamId={card.teamId}
-                  jersey={cardTeam.jersey}
-                  mascotId={cardTeam.mascot.id}
                   intact={summit}
+                  hazardId={card.hazard?.id ?? null}
+                  tick={tick}
                   paintTeams={paintTeams}
                 />
                 <p
@@ -386,22 +390,19 @@ export default function Climb({
   );
 }
 
-/** The head on the card: big, pixelated, and usually with Xs for eyes. */
-function BustedFace({
+/** The card scene: the mascot it happened to, beside the thing that did it. */
+function CardScene({
   teamId,
-  jersey,
-  mascotId,
   intact,
+  hazardId,
+  tick,
   paintTeams,
 }: {
   teamId: string;
-  jersey: string;
-  mascotId: string;
   intact: boolean;
-  paintTeams: Map<
-    string,
-    { mascot: { id: string; head: string[] }; jersey: string; label: string }
-  >;
+  hazardId: string | null;
+  tick: number;
+  paintTeams: Map<string, PaintTeam>;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
 
@@ -411,28 +412,35 @@ function BustedFace({
     const team = paintTeams.get(teamId);
     if (!el || !ctx || !team) return;
 
-    const mascot = team.mascot as Parameters<typeof paintBustedFace>[1];
-    const w = mascot.head[0]?.length ?? 16;
-    const h = mascot.head.length;
-    const image = ctx.createImageData(w, h);
+    const image = ctx.createImageData(CARD_W, CARD_H);
     const painter = imagePainter(image);
-    // The summiteer is the one mascot on the mountain that nothing
-    // happened to, so it keeps its eyes.
-    paintBustedFace(painter, mascot, jersey, intact ? [] : eyeClusters(mascot));
-    ctx.putImageData(image, 0, 0);
-  }, [teamId, jersey, mascotId, intact, paintTeams]);
+    // The card's own background, painted rather than left transparent -
+    // createImageData starts fully transparent black, which shows as a
+    // hole rather than as the card behind it.
+    const bg = rgb("#14100d");
+    for (let y = 0; y < CARD_H; y++)
+      for (let x = 0; x < CARD_W; x++) painter.px(x, y, bg);
 
-  const team = paintTeams.get(teamId);
-  const w = team?.mascot.head[0]?.length ?? 16;
-  const h = team?.mascot.head.length ?? 10;
+    paintCardScene(
+      painter,
+      team.mascot,
+      team.jersey,
+      // The one mascot on the mountain that nothing happened to keeps
+      // its eyes.
+      intact ? [] : eyeClusters(team.mascot),
+      intact ? null : hazardId,
+      tick
+    );
+    ctx.putImageData(image, 0, 0);
+  }, [teamId, intact, hazardId, tick, paintTeams]);
 
   return (
     <canvas
       ref={ref}
-      width={w}
-      height={h}
+      width={CARD_W}
+      height={CARD_H}
       aria-hidden
-      className="h-[72px] w-auto sm:h-[92px]"
+      className="h-auto w-full max-w-[290px]"
       style={{ imageRendering: "pixelated" }}
     />
   );

@@ -35,9 +35,13 @@ export default function ClimbPreview({
   return (
     <div className="flex flex-col gap-4">
       <Climb
-        // Remounts on a new draw, so the rehearsal starts from the
-        // trailhead rather than teleporting the survivors back down.
-        key={`${seed}:${revealed === 0 ? "fresh" : "run"}`}
+        // Keyed on the seed alone, so a new draw starts from the
+        // trailhead. It used to include whether any felling had happened
+        // yet, which flipped on the very first press - React threw the
+        // component away and rebuilt it with one mascot already down, so
+        // the first climb was never drawn at all and the opening press
+        // looked like an instant death.
+        key={seed}
         teams={teams}
         fellings={fellings}
         seed={seed}
