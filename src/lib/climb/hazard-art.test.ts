@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { HAZARDS, YETI } from "./climb";
+import { climbScene, HAZARDS, YETI } from "./climb";
 import { HAZARD_ART, hazardColour } from "./hazard-art";
 import { rotateCW } from "./paint";
 
@@ -63,5 +63,32 @@ describe("rotateCW", () => {
 
   it("survives an empty grid", () => {
     expect(rotateCW([])).toEqual([]);
+  });
+});
+
+describe("there are enough hazards to go round", () => {
+  it("never repeats a disaster over a twelve-team climb", () => {
+    // Eight hazards and eleven fellings meant the list wrapped and the
+    // last two mascots died of something the room had already watched.
+    for (const seed of ["a", "b", "phase-1", "2026-08-29", "zzz"]) {
+      const teams = Array.from({ length: 12 }, (_, i) => ({
+        teamId: `t${i}`,
+        name: `T${i}`,
+        hex: "#fff",
+      }));
+      const fellings = teams.map((t, i) => ({ position: i + 1, teamId: t.teamId }));
+      const scene = climbScene(teams, fellings, seed);
+      const used = scene.climbers
+        .map((c) => c.hazard?.id)
+        .filter((id): id is string => Boolean(id));
+      expect(used.length, seed).toBe(11);
+      expect(new Set(used).size, seed).toBe(used.length);
+    }
+  });
+
+  it("has at least one hazard spare for the largest field it will see", () => {
+    // Main is twelve; Leftovers and Microwave are smaller. If a field
+    // ever grows, this fails before anybody watches a repeat.
+    expect(HAZARDS.length).toBeGreaterThanOrEqual(12 - 2);
   });
 });

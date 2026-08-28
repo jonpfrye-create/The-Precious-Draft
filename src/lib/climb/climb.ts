@@ -59,6 +59,13 @@ export interface Hazard {
  *
  * Ordered as authored; the running order on the night is a seeded
  * shuffle, so no two leagues get the same sequence of disasters.
+ *
+ * There have to be at least as many of these as there are fellings, or
+ * the list wraps and a mascot dies of something the room has already
+ * seen. Twelve teams is eleven fellings, one of which is the yeti, so
+ * ten come from here - at eight, the last two repeated every single
+ * time. Adding a phase or a team means adding hazards too; there is a
+ * test that counts them against a twelve-team field.
  */
 export const HAZARDS: readonly Hazard[] = [
   { id: "boulder", label: "FLATTENED BY A BOULDER" },
@@ -69,6 +76,10 @@ export const HAZARDS: readonly Hazard[] = [
   { id: "eagle", label: "CARRIED OFF BY AN EAGLE" },
   { id: "crevasse", label: "SWALLOWED BY A CREVASSE" },
   { id: "ice", label: "SLIPPED ON THE ICE" },
+  { id: "avalanche", label: "BURIED BY AN AVALANCHE" },
+  { id: "icicle", label: "IMPALED BY AN ICICLE" },
+  { id: "wolves", label: "RUN DOWN BY WOLVES" },
+  { id: "goat", label: "BUTTED OFF BY A GOAT" },
 ] as const;
 
 /**

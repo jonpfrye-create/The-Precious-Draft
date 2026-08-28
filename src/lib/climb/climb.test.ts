@@ -216,11 +216,30 @@ describe("hazards", () => {
     }
   });
 
-  it("gets through the whole catalogue over a twelve-team climb", () => {
+  it("never shows the same disaster twice in one climb", () => {
+    // This replaces a test that asserted every hazard appeared, which
+    // was true only while there were fewer hazards than fellings - the
+    // reason the last two mascots always died of something the room had
+    // already watched. The catalogue is deliberately longer than any
+    // one climb now, so a league sees a subset and never a repeat.
     const scene = climbScene(TEAMS, fellingsAfter(12), SEED);
-    const seen = new Set(scene.climbers.map((c) => c.hazard?.id));
+    const used = scene.climbers
+      .map((c) => c.hazard?.id)
+      .filter((id): id is string => Boolean(id));
+    expect(used).toHaveLength(11);
+    expect(new Set(used).size).toBe(used.length);
+  });
+
+  it("draws on the whole catalogue across leagues", () => {
+    // No single climb shows them all, but nothing should be dead art.
+    const seen = new Set<string>();
+    for (let i = 0; i < 40; i++) {
+      for (const c of climbScene(TEAMS, fellingsAfter(12), `seed-${i}`).climbers) {
+        if (c.hazard) seen.add(c.hazard.id);
+      }
+    }
     for (const hazard of HAZARDS) {
-      expect(seen.has(hazard.id), hazard.id).toBe(true);
+      expect(seen.has(hazard.id), `${hazard.id} never appears`).toBe(true);
     }
   });
 

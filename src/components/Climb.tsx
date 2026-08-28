@@ -392,8 +392,13 @@ export default function Climb({
         {card && cardTeam ? (
           <>
             {summit ? <Confetti accent={teams.find((t) => t.teamId === card.teamId)?.hex ?? "#e8a33d"} /> : null}
-            <div className="absolute inset-0 flex items-center justify-center bg-[#0b1020]/72 px-4">
-              <div className="flex max-w-sm flex-col items-center gap-3 border-4 border-[#efe6d2] bg-[#14100d] px-5 py-5 shadow-[8px_8px_0_#c1391f]">
+            <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#0b1020]/88 px-2 py-2 sm:px-4">
+              {/* Full-bleed and loud. The card used to be a small box
+                  floating in the middle of the screen, which made the
+                  biggest moment in the reveal the quietest thing on it -
+                  the pick number is the whole point and it should land
+                  like a slide, not a tooltip. */}
+              <div className="flex h-full w-full max-w-2xl flex-col items-center justify-center gap-2 border-4 border-[#efe6d2] bg-[#14100d] px-3 py-3 shadow-[10px_10px_0_#c1391f] sm:gap-3 sm:px-6">
                 <CardScene
                   teamId={card.teamId}
                   intact={summit}
@@ -402,15 +407,15 @@ export default function Climb({
                   paintTeams={paintTeams}
                 />
                 <p
-                  className="font-arcade text-center text-[15px] text-[#e8a33d] sm:text-[20px]"
-                  style={{ lineHeight: 1.5 }}
+                  className="font-arcade text-center text-[26px] leading-none text-[#e8a33d] sm:text-[44px]"
+                  style={{ WebkitTextStroke: "1px #14100d", paintOrder: "stroke fill" }}
                 >
                   {ordinal(card.position ?? 0)} PICK
                 </p>
-                <p className="font-plex text-center text-sm font-semibold text-[#efe6d2]">
+                <p className="font-plex text-center text-base font-semibold leading-tight text-[#efe6d2] sm:text-2xl">
                   {splitTeamName(cardName).teamName}
                 </p>
-                <p className="font-arcade text-center text-[8px] leading-relaxed text-[#8a7c68] sm:text-[9px]">
+                <p className="font-arcade text-center text-[8px] leading-relaxed text-[#c1391f] sm:text-[11px]">
                   {summit
                     ? `${cardTeam.mascot.name} REACHES THE SUMMIT`
                     : card.hazard?.label ?? ""}
@@ -482,7 +487,7 @@ function CardScene({
       width={CARD_W}
       height={CARD_H}
       aria-hidden
-      className="h-auto w-full max-w-[290px]"
+      className="h-auto w-full max-w-[200px] flex-shrink sm:max-w-[380px]"
       style={{ imageRendering: "pixelated" }}
     />
   );

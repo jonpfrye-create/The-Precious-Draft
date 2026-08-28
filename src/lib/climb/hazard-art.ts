@@ -160,6 +160,63 @@ export const HAZARD_ART: Record<string, HazardArt> = {
     ],
   },
 
+  avalanche: {
+    palette: { a: "#c8d4e0", b: "#8aa0b4", c: "#5a6a7a", w: "#ffffff" },
+    behind: true,
+    rows: [
+      "...ww..ww.ww..",
+      "..wwww.wwwwww.",
+      ".wwwwwwwwwwww.",
+      "wwwwwwwwwwwwww",
+      "wwwwwwwwwwwwww",
+      ".wwwwwwwwwwww.",
+      "..wwwwwwwwww..",
+      "...wwwwwwww...",
+    ],
+  },
+
+  icicle: {
+    palette: { a: "#c8e4f4", b: "#7aa8c4", c: "#eaf6ff", w: "#dff0fb" },
+    rows: [
+      "..kk..kk..kk..",
+      "..ww..ww..ww..",
+      "..ww..ww..ww..",
+      "..ww..ww..ww..",
+      "...w...w...w..",
+      "...w...w...w..",
+      "....w...w.....",
+    ],
+  },
+
+  wolves: {
+    palette: { a: "#6a6a74", b: "#2a2a30", c: "#d8d2c4", w: "#f4efe4" },
+    rows: [
+      ".k..k....k..k.",
+      ".kaak....kaak.",
+      ".aaaak..aaaak.",
+      "aaaaaa..aaaaaa",
+      "akaaka..akaaka",
+      "aaaaaa..aaaaaa",
+      ".abbba...abbba",
+      "..bbb.....bbb.",
+    ],
+  },
+
+  goat: {
+    palette: { a: "#8a7a5a", b: "#3a2f26", c: "#d8d2c4", w: "#e8e2d4" },
+    rows: [
+      "..kk......kk..",
+      ".kaak....kaak.",
+      ".kaaakkkkaaak.",
+      "..kaaaaaaaak..",
+      "...kwwwwwwk...",
+      "...kwkwwkwk...",
+      "...kwwwwwwk...",
+      "....kbbbbk....",
+      ".....kbbk.....",
+    ],
+  },
+
   ice: {
     palette: { a: "#9fc4dd", b: "#5a8aa8", c: "#d8ecf8", w: "#eaf6ff" },
     behind: true,
