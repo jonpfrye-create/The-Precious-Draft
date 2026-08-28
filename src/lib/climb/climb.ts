@@ -141,6 +141,20 @@ export interface ClimbScene {
 const ALTITUDE_JITTER_SHARE = 0.4;
 const LANE_JITTER = 0.03;
 
+/**
+ * How much further apart the ones still climbing are strung out.
+ *
+ * Applied only to climbers, never to the fallen - the fallen have to
+ * stay in the order they went down, and that invariant is what the tight
+ * jitter above protects.
+ *
+ * The mascots are 24 pixels across and the mountain is not wide enough
+ * for twelve of them abreast, so shoulder to shoulder they were a heap
+ * with three faces showing. Strung up and down the slope they overlap
+ * the way a climbing party does, and every one of them is visible.
+ */
+const CLIMBING_SPREAD = 3;
+
 /** Which felling turns over a given draft position. */
 export function stepForPosition(fieldSize: number, position: number): number {
   return fieldSize - position + 1;
@@ -225,7 +239,7 @@ export function climbScene(
       return {
         teamId: team.teamId,
         status: "climbing" as const,
-        altitude: Math.max(0, packAltitude + wobble),
+        altitude: Math.max(0, packAltitude + wobble * CLIMBING_SPREAD),
         lane,
         position: null,
         step: null,

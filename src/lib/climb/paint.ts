@@ -4,6 +4,7 @@ import { eachTextPixel, textWidth } from "./font";
 import { HAZARD_ART, hazardColour } from "./hazard-art";
 import {
   colourFor,
+  headRows,
   SPRITE_H,
   SPRITE_W,
   spriteRows,
@@ -321,17 +322,18 @@ function stampSkull(p: Painter, cx: number, top: number) {
  * The eye positions come from `eyeClusters()`, which reads the `e`
  * pixels out of the art - so redrawing a head moves the Xs with it.
  */
-export const CARD_W = 54;
-export const CARD_H = 22;
+export const CARD_W = 44;
+export const CARD_H = 20;
 
 /**
  * How much bigger the face is than the thing that got it.
  *
- * At the same scale the two sat side by side like a pair of icons and
- * neither was the subject. The card is about who went out; the hazard is
- * the caption.
+ * Back to life size now the heads are 24x18 rather than 16x10. Doubling
+ * them was only ever propping up art that did not have the pixels; with
+ * the real thing the face already fills more than half the card and the
+ * hazard reads as the caption beside it.
  */
-const FACE_SCALE = 2;
+const FACE_SCALE = 1;
 
 /**
  * The scene on the announcement card: who it happened to, and what did
@@ -353,12 +355,13 @@ export function paintCardScene(
   hazardId: string | null,
   tick: number
 ) {
-  const headH = mascot.head.length * FACE_SCALE;
+  const head = headRows(mascot);
+  const headH = head.length * FACE_SCALE;
   const headTop = CARD_H - headH;
 
   // Drawn a pixel at a time at double size rather than by scaling the
   // canvas, so the hazard beside it can stay at its own scale.
-  mascot.head.forEach((row, y) => {
+  head.forEach((row, y) => {
     for (let x = 0; x < row.length; x++) {
       const hex = colourFor(row[x], mascot, jersey);
       if (!hex) continue;
@@ -387,27 +390,27 @@ export function paintCardScene(
   // Scuffs, so it reads as damage rather than as a mascot that happens
   // to have crosses where its eyes were.
   if (eyes.length) {
-    const w = mascot.head[0]?.length ?? 0;
-    const h = mascot.head.length;
+    const w = head[0]?.length ?? 0;
+    const h = head.length;
     // Left at single-pixel size. Scaled up with the face they became
     // red slabs across every chin and read as injuries far worse than a
     // cartoon needs.
     for (let i = 0; i < 4; i++) {
       const x = Math.round(w * 0.2 + noise(i * 13, 3) * w * 0.6);
       const y = Math.round(h * 0.55 + noise(i * 7, 11) * h * 0.35);
-      if (!colourFor(mascot.head[y]?.[x] ?? ".", mascot, jersey)) continue;
+      if (!colourFor(head[y]?.[x] ?? ".", mascot, jersey)) continue;
       p.px(x * FACE_SCALE, headTop + y * FACE_SCALE, bruise);
     }
   }
 
   if (hazardId) {
     const art = HAZARD_ART[hazardId];
-    if (art) stampHazard(p, hazardId, CARD_W - 15, CARD_H - art.rows.length - 1);
+    if (art) stampHazard(p, hazardId, CARD_W - 15, CARD_H - art.rows.length - 2);
     return;
   }
 
   // Nothing got the summiteer, so they get the flag instead.
-  const fx = CARD_W - 12;
+  const fx = CARD_W - 10;
   fill(p, fx, 4, 1, CARD_H - 5, OUTLINE);
   for (let i = 0; i < 6; i++) fill(p, fx + 1, 4 + i, 8 - i, 1, FLAG);
 

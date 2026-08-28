@@ -11,9 +11,14 @@ import { hashString } from "@/lib/random/seeded";
  *
  * Every mascot is a distinct head on a shared body, which is both the
  * cheap way to draw twelve of these and the correct way: a mascot
- * costume *is* a big head on a person in a shirt. The silhouette carries
- * the identity, because at sixteen pixels across, seen from a sofa,
- * colour does not.
+ * costume *is* a big head on a person in a shirt.
+ *
+ * The heads are 24x18. They were 16x10, and that was simply too few
+ * pixels for the job - at that size a bull and a wolf cannot be told
+ * apart, because a snout and a horn cannot both exist. Drawing them
+ * larger on the announcement card made them bigger without making them
+ * better, which is the tell that the ceiling was the art and not the
+ * presentation.
  *
  * ## The grid
  *
@@ -28,9 +33,9 @@ import { hashString } from "@/lib/random/seeded";
  * list of eye coordinates that could drift away from the art.
  */
 
-export const SPRITE_W = 16;
-export const HEAD_H = 10;
-export const BODY_H = 9;
+export const SPRITE_W = 24;
+export const HEAD_H = 18;
+export const BODY_H = 13;
 export const SPRITE_H = HEAD_H + BODY_H;
 
 export interface Mascot {
@@ -53,12 +58,15 @@ const OUTLINE = "#14100d";
  * two frames is the difference between waiting and climbing.
  */
 const BODY: string[] = [
-  "....kkkkkkkk....",
-  "...kJJJJJJJJk...",
-  "..kkJJJJJJJJkk..",
-  ".k11kJJSSJJk11k.",
-  ".k11kJJJJJJk11k.",
-  ".kkkkJJJJJJkkkk.",
+  ".........k1111k.........",
+  "......kkkkkkkkkkkk......",
+  ".....kJJJJJJJJJJJJk.....",
+  "...kkkJJJJJJJJJJJJkkk...",
+  "..k111JJJJSSSSJJJJ111k..",
+  "..k111JJJJSSSSJJJJ111k..",
+  "..k11kJJJJJJJJJJJJk11k..",
+  "..kkkkJJJJJJJJJJJJkkkk..",
+  ".....kJJJJJJJJJJJJk.....",
 ];
 
 /**
@@ -70,8 +78,18 @@ const BODY: string[] = [
  * fill, not just a line.
  */
 const LEGS: [string[], string[]] = [
-  ["....kJJJJJJk....", "....k2k.k2k.....", "...kk2k.k2kk...."],
-  ["....kJJJJJJk....", "...k2k...k2k....", "..kk2k...k2kk..."],
+  [
+    ".....kJJJJJJJJJJJJk.....",
+    ".......k22k..k22k.......",
+    ".......k22k..k22k.......",
+    "......kk22k..k22kk......",
+  ],
+  [
+    ".....kJJJJJJJJJJJJk.....",
+    "......k22k....k22k......",
+    ".....k22k......k22k.....",
+    "....kk22k......k22kk....",
+  ],
 ];
 
 /**
@@ -88,33 +106,52 @@ export const MASCOTS: readonly Mascot[] = [
     name: "EAGLE",
     palette: { 1: "#f4efe4", 2: "#e8a33d", 3: "#8a6a3a", w: "#ffffff" },
     head: [
-      "................",
-      ".....kkkkkk.....",
-      "....k111111k....",
-      "...k11111111k...",
-      "...k1e1111e1k...",
-      "...k11111111k...",
-      "....k112211k....",
-      ".....k2222k.....",
-      "......k22k......",
-      ".......kk.......",
+      "........................",
+      "......kkkkkkkkkkkk......",
+      ".....k111111111111k.....",
+      "....k11111111111111k....",
+      "...k1111111111111111k...",
+      "...k1111111111111111k...",
+      "...k111ee111111ee111k...",
+      "...k111ee111111ee111k...",
+      "...k1111111111111111k...",
+      "...k1111112222111111k...",
+      "....k11122222222111k....",
+      ".....k112222222211k.....",
+      "......k1122222211k......",
+      ".......k22222222k.......",
+      "........k222222k........",
+      ".........kkkkkk.........",
+      "........................",
+      "........................",
     ],
   },
   {
     id: "falcon",
     name: "FALCON",
+    // A narrower crown and a short hooked beak. Drawn with the eagle's
+    // outline and only a darker palette, the two were the same bird -
+    // the silhouette test caught it, and so had the commissioner.
     palette: { 1: "#6b7a86", 2: "#e0c04a", 3: "#2f3a44", w: "#f4efe4" },
     head: [
-      "................",
-      ".....kkkkkk.....",
-      "....k333333k....",
-      "...k33333333k...",
-      "...k3e3333e3k...",
-      "...k11111111k...",
-      "....k112211k....",
-      ".....k222k......",
-      "......kk........",
-      "................",
+      "........................",
+      ".......kkkkkkkkkk.......",
+      "......k3333333333k......",
+      ".....k333333333333k.....",
+      "....k33333333333333k....",
+      "...k3333333333333333k...",
+      "...k333ee333333ee333k...",
+      "...k333ee333333ee333k...",
+      "...k3333333333333333k...",
+      "...k3331122222211333k...",
+      "....k33112222221133k....",
+      ".....k331222222133k.....",
+      "......k3312222133k......",
+      ".......k33222233k.......",
+      "........k222222k........",
+      ".........k2222k.........",
+      "..........kkkk..........",
+      "........................",
     ],
   },
   {
@@ -131,16 +168,24 @@ export const MASCOTS: readonly Mascot[] = [
     // one marking down the face and it is unmistakably a horse, which is
     // presumably why real horses are identified that way.
     head: [
-      "..kk........kk..",
-      "..k3k......k3k..",
-      "..k33kkkkkk33k..",
-      "...k111ww111k...",
-      "...k1e1ww1e1k...",
-      "....k11ww11k....",
-      ".....k1ww1k.....",
-      ".....k1ww1k.....",
-      ".....k2222k.....",
-      "......kkkk......",
+      "...kk..............kk...",
+      "..k33k............k33k..",
+      "..k333kkkkkkkkkkkk333k..",
+      "...k1111111111111111k...",
+      "...k1111111111111111k...",
+      "...k11111wwwwww11111k...",
+      "...k111eewwwwwwee111k...",
+      "...k111eewwwwwwee111k...",
+      "...k11111wwwwww11111k...",
+      "....k1111wwwwww1111k....",
+      ".....k111wwwwww111k.....",
+      "......k11wwwwww11k......",
+      "......k11wwwwww11k......",
+      ".......k1wwwwww1k.......",
+      ".......k22222222k.......",
+      "........k222222k........",
+      ".........kkkkkk.........",
+      "........................",
     ],
   },
   {
@@ -148,16 +193,24 @@ export const MASCOTS: readonly Mascot[] = [
     name: "PROSPECTOR",
     palette: { 1: "#d9a97a", 2: "#f4efe4", 3: "#5a4028", w: "#ffffff" },
     head: [
-      ".....kkkkkk.....",
-      "....k333333k....",
-      "..kk33333333kk..",
-      "..k3333333333k..",
-      "...k11111111k...",
-      "...k1e1111e1k...",
-      "....k111111k....",
-      "...k22222222k...",
-      "...k22222222k...",
-      "....k2222k......",
+      "......kkkkkkkkkkkk......",
+      ".....k333333333333k.....",
+      ".....k333333333333k.....",
+      ".kkkkkkkkkkkkkkkkkkkkkk.",
+      ".k33333333333333333333k.",
+      "...k1111111111111111k...",
+      "...k1111111111111111k...",
+      "...k111ee111111ee111k...",
+      "...k111ee111111ee111k...",
+      "...k1111111111111111k...",
+      "...k2222222222222222k...",
+      "...k2222222222222222k...",
+      "....k22222222222222k....",
+      "....k22222222222222k....",
+      ".....k222222222222k.....",
+      "......k2222222222k......",
+      ".......kkkkkkkkkk.......",
+      "........................",
     ],
   },
   {
@@ -165,16 +218,24 @@ export const MASCOTS: readonly Mascot[] = [
     name: "BEAR",
     palette: { 1: "#7a5232", 2: "#c9a37a", 3: "#3a2418", w: "#ffffff" },
     head: [
-      "..kk........kk..",
-      ".k11k......k11k.",
-      ".k131k....k131k.",
-      "..k1111111111k..",
-      "...k11111111k...",
-      "...k1e1111e1k...",
-      "...k11222211k...",
-      "....k223322k....",
-      ".....k2222k.....",
-      "......kkkk......",
+      "..kkkk..........kkkk....",
+      ".k1111k........k1111k...",
+      "k111311k......k113111k..",
+      "k113311k......k113311k..",
+      ".k11111kkkkkkkk11111k...",
+      "..k1111111111111111k....",
+      "...k1111111111111111k...",
+      "...k111ee111111ee111k...",
+      "...k111ee111111ee111k...",
+      "...k1111111111111111k...",
+      "....k11222222222211k....",
+      ".....k222222222222k.....",
+      "......k2222332222k......",
+      ".......k22333322k.......",
+      "........k223322k........",
+      ".........k2222k.........",
+      "..........kkkk..........",
+      "........................",
     ],
   },
   {
@@ -182,16 +243,24 @@ export const MASCOTS: readonly Mascot[] = [
     name: "RAM",
     palette: { 1: "#d8d2c4", 2: "#8a7a5a", 3: "#5a4a2a", w: "#ffffff" },
     head: [
-      "..kkk......kkk..",
-      ".k222k....k222k.",
-      "k22k22k..k22k22k",
-      "k2k.k22kk22k.k2k",
-      ".k...k111111k...",
-      "......k1e11ek...",
-      "......k111111k..",
-      ".......k1111k...",
-      ".......k22k.....",
-      "........kk......",
+      "..kkk..............kkk..",
+      ".k222k............k222k.",
+      "k22k22k..........k22k22k",
+      "k2k.k22kkkkkkkkkk22k.k2k",
+      "k22k.k2222222222k2k.k22k",
+      ".k22kkk11111111kkk22k...",
+      "..kkk3k11111111k3kkk....",
+      "...k111ee1111ee111k.....",
+      "...k111ee1111ee111k.....",
+      "...k11111111111111k.....",
+      "....k111111111111k......",
+      ".....k1122222211k.......",
+      "......k22222222k........",
+      "......k22222222k........",
+      ".......k222222k.........",
+      "........kkkkkk..........",
+      "........................",
+      "........................",
     ],
   },
   {
@@ -199,16 +268,24 @@ export const MASCOTS: readonly Mascot[] = [
     name: "BULL",
     palette: { 1: "#3a3a42", 2: "#d8d2c4", 3: "#c1391f", w: "#ffffff" },
     head: [
-      "................",
-      "kk............kk",
-      "k2kk........kk2k",
-      ".k22kkkkkkkk22k.",
-      "..kk11111111kk..",
-      "...k1e1111e1k...",
-      "...k11111111k...",
-      "....k222222k....",
-      "....k232232k....",
-      ".....kkkkk......",
+      "kkk..................kkk",
+      "k22kk..............kk22k",
+      "k2222kk..........kk2222k",
+      ".k22222kkkkkkkkkk22222k.",
+      "..kk222k11111111k222kk..",
+      "....kkk1111111111kkk....",
+      "...k1111111111111111k...",
+      "...k111ee111111ee111k...",
+      "...k111ee111111ee111k...",
+      "...k1111111111111111k...",
+      "....k11222222222211k....",
+      ".....k222222222222k.....",
+      "......k2222332222k......",
+      ".......k22333322k.......",
+      "........k223322k........",
+      ".........k2222k.........",
+      "..........kkkk..........",
+      "........................",
     ],
   },
   {
@@ -216,16 +293,24 @@ export const MASCOTS: readonly Mascot[] = [
     name: "VIKING",
     palette: { 1: "#e0b07a", 2: "#d8d2c4", 3: "#e8c05a", w: "#ffffff" },
     head: [
-      "..kk........kk..",
-      ".k22k......k22k.",
-      ".k22kkkkkkkk22k.",
-      "..kk2222222kk...",
-      "...k11111111k...",
-      "...k1e1111e1k...",
-      "...k33333333k...",
-      "...k33333333k...",
-      "....k333333k....",
-      ".....k3333k.....",
+      "..kk................kk..",
+      ".k22k..............k22k.",
+      ".k222kkkkkkkkkkkkkk222k.",
+      "..k22k222222222222k22k..",
+      "...kkk222222222222kkk...",
+      "....k22222222222222k....",
+      "...k1111111111111111k...",
+      "...k111ee111111ee111k...",
+      "...k111ee111111ee111k...",
+      "...k1111111111111111k...",
+      "...k3333333333333333k...",
+      "...k3333333333333333k...",
+      "....k33333333333333k....",
+      "....k33333333333333k....",
+      ".....k333333333333k.....",
+      "......k3333333333k......",
+      ".......kkkkkkkkkk.......",
+      "........................",
     ],
   },
   {
@@ -237,16 +322,24 @@ export const MASCOTS: readonly Mascot[] = [
     // same reason: sat wide with a pale muzzle spreading across the jaw,
     // this had the exact silhouette of the bull three cells away.
     head: [
-      "..k..........k..",
-      "..kk........kk..",
-      "..k1k......k1k..",
-      "..k11kkkkkk11k..",
-      "...k11111111k...",
-      "...k1e1111e1k...",
-      "....k111111k....",
-      "....k133331k....",
-      ".....k3333k.....",
-      "......k33k......",
+      "...kk..............kk...",
+      "...k1k............k1k...",
+      "..k11k............k11k..",
+      "..k111kkkkkkkkkkkk111k..",
+      "..k111111111111111111k..",
+      "...k1111111111111111k...",
+      "...k111ee111111ee111k...",
+      "...k111ee111111ee111k...",
+      "...k1111111111111111k...",
+      "....k11111111111111k....",
+      ".....k333333333333k.....",
+      "......k3333333333k......",
+      "......k3333333333k......",
+      ".......k33333333k.......",
+      ".......k33333333k.......",
+      "........k333333k........",
+      ".........kkkkkk.........",
+      "........................",
     ],
   },
   {
@@ -254,16 +347,24 @@ export const MASCOTS: readonly Mascot[] = [
     name: "SHARK",
     palette: { 1: "#5a7a8a", 2: "#f4efe4", 3: "#2a3a44", w: "#ffffff" },
     head: [
-      ".......kk.......",
-      "......k1k.......",
-      ".....k11k.......",
-      "....k1111kkk....",
-      "...k11111111k...",
-      "...k1e1111e1k...",
-      "...k11111111k...",
-      "...k22222222k...",
-      "...k2k2k2k2k2k..",
-      "....kkkkkkk.....",
+      "...........kk...........",
+      "..........k11k..........",
+      ".........k1111k.........",
+      "........k111111k........",
+      ".......k11111111kkkkk...",
+      "....kkk1111111111111k...",
+      "...k1111111111111111k...",
+      "...k111ee111111ee111k...",
+      "...k1111111111111111k...",
+      "...k1111111111111111k...",
+      "...k2222222222222222k...",
+      "...k2k2k2k2k2k2k2k2k2k..",
+      "...k2222222222222222k...",
+      "...k2k2k2k2k2k2k2k2k2k..",
+      "....k22222222222222k....",
+      ".....kkkkkkkkkkkkkk.....",
+      "........................",
+      "........................",
     ],
   },
   {
@@ -271,16 +372,24 @@ export const MASCOTS: readonly Mascot[] = [
     name: "HORNET",
     palette: { 1: "#e8c02a", 2: "#2a2418", 3: "#f4efe4", w: "#ffffff" },
     head: [
-      "..k..........k..",
-      "...k........k...",
-      "...k3k....k3k...",
-      "....kkkkkkkk....",
-      "...k11111111k...",
-      "...k1eeeeee1k...",
-      "...k22222222k...",
-      "...k11111111k...",
-      "....k222222k....",
-      ".....kkkkkk.....",
+      "..k..................k..",
+      "...k................k...",
+      "....k3k..........k3k....",
+      ".....k3k........k3k.....",
+      "......kkkkkkkkkkkk......",
+      ".....k111111111111k.....",
+      "....k11111111111111k....",
+      "...k1eeeeee11eeeeee1k...",
+      "...k1eeeeee11eeeeee1k...",
+      "...k2222222222222222k...",
+      "...k2222222222222222k...",
+      "...k1111111111111111k...",
+      "...k1111111111111111k...",
+      "....k22222222222222k....",
+      "....k22222222222222k....",
+      ".....k111111111111k.....",
+      "......kkkkkkkkkkkk......",
+      "........................",
     ],
   },
   {
@@ -288,16 +397,24 @@ export const MASCOTS: readonly Mascot[] = [
     name: "KNIGHT",
     palette: { 1: "#b8bcc4", 2: "#c1391f", 3: "#3a3a42", w: "#ffffff" },
     head: [
-      ".......k22k.....",
-      "......k2222k....",
-      ".....kk222kk....",
-      "....k111111k....",
-      "...k11111111k...",
-      "...kkeeeeeekk...",
-      "...k11111111k...",
-      "...k11k11k11k...",
-      "....k111111k....",
-      ".....kkkkkk.....",
+      "..........k22k..........",
+      "........kk2222kk........",
+      ".......k22222222k.......",
+      "......kk22222222kk......",
+      ".....k1111111111111k....",
+      "....k111111111111111k...",
+      "...k1111111111111111k...",
+      "...kkeeeeeeeeeeeeeekk...",
+      "...kkeeeeeeeeeeeeeekk...",
+      "...k1111111111111111k...",
+      "...k1111111111111111k...",
+      "...k11kk111111kk1111k...",
+      "...k11kk111111kk1111k...",
+      "....k11111111111111k....",
+      "....k11111111111111k....",
+      ".....k111111111111k.....",
+      "......kkkkkkkkkkkk......",
+      "........................",
     ],
   },
 ] as const;
@@ -322,8 +439,36 @@ export function shade(hex: string, amount = 0.62): string {
 }
 
 /** The full sprite grid: head, body, and one of the two leg frames. */
+/**
+ * Pushes a head down so its lowest drawn row is the last one.
+ *
+ * Heads are authored with however many blank rows fall out of the
+ * drawing - some ended two rows above the bottom, some one - and the
+ * body is a fixed thing bolted underneath. Bottom-aligning them puts
+ * every chin on the same row, so one neck fits all twelve instead of
+ * each mascot floating a different distance above its shoulders.
+ */
+function bottomAligned(head: string[]): string[] {
+  const rows = [...head];
+  const blank = ".".repeat(rows[0]?.length ?? SPRITE_W);
+  while (rows.length && !/[^.]/.test(rows[rows.length - 1])) rows.pop();
+  while (rows.length < head.length) rows.unshift(blank);
+  return rows;
+}
+
+const ALIGNED = new Map<string, string[]>();
+
+export function headRows(mascot: Mascot): string[] {
+  let rows = ALIGNED.get(mascot.id);
+  if (!rows) {
+    rows = bottomAligned(mascot.head);
+    ALIGNED.set(mascot.id, rows);
+  }
+  return rows;
+}
+
 export function spriteRows(mascot: Mascot, frame: 0 | 1 = 0): string[] {
-  return [...mascot.head, ...BODY, ...LEGS[frame]];
+  return [...headRows(mascot), ...BODY, ...LEGS[frame]];
 }
 
 /**
@@ -371,23 +516,44 @@ export function colourFor(
  * Adjacent `e` pixels are one eye; a gap starts another.
  */
 export function eyeClusters(mascot: Mascot): { x: number; y: number }[] {
-  const clusters: { x: number; y: number }[] = [];
+  // The aligned rows, not the authored ones - the card draws the same.
+  const rows = headRows(mascot);
+  const seen = rows.map((r) => Array(r.length).fill(false));
+  const out: { x: number; y: number }[] = [];
 
-  mascot.head.forEach((row, y) => {
-    let run: number[] = [];
-    const flush = () => {
-      if (!run.length) return;
-      clusters.push({ x: run.reduce((a, b) => a + b, 0) / run.length, y });
-      run = [];
-    };
-    for (let x = 0; x < row.length; x++) {
-      if (row[x] === "e") run.push(x);
-      else flush();
+  // Flood fill rather than a scan per row. Eyes are two pixels tall at
+  // this size, and a per-row scan reported every eye twice - four eyes
+  // on every mascot, and two crosses stacked on each one.
+  for (let y = 0; y < rows.length; y++) {
+    for (let x = 0; x < rows[y].length; x++) {
+      if (rows[y][x] !== "e" || seen[y][x]) continue;
+
+      const stack = [[x, y]];
+      const cells: number[][] = [];
+      seen[y][x] = true;
+
+      while (stack.length) {
+        const [cx, cy] = stack.pop()!;
+        cells.push([cx, cy]);
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const nx = cx + dx;
+          const ny = cy + dy;
+          if (ny < 0 || ny >= rows.length) continue;
+          if (nx < 0 || nx >= rows[ny].length) continue;
+          if (seen[ny][nx] || rows[ny][nx] !== "e") continue;
+          seen[ny][nx] = true;
+          stack.push([nx, ny]);
+        }
+      }
+
+      out.push({
+        x: cells.reduce((a, c) => a + c[0], 0) / cells.length,
+        y: cells.reduce((a, c) => a + c[1], 0) / cells.length,
+      });
     }
-    flush();
-  });
+  }
 
-  return clusters;
+  return out;
 }
 
 /**
