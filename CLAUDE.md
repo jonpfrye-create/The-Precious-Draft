@@ -215,6 +215,14 @@ Four things are load-bearing:
   it advances only when a felling arrives. The mascot race this replaced
   tried to keep a sixteen-second animation frame-identical across twelve
   phones from a shared seed, and was hopelessly buggy.
+- **Both the lobby and `/commish/order` render it**, from the same seed
+  (the phase id) and the same name-sorted field. That sameness is the
+  requirement: mascot, hazard and lane are all functions of the field,
+  the seed and the felled position, so any difference in how the two
+  pages build their inputs puts a different animal on the television
+  than the one on twelve phones. On the practice night the commissioner
+  screen still had the old list reveal, which is the screen that was on
+  the TV.
 - **Either view can be swapped for the other per device**, from a link
   under the reveal, stored in localStorage (`precious:reveal-view`).
   That is the whole safety net on the night: a deploy is out of the
@@ -241,6 +249,63 @@ legs drawn in the same colour as the sky) and only looking found them.
 driven by a button instead of by the commissioner, so the whole sequence
 can be run through as often as you like without burning the real one. It
 never reads `phase_teams`.
+
+## The drafters' screens
+
+`/draft` is one person's phone and `/draft/board` is the board. Three
+things there are load-bearing, all three found on the practice night.
+
+**Position tabs come from the phase's roster slots, not from a list.**
+`src/lib/draft/position-tabs.ts`: a position earns a tab when a
+*starting* slot can hold it. Bench slots accept everything in this
+league, so counting them would put all six positions on every screen and
+say nothing. That one rule is why Main has no kicker tab (K is
+bench-only there), Leftovers has one (it starts a K), and Microwave
+shows only RB/WR/TE. **A tab is a browsing aid, not a permission** -
+`canFillRoster` remains the only thing deciding what can actually be
+picked, and a kicker is still reachable in Main through search.
+
+**The phone sheet is trimmed to 700 players, so sort order decides
+what exists.** `sortByDraftability` ranks NFL-roster status first, and
+Sleeper ships no status at all for team defenses - all 32 arrive `null`,
+the only rows in the table in that state. They sorted below 2,906 active
+players, landed at index 973, and fell off the end of the trimmed sheet:
+every phone showed a DEF tab with nothing under it while the
+commissioner's board, which reads the *untrimmed* sheet, looked perfectly
+normal. DEF is a required non-bench slot in Main and Leftovers, so this
+made a legal roster impossible to finish. Fixed in `statusRank`, in code
+rather than in the data, because `npm run refresh-pool` would put the
+nulls straight back.
+
+**`/draft/board` renders both boards and hides one in CSS.** Measuring
+the width after mount means a visible flip on every load, and this page
+is opened a hundred and sixty-eight times in an evening. Because both
+mount, the realtime subscription is lifted into `BoardSync` - two
+channels on the same `phase:<id>` topic would let either one's unmount
+silently kill the other's updates.
+
+## Realtime: what each page has to listen to
+
+Two subscriptions, and they are not interchangeable.
+
+- `usePhaseChannel(phaseId)` carries picks and undos *within* one phase.
+- `useLeaguePhases(leagueId)` carries the reveal, the draft starting,
+  and **a new phase being created**.
+
+That last one is why the hook watches every event and not just `UPDATE`:
+starting Leftovers *inserts* a phase rather than updating one, so a
+subscription watching updates alone heard nothing. On the practice night
+every drafter sat on a finished Main board while the next order was being
+drawn, and only a manual reload moved them. `/draft` needs both hooks -
+it is scoped to one phase, so when that phase ends there is nothing left
+in it to hear about.
+
+**Every screen that matters needs a backstop poll.** The lobby has had
+one since a probe caught a cold session missing its first event.
+`/draft` did not, and two people spent the practice draft refreshing to
+find out it was their turn - a locked phone drops the socket with it.
+It now refetches on wake and on focus, with a slow interval underneath
+that pauses while the screen is dark.
 
 ## Clams AI
 

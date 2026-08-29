@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore, useTransition } from "react";
+import { useEffect, useState, useSyncExternalStore, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Phase, Team } from "@/lib/draft/queries";
@@ -17,6 +17,8 @@ import {
 import { pickNumbersForPosition } from "@/lib/draft/snake-order";
 import { playFanfare, playStinger, playSuspense } from "@/lib/audio/fanfare";
 import Confetti from "@/components/Confetti";
+import Climb, { FELLING_MS } from "@/components/Climb";
+import type { ClimbTeam, Felling } from "@/lib/climb/climb";
 import { drawDraftOrder, revealNextPosition } from "./actions";
 import { ACTION_FAILED } from "@/lib/errors";
 
@@ -35,16 +37,30 @@ const CARD_HOLD_MS = 2600;
 // looking at a bare list while pieces are still falling.
 const FINALE_HOLD_MS = 8000;
 
+/**
+ * Both screens read this key, so a device that has been switched to the
+ * plain list stays on it wherever the reveal is being watched.
+ */
+const VIEW_KEY = "precious:reveal-view";
+
 export default function OrderDraw({
   phase,
   teams,
   picksMade,
   colorByTeamId,
+  climbTeams,
+  fellings,
+  climbSeed,
+  forcedView,
 }: {
   phase: Phase;
   teams: Team[];
   picksMade: number;
   colorByTeamId: Record<string, TeamColor>;
+  climbTeams: ClimbTeam[];
+  fellings: Felling[];
+  climbSeed: string;
+  forcedView: "climb" | "list" | null;
 }) {
   // Falls back to the first palette entry rather than crashing if a team
   // somehow arrives without a colour.
@@ -62,12 +78,40 @@ export default function OrderDraw({
   const [muted, setMuted] = useState(false);
   const [celebrating, setCelebrating] = useState(false);
 
+  // Starts on the list and switches after mount rather than reading
+  // localStorage during render - the server cannot know what this device
+  // chose last time, and rendering the climb first would be a hydration
+  // mismatch every time.
+  const [view, setView] = useState<"climb" | "list">("list");
+  const [ready, setReady] = useState(false);
+  // Held down while the mountain plays out the felling just triggered.
+  const [climbBusy, setClimbBusy] = useState(false);
+
+  useEffect(() => {
+    const chosen =
+      forcedView ??
+      (window.localStorage.getItem(VIEW_KEY) === "list" ? "list" : "climb");
+    window.localStorage.setItem(VIEW_KEY, chosen);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setView(chosen);
+    setReady(true);
+  }, [forcedView]);
+
+  const choose = (next: "climb" | "list") => {
+    setView(next);
+    window.localStorage.setItem(VIEW_KEY, next);
+  };
+
   const hasBeenDrawn = phase.order_drawn_at !== null;
   const isLocked = picksMade > 0;
   const total = teams.length;
   const revealedCount = phase.order_revealed_count;
   const fullyRevealed = hasBeenDrawn && revealedCount >= total;
   const midReveal = hasBeenDrawn && revealedCount < total;
+
+  // Nothing to climb before the order exists, and `ready` keeps the
+  // server and the first client render agreeing.
+  const climbing = ready && view === "climb" && hasBeenDrawn;
 
   function handleDraw(isRedraw: boolean) {
     setError(null);
@@ -115,8 +159,25 @@ export default function OrderDraw({
           ),
         }));
 
-        setStage([announced]);
         const finale = Boolean(result.isFinale);
+
+        // The climb runs the whole announcement itself: it holds each
+        // felling back until the pack has walked up to it, then plays its
+        // own stinger and shows its own card. Firing the card and the
+        // horn from here as well would sound it seconds before anything
+        // moved on screen, and show the same pick twice.
+        if (climbing) {
+          setStage([]);
+          router.refresh();
+          // The climb walks the pack up, kills one and holds its card for
+          // about ten seconds. Leaving the button live through all of
+          // that invites a second press that looks like it did nothing.
+          setClimbBusy(true);
+          setTimeout(() => setClimbBusy(false), FELLING_MS);
+          return;
+        }
+
+        setStage([announced]);
 
         if (finale) {
           setCelebrating(true);
@@ -156,15 +217,44 @@ export default function OrderDraw({
 
   return (
     <div className="flex w-full max-w-3xl flex-col gap-8">
-      {stage.length > 0 && (
+      {stage.length > 0 && !climbing && (
         <Stage announcements={stage} />
       )}
-      {celebrating && (
+      {celebrating && !climbing && (
         <Confetti
           accent={
             stage.find((a) => a.draftPosition === 1)?.color.hex ?? "#FCD34D"
           }
         />
+      )}
+
+      {climbing && (
+        <div className="flex flex-col gap-2">
+          <Climb
+            teams={climbTeams}
+            fellings={fellings}
+            seed={climbSeed}
+            fieldSize={climbTeams.length}
+            muted={muted}
+          />
+          <button
+            type="button"
+            onClick={() => choose("list")}
+            className="self-center text-xs text-zinc-500 hover:underline"
+          >
+            Show the plain list instead
+          </button>
+        </div>
+      )}
+
+      {ready && view === "list" && hasBeenDrawn && (
+        <button
+          type="button"
+          onClick={() => choose("climb")}
+          className="self-center text-xs text-zinc-500 hover:underline"
+        >
+          Show the climb instead
+        </button>
       )}
 
       {!isLocked && (
@@ -290,14 +380,14 @@ export default function OrderDraw({
           <button
             type="button"
             onClick={handleReveal}
-            disabled={isPending || stage.length > 0}
+            disabled={isPending || stage.length > 0 || climbBusy}
             className={`self-start rounded px-8 py-5 text-xl font-semibold disabled:opacity-40 ${
               onePickLeft
                 ? "animate-pulse bg-amber-400 text-black shadow-lg shadow-amber-500/40"
                 : "bg-amber-500 text-black"
             }`}
           >
-            {stage.length > 0 ? "..." : nextPositionLabel}
+            {stage.length > 0 || climbBusy ? "..." : nextPositionLabel}
           </button>
         </div>
       ) : showRedraw ? (

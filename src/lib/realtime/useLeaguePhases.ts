@@ -14,6 +14,13 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
  * publication - so one subscription covers the whole reveal, and the same
  * subscription catches the phase going `active` when the draft starts.
  *
+ * Every event, not just UPDATE. Starting Leftovers *inserts* a phase
+ * rather than updating one, so a subscription watching updates alone
+ * heard nothing at all: on the practice night every drafter sat on a
+ * finished Main board while the commissioner drew the next order, and
+ * only a manual reload moved them. The reveal is an update and the new
+ * phase is an insert; both have to arrive.
+ *
  * Requires supabase/008-realtime.sql. Without it the subscription still
  * succeeds and simply goes quiet, which is indistinguishable from a
  * commissioner who hasn't pressed anything yet - the exact failure that
@@ -40,7 +47,7 @@ export function useLeaguePhases(
       .on(
         "postgres_changes",
         {
-          event: "UPDATE",
+          event: "*",
           schema: "public",
           table: "phases",
           filter: `league_id=eq.${leagueId}`,

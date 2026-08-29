@@ -24,8 +24,21 @@ function isRostered(player: RankablePlayer): boolean {
 // Lower sorts earlier. Injured players stay well above retired ones -
 // someone on IR is a real draft consideration; someone out of the league
 // is not.
-function statusRank(status: string | null): number {
-  switch (status) {
+function statusRank(player: RankablePlayer): number {
+  // Sleeper ships no status at all for a team defense, so all 32 arrive
+  // null - the only rows in the table in that state. Falling through to
+  // the default below put them at 2, beneath every one of the 2,906
+  // players marked Active: the first defense landed at index 973, and
+  // getDrafterSheetForPhase trims the phone sheet to 700. Every phone
+  // showed a DEF tab with nothing under it, while the commissioner's
+  // board - which reads the untrimmed sheet - looked perfectly normal.
+  //
+  // The Seahawks are as active as anyone on the field. Saying so lets
+  // them sort on their real ADP (7.09, around pick 81) instead of being
+  // treated as a doubtful roster prospect.
+  if (player.position === "DEF" && player.status === null) return 0;
+
+  switch (player.status) {
     case "Active":
       return 0;
     case "Injured Reserve":
@@ -59,7 +72,7 @@ export function sortByDraftability<T extends RankablePlayer>(players: T[]): T[] 
     const rostered = Number(isRostered(b)) - Number(isRostered(a));
     if (rostered !== 0) return rostered;
 
-    const status = statusRank(a.status) - statusRank(b.status);
+    const status = statusRank(a) - statusRank(b);
     if (status !== 0) return status;
 
     // Real ADP wins where both players have it: it comes from actual

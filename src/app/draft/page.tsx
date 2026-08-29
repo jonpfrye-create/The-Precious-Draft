@@ -119,6 +119,7 @@ export default async function DraftPage() {
       <DrafterView
         teamName={me.teamName}
         leagueName={me.leagueName}
+        leagueId={me.leagueId}
         phaseType={phase.type}
         phaseId={phase.id}
         inPhase={inPhase}

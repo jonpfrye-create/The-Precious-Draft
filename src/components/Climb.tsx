@@ -53,6 +53,15 @@ const STRIKE_MS = 1400;
 /** How long the announcement card holds. */
 const CARD_MS = 4200;
 
+/**
+ * Roughly how long one felling takes from the press to the card
+ * clearing. Exported so the commissioner's reveal button can stay down
+ * until the mountain has caught up with it - a button that is live while
+ * nothing it does is visible is the "it silently did nothing" failure
+ * this project keeps running into.
+ */
+export const FELLING_MS = WALK_MS + STRIKE_MS + CARD_MS;
+
 /** Leg frames per second, roughly. */
 const TICK_MS = 190;
 
@@ -119,12 +128,19 @@ export default function Climb({
   seed,
   myTeamId = null,
   fieldSize,
+  muted = false,
 }: {
   teams: ClimbTeam[];
   fellings: Felling[];
   seed: string;
   myTeamId?: string | null;
   fieldSize: number;
+  /**
+   * Silences the horn without silencing the picture. The commissioner's
+   * screen has its own sound toggle and drives the television, so the
+   * climb has to be able to answer to it.
+   */
+  muted?: boolean;
 }) {
   const revealed = fellings.length;
 
@@ -196,6 +212,15 @@ export default function Climb({
   const raf = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
+  // Read at the moment the horn would sound rather than captured in the
+  // sequencer's dependencies: putting `muted` in there would tear down
+  // and restart the whole sequence the instant the toggle was pressed,
+  // in the middle of a felling.
+  const mutedRef = useRef(muted);
+  useEffect(() => {
+    mutedRef.current = muted;
+  }, [muted]);
+
   useEffect(
     () => () => {
       // Only on unmount. Tearing these down whenever the dependencies
@@ -245,7 +270,7 @@ export default function Climb({
       // Nothing happens to the one that reaches the top, so there is no
       // lightning and no skull - just the summit and the fanfare.
       if (latest.position === 1) {
-        playFanfare();
+        if (!mutedRef.current) playFanfare();
         hold(latest);
         return;
       }
@@ -254,7 +279,7 @@ export default function Climb({
       // the mascot, and the bang at the moment of the flash rather than
       // when the card turns up a beat and a half later.
       setStrike(latest.teamId);
-      playStinger(Math.min(1, next / Math.max(1, fieldSize)));
+      if (!mutedRef.current) playStinger(Math.min(1, next / Math.max(1, fieldSize)));
 
       const struckAt = performance.now();
       const strikeStep = (now: number) => {

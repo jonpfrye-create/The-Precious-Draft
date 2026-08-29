@@ -1,15 +1,17 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { positionColor, POSITIONS } from "@/lib/positions";
 import { draftablePositions, type SlotSpec } from "@/lib/draft/roster-fit";
+import { defaultTab, matchesTab, positionTabs } from "@/lib/draft/position-tabs";
 import { splitTeamName } from "@/lib/teams/branding";
 import { ACTION_FAILED } from "@/lib/errors";
 import type { SheetPlayer } from "@/lib/draft/queries";
 import { makePick } from "@/app/commish/(protected)/board/actions";
 import { searchDeepPool } from "./actions";
 import { usePhaseChannel } from "@/lib/realtime/usePhaseChannel";
+import { useLeaguePhases } from "@/lib/realtime/useLeaguePhases";
 import { generateSnakeOrder, currentPick } from "@/lib/draft/snake-order";
 
 /**
@@ -26,13 +28,9 @@ import { generateSnakeOrder, currentPick } from "@/lib/draft/snake-order";
  * row below is a whole season.
  */
 
-/**
- * The phone's list gets an "all" tab, which the board deliberately does
- * not: the board is meant to read like a sheet of stickers organised by
- * position, whereas this is a list you scroll with a thumb, and opening
- * it filtered to quarterbacks helps nobody.
- */
-const ALL = "All";
+// Slow on purpose: realtime carries every pick already, and this only
+// exists to catch the ones it drops.
+const TURN_BACKSTOP_MS = 15000;
 
 export interface RosterLine {
   slotName: string;
@@ -44,6 +42,7 @@ export interface RosterLine {
 export default function DrafterView({
   teamName,
   leagueName,
+  leagueId,
   phaseType,
   phaseId,
   inPhase,
@@ -59,6 +58,7 @@ export default function DrafterView({
 }: {
   teamName: string;
   leagueName: string;
+  leagueId: string;
   phaseType: string;
   phaseId: string;
   inPhase: boolean;
@@ -77,7 +77,7 @@ export default function DrafterView({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [position, setPosition] = useState<string>(ALL);
+  const [position, setPosition] = useState<string>("All");
   const [selected, setSelected] = useState<SheetPlayer | null>(null);
   const [peeling, setPeeling] = useState<string | null>(null);
   // The row vanishing is the confirmation. An explicit "drafted!" note
@@ -104,6 +104,47 @@ export default function DrafterView({
   // server refuses it.
   usePhaseChannel(phaseId, () => router.refresh());
 
+  // And the league's phases, which is a different thing entirely: this
+  // page is scoped to one phase, so when Main finishes and Leftovers is
+  // created there is nothing in this phase left to hear about. Without
+  // it every drafter stays on the completed board while the next order
+  // is being drawn - the page already knows to send them to the lobby,
+  // it just never got told to look again.
+  useLeaguePhases(leagueId, () => router.refresh());
+
+  // The backstop, which the lobby has had since a probe caught a cold
+  // session missing the very first event it should have received. This
+  // page never got one, and it is the page where missing an event costs
+  // something: two people spent the practice draft refreshing to find
+  // out it was their turn.
+  //
+  // A locked phone is the likely culprit - the socket goes with it - so
+  // coming back to the screen refetches immediately rather than waiting
+  // out the interval. The interval is the slower net underneath, and is
+  // deliberately lazy: this page is heavy, twelve of them are on it, and
+  // it only has to catch what realtime dropped.
+  useEffect(() => {
+    const refresh = () => router.refresh();
+
+    const onVisible = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", refresh);
+
+    const id = setInterval(() => {
+      // Nothing to catch up on while the screen is dark, and polling in a
+      // pocket for three hours is how a phone arrives at Microwave flat.
+      if (document.visibilityState === "visible") refresh();
+    }, TURN_BACKSTOP_MS);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", refresh);
+      clearInterval(id);
+    };
+  }, [router]);
+
   const { teamName: shortName, manager } = splitTeamName(teamName);
 
   // Positions this roster can still legally take. A player who cannot fit
@@ -117,14 +158,25 @@ export default function DrafterView({
     [draftedPositions, slots]
   );
 
+  // The tabs this phase offers, from its own roster slots. Same rule as
+  // the board, so the two screens never disagree about what is on offer.
+  const tabs = useMemo(() => positionTabs(slots), [slots]);
+
+  // Moving from Main to Leftovers to Microwave retires tabs, and a
+  // filter the new phase has never heard of shows an empty sheet with
+  // nothing to explain it. Resolved while rendering rather than corrected
+  // afterwards in an effect, so there is never a frame showing the wrong
+  // one.
+  const activeTab = tabs.includes(position) ? position : defaultTab(tabs);
+
   const visible = useMemo(() => {
     const query = search.trim().toLowerCase();
     return sheetPlayers
       .filter((p) => !p.taken && !gone.has(p.player_id))
-      .filter((p) => position === ALL || p.position === position)
+      .filter((p) => matchesTab(activeTab, p.position))
       .filter((p) => !query || p.full_name.toLowerCase().includes(query))
       .slice(0, 60);
-  }, [sheetPlayers, position, search, gone]);
+  }, [sheetPlayers, activeTab, search, gone]);
 
   function draft(player: SheetPlayer) {
     setError(null);
@@ -261,13 +313,13 @@ export default function DrafterView({
 
       {/* The sheet */}
       <div className="mb-2 flex gap-1 overflow-x-auto pb-1">
-        {[ALL, ...POSITIONS].map((p) => (
+        {tabs.map((p) => (
           <button
             key={p}
             type="button"
             onClick={() => setPosition(p)}
             className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold uppercase ${
-              position === p
+              activeTab === p
                 ? "bg-black text-white dark:bg-white dark:text-black"
                 : "bg-zinc-100 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400"
             }`}

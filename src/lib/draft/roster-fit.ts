@@ -1,6 +1,13 @@
 export interface SlotSpec {
   slotName: string;
   eligiblePositions: string[];
+  /**
+   * Optional, and read by nothing in this file - roster fitting treats a
+   * bench slot like any other. It rides along because position-tabs.ts
+   * needs to tell a starting slot from a bench one, and every caller
+   * already has it to hand.
+   */
+  isBench?: boolean;
 }
 
 /**

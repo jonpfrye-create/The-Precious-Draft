@@ -122,4 +122,43 @@ describe("sortByDraftability", () => {
     ]);
     expect(sorted[0].full_name).toBe("Real Team");
   });
+
+  // Found on draft morning: every phone showed a DEF tab with nothing
+  // under it. Sleeper sends no status for a team defense, so all 32 came
+  // through null and sorted below every active player - far past the 700
+  // the phone sheet carries.
+  it("does not penalise a team defense for having no status", () => {
+    const sorted = sortByDraftability([
+      player("Some Active Guy", { position: "WR", status: "Active", adp: 90 }),
+      player("Seattle Seahawks", {
+        position: "DEF",
+        nfl_team: "SEA",
+        status: null,
+        search_rank: null,
+        adp: 80.8,
+      }),
+    ]);
+    expect(sorted[0].full_name).toBe("Seattle Seahawks");
+  });
+
+  it("still penalises a non-defense with no status", () => {
+    // The exemption is about defenses specifically, not about null being
+    // harmless - a skill player Sleeper has stopped tracking should sink.
+    const sorted = sortByDraftability([
+      player("Ghost", { position: "WR", status: null, search_rank: 1 }),
+      player("Playing", { position: "WR", status: "Active", search_rank: 900 }),
+    ]);
+    expect(sorted[0].full_name).toBe("Playing");
+  });
+
+  it("orders defenses among themselves by ADP", () => {
+    const sorted = sortByDraftability([
+      player("Denver Broncos", { position: "DEF", nfl_team: "DEN", status: null, search_rank: null, adp: 92.1 }),
+      player("Seattle Seahawks", { position: "DEF", nfl_team: "SEA", status: null, search_rank: null, adp: 80.8 }),
+    ]);
+    expect(sorted.map((p) => p.full_name)).toEqual([
+      "Seattle Seahawks",
+      "Denver Broncos",
+    ]);
+  });
 });

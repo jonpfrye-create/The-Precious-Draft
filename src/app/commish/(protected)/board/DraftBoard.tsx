@@ -16,7 +16,10 @@ import { generateSnakeOrder, currentPick } from "@/lib/draft/snake-order";
 import { positionColor, POSITIONS } from "@/lib/positions";
 import { usePhaseChannel } from "@/lib/realtime/usePhaseChannel";
 import { draftablePositions, forcedPositions } from "@/lib/draft/roster-fit";
+import { defaultTab, matchesTab, positionTabs } from "@/lib/draft/position-tabs";
 import { placementFromClick, placementStyle } from "@/lib/stickers";
+import { playFanfare } from "@/lib/audio/fanfare";
+import Confetti from "@/components/Confetti";
 import { makePick, undoLastPick } from "./actions";
 
 interface DraftBoardProps {
@@ -56,7 +59,7 @@ export default function DraftBoard({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [positionFilter, setPositionFilter] = useState<string>(POSITIONS[0]);
+  const [positionFilter, setPositionFilter] = useState<string>("All");
   // The player currently peeling off the sheet, and the pick pressing onto
   // the board. Both are purely visual and clear themselves.
   const [peelingPlayerId, setPeelingPlayerId] = useState<string | null>(null);
@@ -90,6 +93,27 @@ export default function DraftBoard({
     () => generateSnakeOrder(teams.map((t) => t.id), phase.rounds),
     [teams, phase.rounds]
   );
+  // The last pick can land from anyone's phone, so the board finds out
+  // about the draft ending the same way it finds out about everything
+  // else - by the count changing under it.
+  const complete = picks.length >= snakeOrder.length && snakeOrder.length > 0;
+  const wasComplete = useRef(complete);
+  const [wrap, setWrap] = useState(false);
+
+  useEffect(() => {
+    if (complete && !wasComplete.current) {
+      // Reacting to something that happened on another device is what an
+      // effect is actually for; there is no event on this machine to hang
+      // it off. It fires on the transition only, and the transition only
+      // happens once - an undo takes the count back down and re-arms it,
+      // which is correct: putting the last pick back means the draft is
+      // not over after all.
+      setWrap(true);
+      playFanfare();
+    }
+    wasComplete.current = complete;
+  }, [complete]);
+
   const onClockPick = currentPick(snakeOrder, picks.length);
   const onClockTeam = onClockPick
     ? teams.find((t) => t.id === onClockPick.teamId) ?? null
@@ -119,9 +143,14 @@ export default function DraftBoard({
       rosterSlots.map((slot) => ({
         slotName: slot.slot_name,
         eligiblePositions: slot.eligible_positions,
+        isBench: slot.is_bench,
       })),
     [rosterSlots]
   );
+
+  // Which tabs this phase offers, from its own roster slots - so Main
+  // has no kicker tab and Microwave only shows the three it drafts.
+  const tabs = useMemo(() => positionTabs(slotSpecs), [slotSpecs]);
 
   const onClockDraftedPositions = useMemo(() => {
     if (!onClockTeam) return [];
@@ -143,6 +172,13 @@ export default function DraftBoard({
     [onClockDraftedPositions, slotSpecs]
   );
 
+  // A phase change can retire the selected tab - Microwave has no QB tab
+  // and the board carries its filter across the transition. Resolved
+  // while rendering rather than corrected afterwards in an effect.
+  const activeTab = tabs.includes(positionFilter)
+    ? positionFilter
+    : defaultTab(tabs);
+
   const searchTerm = search.trim().toLowerCase();
   const filteredPlayers = useMemo(() => {
     return sheetPlayers.filter((p) => {
@@ -153,9 +189,10 @@ export default function DraftBoard({
       if (searchTerm) {
         return !p.taken && p.full_name.toLowerCase().includes(searchTerm);
       }
-      return p.position === positionFilter;
+      return matchesTab(activeTab, p.position);
     });
-  }, [sheetPlayers, searchTerm, positionFilter]);
+  }, [sheetPlayers, searchTerm, activeTab]);
+
 
   const clearHeld = useCallback(() => {
     setHeldPlayer(null);
@@ -260,6 +297,68 @@ export default function DraftBoard({
 
   return (
     <div className="flex min-h-screen flex-col gap-6 bg-zinc-50 p-6 dark:bg-black">
+      {wrap && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-8 bg-[#05060A] px-8 text-center">
+          <Confetti accent="#FCD34D" />
+          <p className="text-xl font-bold uppercase tracking-[0.4em] text-amber-400">
+            {phase.type} draft
+          </p>
+          <h2 className="animate-slam text-6xl font-black uppercase leading-none tracking-tight text-white md:text-8xl">
+            That&apos;s a wrap
+          </h2>
+          <p className="max-w-xl text-lg text-zinc-400">
+            {picks.length} picks. {teams.length} rosters.{" "}
+            {phase.type === "main"
+              ? "Now the part everybody actually argues about."
+              : "Pool's another round lighter."}
+          </p>
+
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-4">
+            {/* Grades are the Main draft's own encore - that is the order
+                the night has always run in. */}
+            {phase.type === "main" && (
+              <Link
+                href="/commish/grades"
+                className="rounded bg-amber-400 px-8 py-5 text-xl font-bold text-black shadow-lg shadow-amber-500/30"
+              >
+                🏆 On to the grades
+              </Link>
+            )}
+            {phase.type !== "microwave" && viewingLive && (
+              <Link
+                href="/commish/next-phase"
+                className={`rounded px-8 py-5 text-xl font-semibold ${
+                  phase.type === "main"
+                    ? "border-2 border-zinc-600 text-white"
+                    : "bg-white text-black"
+                }`}
+              >
+                Start {phase.type === "main" ? "Leftovers" : "Microwave"} →
+              </Link>
+            )}
+            {phase.type === "microwave" && (
+              <Link
+                href="/commish/rosters"
+                className="rounded bg-white px-8 py-5 text-xl font-semibold text-black"
+              >
+                Rosters for Yahoo →
+              </Link>
+            )}
+          </div>
+
+          {/* Dismissable rather than timed. The board underneath is the
+              thing the room has spent three hours making, and covering it
+              up on a timer nobody controls would be the wrong call. */}
+          <button
+            type="button"
+            onClick={() => setWrap(false)}
+            className="mt-4 text-sm text-zinc-500 hover:underline"
+          >
+            Back to the board
+          </button>
+        </div>
+      )}
+
       <header className="flex items-center justify-between">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-semibold">
@@ -620,18 +719,18 @@ export default function DraftBoard({
               placeholder="Search players..."
               className="min-w-[200px] flex-1 rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
             />
-            <div className="flex gap-1">
-              {POSITIONS.map((pos) => (
+            <div className="flex flex-wrap gap-1">
+              {tabs.map((tab) => (
                 <button
-                  key={pos}
-                  onClick={() => setPositionFilter(pos)}
+                  key={tab}
+                  onClick={() => setPositionFilter(tab)}
                   className={`rounded px-3 py-2 text-sm ${
-                    positionFilter === pos
+                    activeTab === tab
                       ? "bg-black text-white dark:bg-white dark:text-black"
                       : "border border-zinc-300 dark:border-zinc-700"
                   }`}
                 >
-                  {pos}
+                  {tab}
                 </button>
               ))}
             </div>
