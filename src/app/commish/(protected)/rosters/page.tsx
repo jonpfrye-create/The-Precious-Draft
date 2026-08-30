@@ -5,7 +5,6 @@ import {
   getPhasesForLeague,
   getPicks,
   getPlayersByIds,
-  getRosterSlots,
   getTeamsForPhase,
 } from "@/lib/draft/queries";
 import { PHASE_LABELS, type PhaseType } from "@/lib/draft/phase-templates";
@@ -31,29 +30,30 @@ export default async function RostersPage({
     phases.find((p) => p.status !== "completed") ??
     phases[phases.length - 1];
 
-  const [teams, slots, picks] = await Promise.all([
+  const [teams, picks] = await Promise.all([
     getTeamsForPhase(phase.id),
-    getRosterSlots(phase.id),
     getPicks(phase.id),
   ]);
   const players = await getPlayersByIds(picks.map((p) => p.player_id));
   const playerById = new Map(players.map((p) => [p.player_id, p]));
 
-  const slotSpecs = slots.map((slot) => ({
-    slotName: slot.slot_name,
-    eligiblePositions: slot.eligible_positions,
-  }));
-
+  // The round travels with the player, because the export is ordered by
+  // it. Taken from the pick rather than counted off the array, so a gap
+  // shows as a gap instead of quietly renumbering everyone below it.
   const rosters = teams.map((team) => ({
     teamName: team.name,
     players: picks
       .filter((pick) => pick.team_id === team.id)
-      .map((pick) => playerById.get(pick.player_id))
+      .map((pick) => {
+        const player = playerById.get(pick.player_id);
+        return player ? { ...player, round: pick.round } : undefined;
+      })
       .filter((p) => p !== undefined)
       .map((p) => ({
         full_name: p.full_name,
         position: p.position,
         nfl_team: p.nfl_team,
+        round: p.round,
       })),
   }));
 
@@ -65,7 +65,7 @@ export default async function RostersPage({
       <div className="flex w-full max-w-3xl flex-col gap-2">
         <h1 className="text-3xl font-semibold">{label} rosters</h1>
         <p className="text-zinc-600 dark:text-zinc-400">
-          Slot by slot, ready to type into Yahoo.{" "}
+          Round by round, in the order Yahoo asks for them.{" "}
           {picks.length < teams.length * phase.rounds && (
             <span className="font-medium text-amber-700 dark:text-amber-500">
               This phase isn&apos;t finished — {picks.length} of{" "}
@@ -91,10 +91,10 @@ export default async function RostersPage({
       </div>
 
       <RosterExport
-        text={formatAllRosters(rosters, slotSpecs, heading)}
+        text={formatAllRosters(rosters, heading)}
         perTeam={rosters.map((roster) => ({
           teamName: roster.teamName,
-          block: formatTeamRoster(roster, slotSpecs),
+          block: formatTeamRoster(roster),
         }))}
       />
 
